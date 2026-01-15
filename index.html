@@ -3,40 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V12 (安全版)</title>
+    <title>海廢調查員 V13 (單機版)</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <style>
-        body { font-family: sans-serif; background: #e0f2f1; text-align: center; padding: 15px; margin: 0; padding-bottom: 80px; }
+        body { font-family: -apple-system, sans-serif; background: #e0f7fa; text-align: center; padding: 15px; margin: 0; padding-bottom: 80px; }
         .page { display: none; }
         #p1 { display: block; }
 
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; border: 1px solid #b2dfdb; }
-        h2 { margin-top: 0; color: #00796b; font-size: 18px; border-bottom: 1px solid #b2dfdb; padding-bottom: 8px; }
+        .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 15px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #006064; font-size: 18px; border-bottom: 2px solid #b2ebf2; padding-bottom: 10px; }
         
-        input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 2px solid #80cbc4; border-radius: 8px; font-size: 16px; background: #fff; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 2px solid #0097a7; border-radius: 8px; font-size: 16px; background: #fff; box-sizing: border-box; }
         
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
-        button:active { opacity: 0.8; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
+        button:active { opacity: 0.7; transform: scale(0.98); }
         .btn-green { background: #00897b; }
         .btn-blue { background: #0288d1; }
         .btn-red { background: #d32f2f; }
         .btn-orange { background: #f57c00; }
 
-        #status-bar { position: fixed; bottom: 0; left: 0; width: 100%; padding: 5px; font-size: 12px; background: #333; color: white; text-align: center; }
-        
-        #reader { width: 100%; background: black; display: none; margin-bottom: 10px; }
-        #report-area { background: white; padding: 15px; border: 1px solid #ccc; text-align: center; }
+        /* 進度條 */
+        #progress-bar { height: 10px; background: #ddd; border-radius: 5px; margin: 10px 0; overflow: hidden; }
+        #progress-fill { height: 100%; background: #00acc1; width: 0%; transition: 0.3s; }
+
+        /* 報告區 */
+        #report-area { background: white; padding: 15px; border: 2px solid #006064; text-align: center; }
         .evidence-img { width: 100%; margin-top: 10px; display: none; border: 1px solid #999; }
+        
+        /* 統計列表 */
+        #stats-list { list-style: none; padding: 0; margin: 0; text-align: left; }
+        #stats-list li { padding: 8px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        #stats-list li span { font-weight: bold; color: #006064; }
     </style>
 </head>
 <body>
 
     <div id="p1" class="page">
-        <h1>📋 海廢調查 V12</h1>
+        <h1 style="color:#006064;">📋 海廢調查 V13</h1>
         
         <div class="card">
             <h2>1. 基本資料</h2>
@@ -48,9 +51,9 @@
 
         <div class="card">
             <h2>2. 定位</h2>
-            <button class="btn-blue" onclick="doGPS()">📍 抓取 GPS</button>
+            <button class="btn-blue" onclick="doGPS()">📍 抓取 GPS (原生)</button>
             <input type="text" id="inp_gps" placeholder="尚未定位" readonly style="background:#f1f8e9;">
-            <label>地點：</label>
+            <label>地點名稱：</label>
             <input type="text" id="inp_loc" placeholder="例如：外澳沙灘">
         </div>
 
@@ -59,81 +62,109 @@
 
     <div id="p2" class="page">
         <div class="card" style="text-align:center;">
-            進度：<b id="txt_count" style="color:red; font-size:22px;">0</b> / 10
-            <button class="btn-orange" id="force-btn" onclick="goP3()" style="display:none; margin-top:5px; font-size:14px;">🏁 結算成果</button>
+            進度：<b id="txt_count" style="color:red; font-size:24px;">0</b> / 10
+            <div id="progress-bar"><div id="progress-fill"></div></div>
+            <button class="btn-orange" id="force-btn" onclick="goP3()" style="display:none; font-size:14px;">🏁 結算成果</button>
         </div>
 
         <div class="card">
-            <h2>📷 掃描 (外掛功能)</h2>
-            <div id="reader"></div>
-            <button id="btn-cam-start" class="btn-blue" onclick="startCam()">啟動相機</button>
-            <button id="btn-cam-stop" class="btn-red" onclick="stopCam()" style="display:none;">關閉相機</button>
-        </div>
-
-        <div class="card">
-            <h2>⌨️ 手動記錄 (核心功能)</h2>
+            <h2>⌨️ 記錄海廢</h2>
+            <p style="color:#666; font-size:14px; margin-top:0;">請直接選擇瓶罐上的國家：</p>
             <select id="sel_country">
-                <option value="">👇 請選擇國家...</option>
-                <option value="🇹🇼 台灣">🇹🇼 台灣</option>
-                <option value="🇨🇳 中國">🇨🇳 中國</option>
-                <option value="🇯🇵 日本">🇯🇵 日本</option>
-                <option value="🇰🇷 韓國">🇰🇷 韓國</option>
-                <option value="🇻🇳 越南">🇻🇳 越南</option>
-                <option value="🇹🇭 泰國">🇹🇭 泰國</option>
-                <option value="🇮🇩 印尼">🇮🇩 印尼</option>
-                <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
-                <option value="🇺🇸 美國">🇺🇸 美國</option>
+                <option value="">👇 點此選擇...</option>
+                <option value="🇹🇼 台灣 (Taiwan)">🇹🇼 台灣</option>
+                <option value="🇨🇳 中國 (China)">🇨🇳 中國</option>
+                <option value="🇯🇵 日本 (Japan)">🇯🇵 日本</option>
+                <option value="🇰🇷 韓國 (Korea)">🇰🇷 韓國</option>
+                <option value="🇻🇳 越南 (Vietnam)">🇻🇳 越南</option>
+                <option value="🇹🇭 泰國 (Thailand)">🇹🇭 泰國</option>
+                <option value="🇮🇩 印尼 (Indonesia)">🇮🇩 印尼</option>
+                <option value="🇵🇭 菲律賓 (Philippines)">🇵🇭 菲律賓</option>
+                <option value="🇺🇸 美國 (USA)">🇺🇸 美國</option>
                 <option value="❓ 無法辨識">❓ 無法辨識</option>
             </select>
-            <button class="btn-green" onclick="addRec()">記錄這一筆</button>
+            <button class="btn-green" onclick="addRec()">➕ 記錄這一筆</button>
         </div>
+        
         <button class="btn-red" onclick="undo()" style="opacity:0.7;">↩️ 刪除上一筆</button>
     </div>
 
     <div id="p3" class="page">
-        <h1>🎉 完成</h1>
+        <h1 style="color:#006064;">🎉 調查完成</h1>
         
         <div class="card">
-            <h2>📸 步驟 1: 拍照</h2>
+            <h2>📸 步驟 1: 拍照存證</h2>
             <input type="file" accept="image/*" onchange="loadImg(event)">
         </div>
 
         <div class="card">
-            <h2>📄 步驟 2: 報告</h2>
+            <h2>📄 步驟 2: 您的報告</h2>
+            <p style="font-size:12px; color:red;">*此版本不支援自動下載圖片，請直接「手機截圖」此畫面保存。</p>
+            
             <div id="report-area">
-                <div style="background:#00796b; color:white; padding:10px;">
-                    <h3>海廢調查報告</h3>
+                <div style="background:#006064; color:white; padding:10px; margin-bottom:10px;">
+                    <h3 style="margin:0;">海廢調查報告</h3>
                 </div>
-                <div style="text-align:left; font-size:14px; padding:10px;">
-                    日期：<span id="out_date"></span><br>
-                    人員：<span id="out_name"></span> (<span id="out_team"></span>人)<br>
-                    GPS：<span id="out_gps"></span>
+                <div style="text-align:left; font-size:14px; line-height:1.6; border-bottom:1px solid #ccc; padding-bottom:10px; margin-bottom:10px;">
+                    <strong>日期：</strong><span id="out_date"></span><br>
+                    <strong>人員：</strong><span id="out_name"></span> (<span id="out_team"></span>人)<br>
+                    <strong>GPS：</strong><span id="out_gps"></span><br>
+                    <strong>地點：</strong><span id="out_loc"></span>
                 </div>
-                <canvas id="myChart" style="max-height:250px;"></canvas>
-                <div id="chart-msg" style="display:none; color:red;">(圖表載入失敗，但不影響數據)</div>
+                
+                <h4 style="margin:0 0 5px 0;">📊 統計結果</h4>
+                <ul id="stats-list">
+                    </ul>
+
                 <img id="out_img" class="evidence-img">
             </div>
         </div>
 
-        <button class="btn-orange" onclick="dlImg()">📥 下載圖片</button>
-        <button class="btn-blue" onclick="location.reload()" style="margin-top:20px;">🔄 重來</button>
+        <button class="btn-blue" onclick="location.reload()" style="margin-top:20px;">🔄 開始新調查</button>
     </div>
 
-    <div id="status-bar">系統檢查中...</div>
-
 <script>
-    // === 核心變數 (使用最傳統的 var) ===
+    // === 變數 ===
     var count = 0;
     var target = 10;
     var stats = {};
     var historyStack = [];
-    var html5QrCode = null;
 
-    // === 系統自我檢查 ===
+    // === 開場測試 ===
     window.onload = function() {
-        var status = [];
-        if(typeof Html5Qrcode !== 'undefined') status.push("相機OK"); else status.push("相機X");
-        if(typeof Chart !== 'undefined') status.push("圖表OK"); else status.push("圖表X");
+        console.log("V13 啟動");
+        // 嘗試震動一下確認 JS 活著
+        if(navigator.vibrate) navigator.vibrate(100);
+    };
+
+    // === 1. GPS (原生) ===
+    function doGPS() {
+        var field = document.getElementById('inp_gps');
+        field.value = "定位中...";
         
-        var msg = "系統就緒: " + status.join(", ");
-        document
+        if (!navigator.geolocation) {
+            alert("不支援 GPS");
+            field.value = "無訊號";
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                field.value = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
+                alert("✅ 定位成功");
+            },
+            function(err) {
+                alert("定位失敗 (請確認 HTTPS 或權限)");
+                field.value = "";
+            },
+            { timeout: 5000 }
+        );
+    }
+
+    // === 2. 切換頁面 ===
+    function goP2() {
+        var name = document.getElementById('inp_name').value;
+        if(!name) { alert("請輸入姓名"); return; }
+        
+        document.getElementById('p1').style.display = 'none';
+        document.
