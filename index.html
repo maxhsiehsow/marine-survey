@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V33</title>
+    <title>海廢調查員 V41</title>
 
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 80px; color: #333; }
@@ -22,7 +22,7 @@
         #camera-container { position: relative; display: none; margin-bottom: 15px; background: #000; border-radius: 8px; overflow: hidden; }
         #reader { width: 100%; min-height: 250px; }
         
-        /* 覆蓋在相機上的 AI 按鈕 */
+        /* AI 按鈕 */
         #ai-trigger-overlay {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             z-index: 100; text-align: center; width: 90%;
@@ -42,24 +42,28 @@
         .input-group select { flex: 2; }
         .input-group input { flex: 1; text-align: center; }
         
-        /* Loading 遮罩 */
         #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:white; z-index:9999; text-align:center; padding-top:50%; font-size:18px; }
+        
+        /* 版本標籤 */
+        .version-tag { text-align: center; font-size: 10px; color: #999; margin-top: 20px; }
     </style>
 
     <script>
-        // ⚠️⚠️⚠️【重要】請填入您的 Google Script 網址 ⚠️⚠️⚠️
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwJkaPNyshPtObIO7yvuwlagGhJsi2iAQWsqPd3qsuNXrW_U7umgdvL0Kezrfksg9FM_Q/exec"; 
+        // ⚠️⚠️⚠️【重要】請在這裡貼上剛剛複製的「全新」網址 ⚠️⚠️⚠️
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzszmfO_5CLnNQFen8qWKujGFYlFI-trtxiBXcyhfk7dyd2LDJq6SfXKniyARtjsusl6g/exec"; 
 
-        // === 變數 ===
         var count = 0; var target = 100;
         var stats = {}; var historyStack = [];
         var html5QrCode = null; var isLibLoaded = false;
         var currentCity = "未定位"; var uploadFileBase64 = null;
         var fixedColors = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '其它': '#757575' };
 
-        window.onload = function() { var d = new Date(); document.getElementById('out_date').innerText = d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate(); };
+        window.onload = function() { 
+            var d = new Date(); 
+            document.getElementById('out_date').innerText = d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate(); 
+            console.log("Frontend V41 Loaded");
+        };
 
-        // === 1. 智慧鏡頭核心 ===
         function startSmartCamera() {
             if(!isLibLoaded) {
                 showLoading("⏳ 下載掃描模組...");
@@ -84,7 +88,6 @@
                 
                 html5QrCode.start({ facingMode: "environment" }, config,
                     function(decodedText) {
-                        // 掃到條碼 -> 自動處理
                         if(navigator.vibrate) navigator.vibrate(200);
                         closeCamera();
                         var country = identifyBarcode(decodedText);
@@ -106,37 +109,24 @@
             document.getElementById('btn-close-cam').style.display = 'none';
         }
 
-        // === 2. 直接截圖辨識 (Snapshot) ===
         function captureAndIdentify() {
-            // 找出正在播放的 video 元素 (html5-qrcode 產生的)
             var videoElement = document.querySelector("#reader video");
-            
-            if (!videoElement) {
-                alert("相機尚未啟動，請先開啟智慧鏡頭");
-                return;
-            }
-
-            // 暫停畫面 (讓使用者感覺像拍了照)
+            if (!videoElement) { alert("相機尚未啟動"); return; }
             videoElement.pause();
-            showLoading("🤖 截圖分析中...");
+            showLoading("🤖 V41 正在連線 AI...");
 
-            // 建立 Canvas 來截圖
             var canvas = document.createElement("canvas");
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
             var ctx = canvas.getContext("2d");
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            // 轉成 Base64
             var base64Image = canvas.toDataURL("image/jpeg", 0.7).split(',')[1];
-
-            // 送出
             sendToGemini(base64Image, videoElement);
         }
 
         function sendToGemini(base64Image, videoEl) {
             if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { 
-                hideLoading(); videoEl.play(); alert("請先設定 Google Script 網址！"); return; 
+                hideLoading(); if(videoEl) videoEl.play(); alert("請更新程式碼中的 Google Script 網址！"); return; 
             }
 
             var payload = { action: "identify", image: base64Image };
@@ -149,23 +139,20 @@
             .then(response => response.json())
             .then(data => {
                 hideLoading();
-                // 恢復相機播放，或者直接關閉 (這裡選擇直接關閉，因為要處理結果了)
                 closeCamera(); 
-
                 if(data.status === "success") {
                     var result = data.result;
                     alert("🤖 AI 分析結果：" + result);
                     var matched = matchCountry(result);
                     addRecord(matched, 1);
                 } else {
-                    alert("AI 回傳錯誤: " + data.message + "\n(請確認已執行後端權限授權)");
+                    alert("AI 回傳錯誤:\n" + data.message);
                 }
             })
             .catch(err => {
                 hideLoading();
-                if(videoEl) videoEl.play(); // 失敗的話恢復播放
-                console.error(err);
-                alert("連線失敗！\n1. 請確認已執行 Google Script 的權限授權。\n2. 錯誤訊息：" + err.message);
+                if(videoEl) videoEl.play();
+                alert("連線失敗！請確認網址是否正確。\n錯誤: " + err.message);
             });
         }
 
@@ -177,9 +164,8 @@
             return aiText;
         }
 
-        // === 3. 資料上傳 (維持不變) ===
         function uploadData() {
-            if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { alert("請先設定 Google Script 網址！"); return; }
+            if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { alert("請設定 Google Script 網址！"); return; }
             if(count === 0) { alert("沒有資料！"); return; }
             if(!document.getElementById('inp_name').value) { alert("請輸入姓名"); return; }
 
@@ -215,7 +201,7 @@
                 body: JSON.stringify(payload)
             }).then(res => res.json()).then(data => {
                 if(data.status === "success") {
-                    alert("謝謝您參與瓶罐調查，有任何問題請聯絡荒野專案負責人雁子。");
+                    alert("✅ 上傳成功！" + (data.message || ""));
                     resetForm();
                 } else {
                     alert("上傳錯誤: " + data.message);
@@ -227,7 +213,6 @@
             });
         }
 
-        // === 其他功能 ===
         function runGPS() {
             document.getElementById('inp_gps').value = "定位中...";
             if(!navigator.geolocation) { alert("不支援 GPS"); return; }
@@ -284,16 +269,13 @@
         function updateUI() {
             document.getElementById('disp_count').innerText = count;
             document.getElementById('out_total').innerText = count;
-            
             var tbody = document.getElementById('stats-body'); tbody.innerHTML = "";
             var grad = [], deg=0;
-            
             for(var key in stats) {
                 var color = fixedColors[key] || stringToColor(key);
                 var tr = document.createElement('tr');
                 tr.innerHTML = "<td><span style='color:"+color+"'>■</span> "+key+"</td><td>"+stats[key]+"</td>";
                 tbody.appendChild(tr);
-                
                 var p = stats[key]/count, d = p*360;
                 grad.push(color + " " + deg.toFixed(1) + "deg " + (deg+d).toFixed(1) + "deg");
                 deg += d;
@@ -367,11 +349,11 @@
         <div id="loading-text">處理中...</div>
     </div>
 
-    <h1>📋 海廢 V33 真・智慧鏡頭</h1>
+    <h1>📋 海廢 V41 同步版</h1>
 
     <div class="card">
         <h2>1. 設定</h2>
-        <label>姓名 ：</label><input type="text" id="inp_name" oninput="syncData()">
+        <label>姓名：</label><input type="text" id="inp_name" oninput="syncData()">
         <label>GPS / 地點：</label>
         <button onclick="runGPS()" class="btn-blue">📍 抓取座標 & 縣市</button>
         <input type="text" id="inp_gps" readonly value="尚未定位" style="background:#f1f8e9;">
@@ -389,7 +371,6 @@
 
         <div id="camera-container">
             <div id="reader"></div>
-            
             <div id="ai-trigger-overlay">
                 <button onclick="captureAndIdentify()" class="btn-ai-overlay">
                     <span>🤖</span> 沒條碼？點我截圖辨識
@@ -447,8 +428,7 @@
         <hr style="margin: 20px 0;">
         <button id="btn-upload" onclick="uploadData()" class="btn-upload">📤 上傳資料與照片到雲端</button>
     </div>
+    
+    <div class="version-tag">Build: V41 | Sync Check</div>
 </body>
 </html>
- 
-
-
