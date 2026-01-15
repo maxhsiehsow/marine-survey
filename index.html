@@ -3,104 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V21</title>
+    <title>海廢調查員 V22</title>
 
     <style>
-        /* 1. 全域除錯視窗 */
-        #debug-console {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100px;
-            background: #000; color: #0f0; font-family: monospace; font-size: 12px;
-            padding: 5px; overflow-y: scroll; z-index: 10000; border-bottom: 2px solid red;
-            opacity: 0.95;
+        /* 基礎設定 */
+        body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 80px; color: #333; }
+        
+        /* 診斷框 */
+        #debug-bar {
+            background: #28a745; color: white; font-size: 12px; padding: 5px; 
+            margin-bottom: 10px; border-radius: 5px; text-align: center;
         }
 
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-top: 110px; padding-bottom: 50px; }
+        .card { 
+            background: white; padding: 15px; border-radius: 12px; 
+            margin-bottom: 15px; border: 1px solid #ddd; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
 
-        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; }
-        h2 { margin-top: 0; color: #0056b3; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        h2 { margin-top: 0; color: #0056b3; font-size: 18px; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px; }
         
-        input, select { width: 100%; padding: 12px; font-size: 16px; margin: 5px 0 15px 0; border: 1px solid #999; border-radius: 5px; background:#fff; box-sizing: border-box;}
-        
-        button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; margin-top: 5px; cursor: pointer; color: white; border: none; border-radius: 5px; }
-        .btn-blue { background: #007bff; }
-        .btn-green { background: #28a745; }
-        .btn-red { background: #dc3545; }
-        .btn-orange { background: #fd7e14; }
+        input, select { 
+            width: 100%; padding: 12px; font-size: 16px; margin: 5px 0 15px 0; 
+            border: 2px solid #cfd8dc; border-radius: 8px; background: #fff; box-sizing: border-box;
+        }
 
-        #reader { width: 100%; background: #000; display: none; margin-bottom: 10px; min-height: 200px; color: white; text-align: center; line-height: 200px; }
+        button { 
+            width: 100%; padding: 14px; font-size: 16px; font-weight: bold; 
+            margin-top: 5px; cursor: pointer; color: white; border: none; border-radius: 8px; 
+        }
+        .btn-blue { background: #0288d1; }
+        .btn-green { background: #2e7d32; }
+        .btn-red { background: #d32f2f; }
+        .btn-orange { background: #f57c00; }
+
+        /* === 關鍵技術：CSS 純代碼圓餅圖 === */
+        .pie-chart {
+            width: 200px; height: 200px; border-radius: 50%;
+            background: conic-gradient(#eee 0% 100%);
+            margin: 20px auto;
+            border: 1px solid #ccc;
+        }
         
+        /* 圖例 */
+        .legend-item { font-size: 13px; display: inline-block; margin: 3px 8px; }
+        .color-box { display: inline-block; width: 10px; height: 10px; margin-right: 5px; }
+
+        /* 表格 */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     </style>
 
     <script>
-        // === 全域錯誤捕捉 ===
-        window.onerror = function(msg, url, line) {
-            var box = document.getElementById('debug-console');
-            if(box) box.innerHTML = "<div style='color:red;'>❌ 錯誤: " + msg + " (行:" + line + ")</div>" + box.innerHTML;
+        // === 1. 初始化 (絕對安全) ===
+        window.onload = function() {
+            document.getElementById('debug-bar').innerText = "✅ V22 核心已啟動 (無外部依賴)";
+            
+            // 填入日期
+            var d = new Date();
+            document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
         };
 
         // === 變數 ===
         var count = 0;
         var stats = {};
         var historyStack = [];
-        var html5QrCode = null;
-        var libStatus = { cam: false, chart: false };
-
-        // === 日誌工具 ===
-        function log(msg) {
-            var box = document.getElementById('debug-console');
-            var now = new Date();
-            var time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-            if(box) box.innerHTML = "<div>[" + time + "] " + msg + "</div>" + box.innerHTML;
-        }
-
-        // === 1. 初始化 (純 JS 邏輯) ===
-        window.onload = function() {
-            log("步驟1: 頁面 UI 已渲染");
-            
-            // 填入日期
-            var d = new Date();
-            document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
-
-            // 開始異步載入外部庫
-            loadExternalLibs();
+        
+        // 定義顏色 (給 CSS 圓餅圖用)
+        var colors = {
+            '🇹🇼 台灣': '#e53935', // 紅
+            '🇨🇳 中國': '#1e88e5', // 藍
+            '🇯🇵 日本': '#43a047', // 綠
+            '🇰🇷 韓國': '#fdd835', // 黃
+            '🇻🇳 越南': '#8e24aa', // 紫
+            '🇹🇭 泰國': '#fb8c00', // 橘
+            '🇮🇩 印尼': '#00acc1', // 青
+            '🇵🇭 菲律賓': '#6d4c41', // 棕
+            '🇺🇸 美國': '#546e7a', // 灰
+            '❓ 無法辨識': '#757575' // 深灰
         };
 
-        // === 2. 動態載入外部庫 (關鍵修復) ===
-        function loadExternalLibs() {
-            log("步驟2: 開始載入外部模組...");
-
-            // 載入 QR Code 庫
-            var scriptQr = document.createElement('script');
-            scriptQr.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
-            scriptQr.onload = function() { 
-                libStatus.cam = true; 
-                log("✅ 相機模組載入成功"); 
-                document.getElementById('btn-scan').style.display = 'block'; // 載入成功才顯示按鈕
-            };
-            scriptQr.onerror = function() { log("❌ 相機模組載入失敗 (網路封鎖)"); };
-            document.head.appendChild(scriptQr);
-
-            // 載入 Chart 庫
-            var scriptChart = document.createElement('script');
-            scriptChart.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js";
-            scriptChart.onload = function() { 
-                libStatus.chart = true; 
-                log("✅ 圖表模組載入成功"); 
-            };
-            scriptChart.onerror = function() { log("❌ 圖表模組載入失敗"); };
-            document.head.appendChild(scriptChart);
-        }
-
-        // === 3. GPS 功能 ===
+        // === 2. GPS ===
         window.runGPS = function() {
-            log("嘗試定位...");
             var field = document.getElementById('inp_gps');
             field.value = "定位中...";
 
             if(!navigator.geolocation) {
-                log("錯誤: 不支援 GPS");
+                alert("手機不支援 GPS");
+                field.value = "不支援";
                 return;
             }
 
@@ -109,45 +99,200 @@
                     var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
                     field.value = txt;
                     document.getElementById('out_gps').innerText = txt;
-                    log("定位成功: " + txt);
+                    alert("定位成功！");
                 },
                 function(err) {
-                    log("定位失敗: " + err.message);
                     field.value = "定位失敗";
+                    alert("定位失敗，請手動輸入");
                 },
                 { timeout: 10000 }
             );
         };
 
-        // === 4. 掃描功能 (防護版) ===
-        window.startScan = function() {
-            if(!libStatus.cam) {
-                alert("相機模組尚未載入完成，或載入失敗。");
+        // === 3. 同步資料 ===
+        window.syncData = function() {
+            document.getElementById('out_name').innerText = document.getElementById('inp_name').value;
+            document.getElementById('out_loc').innerText = document.getElementById('inp_loc').value;
+        };
+
+        // === 4. 增加記錄 ===
+        window.addRecord = function() {
+            var sel = document.getElementById('sel_country');
+            var val = sel.value;
+
+            if(!val) { alert("請選擇國家"); return; }
+
+            // 邏輯
+            if(!stats[val]) stats[val] = 0;
+            stats[val]++;
+            count++;
+            historyStack.push(val);
+
+            // 更新畫面
+            document.getElementById('disp_count').innerText = count;
+            sel.value = ""; // 重置
+
+            // 更新表格 & CSS 圖表
+            renderTable();
+            drawCssChart();
+            
+            // 提示
+            if(count == 10) alert("🎉 已滿 10 個！請截圖保存報告。");
+        };
+
+        // === 5. 刪除記錄 ===
+        window.undoRecord = function() {
+            if(count <= 0) return;
+            var last = historyStack.pop();
+            stats[last]--;
+            if(stats[last] === 0) delete stats[last];
+            count--;
+
+            document.getElementById('disp_count').innerText = count;
+            renderTable();
+            drawCssChart();
+        };
+
+        // === 6. 渲染表格 ===
+        function renderTable() {
+            var tbody = document.getElementById('stats-body');
+            tbody.innerHTML = "";
+
+            if(count === 0) {
+                tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>";
                 return;
             }
-            
-            document.getElementById('reader').style.display = 'block';
-            document.getElementById('btn-scan').style.display = 'none';
-            document.getElementById('btn-stop').style.display = 'inline-block';
-            log("啟動相機中...");
 
-            try {
-                html5QrCode = new Html5Qrcode("reader");
-                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                    function(decodedText) {
-                        // 掃描成功
-                        window.stopScan();
-                        var country = getCountry(decodedText);
-                        alert("掃描成功: " + country);
-                        log("掃到: " + decodedText + " -> " + country);
-                        window.addRecord(country);
-                    },
-                    function(errorMessage) {
-                        // 掃描中的錯誤忽略，避免洗版
-                    }
-                ).catch(err => {
-                    log("相機啟動錯誤: " + err);
-                    window.stopScan();
-                    alert("相機無法啟動 (HTTPS?)");
-                });
-            } catch
+            for(var key in stats) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = "<td><span class='color-box' style='background:"+(colors[key]||'#ccc')+"'></span>" + key + "</td><td>" + stats[key] + "</td>";
+                tbody.appendChild(tr);
+            }
+        }
+
+        // === 7. 繪製 CSS 圓餅圖 (核心黑科技) ===
+        function drawCssChart() {
+            if(count === 0) {
+                document.getElementById('css-pie').style.background = "conic-gradient(#eee 0% 100%)";
+                return;
+            }
+
+            var gradientStr = [];
+            var currentDeg = 0;
+
+            for(var key in stats) {
+                var qty = stats[key];
+                var percent = qty / count;
+                var deg = percent * 360; // 佔多少角度
+                
+                var color = colors[key] || '#999';
+                
+                // 拼接 CSS 語法: color startDeg endDeg
+                var endDeg = currentDeg + deg;
+                gradientStr.push(color + " " + currentDeg.toFixed(1) + "deg " + endDeg.toFixed(1) + "deg");
+                
+                currentDeg = endDeg;
+            }
+
+            var finalCss = "conic-gradient(" + gradientStr.join(", ") + ")";
+            document.getElementById('css-pie').style.background = finalCss;
+        }
+
+        // === 8. 照片預覽 ===
+        window.previewImage = function(event) {
+            var file = event.target.files[0];
+            if(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var img = document.getElementById('out_img');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        };
+    </script>
+</head>
+<body>
+
+    <div id="debug-bar">載入中...</div>
+
+    <h1>📋 海廢調查 V22 (原生版)</h1>
+
+    <div class="card">
+        <h2>1. 設定</h2>
+        <label>姓名：</label>
+        <input type="text" id="inp_name" placeholder="輸入姓名" oninput="syncData()">
+        
+        <label>GPS：</label>
+        <button onclick="runGPS()" class="btn-blue">📍 抓取 GPS</button>
+        <input type="text" id="inp_gps" readonly value="尚未定位" style="background:#eee;">
+        
+        <label>地點：</label>
+        <input type="text" id="inp_loc" placeholder="輸入地點" oninput="syncData()">
+    </div>
+
+    <div class="card">
+        <h2>2. 記錄</h2>
+        <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">
+            數量：<span id="disp_count" style="color:red;">0</span> / 10
+        </div>
+        
+        <label>工具：</label>
+        <input type="file" accept="image/*" capture="environment" id="cam-input" style="display:none;">
+        <button class="btn-orange" onclick="document.getElementById('cam-input').click()">📷 開啟相機掃描條碼</button>
+        <div style="font-size:12px; color:#666; margin-top:5px; text-align:center;">
+            (請使用相機查看條碼，然後在下方手動選擇)
+        </div>
+
+        <label style="margin-top:15px;">選擇來源國：</label>
+        <select id="sel_country">
+            <option value="">👇 點此選擇...</option>
+            <option value="🇹🇼 台灣">🇹🇼 台灣</option>
+            <option value="🇨🇳 中國">🇨🇳 中國</option>
+            <option value="🇯🇵 日本">🇯🇵 日本</option>
+            <option value="🇰🇷 韓國">🇰🇷 韓國</option>
+            <option value="🇻🇳 越南">🇻🇳 越南</option>
+            <option value="🇹🇭 泰國">🇹🇭 泰國</option>
+            <option value="🇮🇩 印尼">🇮🇩 印尼</option>
+            <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+            <option value="🇺🇸 美國">🇺🇸 美國</option>
+            <option value="❓ 無法辨識">❓ 無法辨識</option>
+        </select>
+
+        <button onclick="addRecord()" class="btn-green">➕ 增加一筆</button>
+        <button onclick="undoRecord()" class="btn-red">↩️ 刪除上一筆</button>
+    </div>
+
+    <div class="card">
+        <h2>3. 報告預覽 (請截圖)</h2>
+        
+        <div style="border:3px solid #0056b3; background:white;">
+            <div style="background:#0056b3; color:white; padding:8px; text-align:center; font-weight:bold;">
+                海廢調查報告
+            </div>
+            <div style="padding:15px;">
+                <div style="font-size:14px; line-height:1.6; border-bottom:1px solid #ccc; padding-bottom:10px;">
+                    <strong>日期：</strong><span id="out_date"></span><br>
+                    <strong>姓名：</strong><span id="out_name"></span><br>
+                    <strong>GPS：</strong><span id="out_gps"></span><br>
+                    <strong>地點：</strong><span id="out_loc"></span>
+                </div>
+                
+                <div id="css-pie" class="pie-chart"></div>
+
+                <table id="stats-table">
+                    <thead><tr><th>國家</th><th>數量</th></tr></thead>
+                    <tbody id="stats-body"><tr><td colspan="2">無資料</td></tr></tbody>
+                </table>
+
+                <img id="out_img" class="evidence-img">
+            </div>
+        </div>
+
+        <label style="margin-top:15px;">📸 上傳照片：</label>
+        <input type="file" accept="image/*" onchange="previewImage(event)">
+    </div>
+
+</body>
+</html>
