@@ -17,7 +17,7 @@
 
         h2 { margin-top: 0; color: #0056b3; font-size: 18px; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px; }
         
-        input, select { 
+        input, select, textarea { 
             width: 100%; padding: 12px; font-size: 16px; margin: 5px 0 15px 0; 
             border: 2px solid #cfd8dc; border-radius: 8px; background: #fff; box-sizing: border-box;
         }
@@ -32,17 +32,13 @@
         .btn-orange { background: #f57c00; }
         .btn-upload { background: #673ab7; }
 
-        /* CSS 純代碼圓餅圖 */
         .pie-chart {
             width: 120px; height: 120px; border-radius: 50%; 
             background: conic-gradient(#eee 0% 100%);
             margin: 10px auto; border: 1px solid #ccc;
         }
 
-        /* 掃描視窗 */
         #reader { width: 100%; background: #000; display: none; margin-bottom: 10px; min-height: 200px; }
-
-        /* 報告區 */
         #report-layout { border: 3px solid #0056b3; background: white; padding: 0; }
         .rep-head { background: #0056b3; color: white; padding: 8px; text-align: center; font-weight: bold; }
         .rep-body { padding: 10px; font-size: 13px; line-height: 1.4; }
@@ -54,12 +50,8 @@
 
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
         th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
-        
-        /* 總計行樣式 */
         .total-row { background-color: #e3f2fd; font-weight: bold; }
-
         #scan-loading { display: none; color: #f57c00; font-weight: bold; margin-bottom: 5px; }
-        
         .input-group { display: flex; gap: 10px; align-items: center; }
         .input-group select { flex: 2; }
         .input-group input { flex: 1; text-align: center; }
@@ -87,11 +79,15 @@
 
         // === 1. 初始化 ===
         window.onload = function() {
-            var d = new Date();
-            document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+            resetDate();
         };
 
-        // === 2. 上傳核心 ===
+        function resetDate() {
+            var d = new Date();
+            document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+        }
+
+        // === 2. 上傳核心 (修改版) ===
         function uploadData() {
             if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { alert("請先設定 Google Script 網址！"); return; }
             if(count === 0) { alert("沒有資料！"); return; }
@@ -101,6 +97,7 @@
             btn.innerText = "⏳ 處理數據中...";
             btn.disabled = true;
 
+            // 整理數據
             var breakdown = {
                 tw: stats['🇹🇼 台灣'] || 0, cn: stats['🇨🇳 中國'] || 0, vn: stats['🇻🇳 越南'] || 0,
                 ph: stats['🇵🇭 菲律賓'] || 0, my: stats['🇲🇾 馬來西亞'] || 0, id: stats['🇮🇩 印尼'] || 0,
@@ -124,6 +121,8 @@
                 cnt_tw: breakdown.tw, cnt_cn: breakdown.cn, cnt_vn: breakdown.vn,
                 cnt_ph: breakdown.ph, cnt_my: breakdown.my, cnt_id: breakdown.id,
                 cnt_other: otherColumnValue,
+                // 新增：特殊記錄
+                note: document.getElementById('inp_note').value,
                 fileData: uploadFileBase64 ? uploadFileBase64.split(',')[1] : "",
                 mimeType: "image/jpeg"
             };
@@ -134,12 +133,52 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                alert("✅ 上傳成功！");
-                btn.innerText = "☁️ 上傳成功"; btn.disabled = false;
+                // 成功後的動作
+                alert("謝謝您參與瓶罐調查，有任何問題請聯絡荒野專案負責人雁子。");
+                resetForm(); // 清空表單
+                
+                btn.innerText = "📤 上傳資料與照片到雲端"; 
+                btn.disabled = false;
             }).catch(err => {
                 alert("❌ 上傳失敗 (網路問題)");
                 btn.innerText = "☁️ 重試上傳"; btn.disabled = false;
             });
+        }
+
+        // === 新功能：清空所有資料 ===
+        function resetForm() {
+            // 1. 清空變數
+            count = 0;
+            stats = {};
+            historyStack = [];
+            currentCity = "未定位";
+            uploadFileBase64 = null;
+
+            // 2. 清空輸入欄位
+            document.getElementById('inp_name').value = "";
+            document.getElementById('inp_loc').value = "";
+            document.getElementById('inp_gps').value = "尚未定位";
+            document.getElementById('inp_note').value = ""; // 清空特殊記錄
+            document.getElementById('inp_qty').value = "1";
+            document.getElementById('sel_country').value = "🇹🇼 台灣";
+            
+            // 3. 重置報告顯示
+            document.getElementById('out_name').innerText = "";
+            document.getElementById('out_loc').innerText = "";
+            document.getElementById('out_loc_city').innerText = "(未定位縣市)";
+            document.getElementById('out_gps').innerText = "";
+            document.getElementById('disp_count').innerText = "0";
+            
+            // 4. 清空照片與圖表
+            document.getElementById('out_img').style.display = 'none';
+            document.getElementById('out_img').src = "";
+            // 清空 file input (需要重置 value)
+            document.querySelector('input[type=file]').value = "";
+            
+            renderTable(); // 會自動畫出空表格和空圓餅圖
+            
+            // 滾動回到最上方
+            window.scrollTo(0, 0);
         }
 
         // === 3. 照片處理 ===
@@ -294,7 +333,7 @@
             tbody.innerHTML = "";
             if(count === 0) { 
                 tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>"; 
-                document.getElementById('out_total').innerText = "0"; // 重置總數
+                document.getElementById('out_total').innerText = "0";
                 return; 
             }
             
@@ -305,13 +344,10 @@
                 tbody.appendChild(tr);
             }
             
-            // 新增：總計列
             var totalRow = document.createElement('tr');
             totalRow.className = "total-row";
             totalRow.innerHTML = "<td>總計</td><td>" + count + "</td>";
             tbody.appendChild(totalRow);
-            
-            // 更新圓餅圖下方的總數
             document.getElementById('out_total').innerText = count;
         }
 
@@ -380,6 +416,9 @@
 
         <button onclick="handleManualAdd()" class="btn-green">➕ 增加記錄</button>
         <button onclick="undoRecord()" class="btn-red">↩️ 刪除上一筆</button>
+
+        <label style="margin-top:20px; color:#666;">📝 特殊記錄 (選填)：</label>
+        <textarea id="inp_note" rows="2" placeholder="例如：發現大量特定品牌漂流物，或現場特殊狀況..."></textarea>
     </div>
 
     <div class="card">
