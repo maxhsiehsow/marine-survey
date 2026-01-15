@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V24</title>
+    <title>海廢調查員 V25 (旗艦版)</title>
 
     <style>
         /* 基礎設定 */
@@ -30,9 +30,9 @@
         .btn-green { background: #2e7d32; }
         .btn-red { background: #d32f2f; }
         .btn-orange { background: #f57c00; }
-        .btn-upload { background: #673ab7; } /* 紫色上傳按鈕 */
+        .btn-upload { background: #673ab7; }
 
-        /* CSS 純代碼圓餅圖 (縮小版，方便截圖) */
+        /* CSS 純代碼圓餅圖 */
         .pie-chart {
             width: 120px; height: 120px; border-radius: 50%; 
             background: conic-gradient(#eee 0% 100%);
@@ -42,13 +42,12 @@
         /* 掃描視窗 */
         #reader { width: 100%; background: #000; display: none; margin-bottom: 10px; min-height: 200px; }
 
-        /* 報告區 (緊湊排版) */
-        #report-layout {
-            border: 3px solid #0056b3; background: white; padding: 0;
-        }
+        /* 報告區 */
+        #report-layout { border: 3px solid #0056b3; background: white; padding: 0; }
         .rep-head { background: #0056b3; color: white; padding: 8px; text-align: center; font-weight: bold; }
         .rep-body { padding: 10px; font-size: 13px; line-height: 1.4; }
         
+        /* 照片縮圖 */
         .evidence-img { 
             width: 100%; height: 150px; object-fit: cover; object-position: center;
             display: none; margin-top: 5px; border: 1px solid #333; 
@@ -61,31 +60,133 @@
     </style>
 
     <script>
+        // ⚠️⚠️⚠️【重要】請填入您的 Google Script 網址 ⚠️⚠️⚠️
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKCZyudHLUvt2QHt_jrtEMR-uW9Myy8vQ2hwEVtp4z_Ea9asiSXj3IaGpoHZTW2jP7Eg/exec"; 
+
+        // === 變數 ===
+        var count = 0;
+        var target = 100; // 上限改為 100
+        var stats = {};
+        var historyStack = [];
+        var html5QrCode = null;
+        var isLibLoaded = false;
+        var currentCity = "未定位";
+        var uploadFileBase64 = null; // 存壓縮後的照片資料
+
+        // 國家顏色與分類Mapping
+        var colors = {
+            '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇯🇵 日本': '#43a047',
+            '🇰🇷 韓國': '#fdd835', '🇻🇳 越南': '#8e24aa', '🇹🇭 泰國': '#fb8c00',
+            '🇮🇩 印尼': '#00acc1', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63',
+            '🇺🇸 美國': '#546e7a', '❓ 無法辨識': '#757575'
+        };
+
         // === 1. 初始化 ===
         window.onload = function() {
             var d = new Date();
             document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
         };
 
-        // === 變數 ===
-        var count = 0;
-        var stats = {};
-        var historyStack = [];
-        var html5QrCode = null;
-        var isLibLoaded = false;
-        var currentCity = "未定位"; // 用來存縣市
+        // === 2. 上傳核心 (升級版) ===
+        function uploadData() {
+            if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { alert("請先設定 Google Script 網址！"); return; }
+            if(count === 0) { alert("沒有資料！"); return; }
+            if(!document.getElementById('inp_name').value) { alert("請輸入姓名"); return; }
 
-        // ⚠️⚠️⚠️【重要】請將下面的引號內換成您的 Google Apps Script 網址 ⚠️⚠️⚠️
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhPWysxZoVHQreEsFyPJMPU_Ko4f-d50etDLiNmI_k0c7Vf1ncchVRAQnA73YbdvbGUw/exec"; 
+            var btn = document.getElementById('btn-upload');
+            btn.innerText = "⏳ 處理中...";
+            btn.disabled = true;
 
-        var colors = {
-            '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇯🇵 日本': '#43a047',
-            '🇰🇷 韓國': '#fdd835', '🇻🇳 越南': '#8e24aa', '🇹🇭 泰國': '#fb8c00',
-            '🇮🇩 印尼': '#00acc1', '🇵🇭 菲律賓': '#6d4c41', '🇺🇸 美國': '#546e7a',
-            '❓ 無法辨識': '#757575'
-        };
+            // 1. 整理分類數據
+            var breakdown = {
+                tw: stats['🇹🇼 台灣'] || 0,
+                cn: stats['🇨🇳 中國'] || 0,
+                vn: stats['🇻🇳 越南'] || 0,
+                ph: stats['🇵🇭 菲律賓'] || 0,
+                my: stats['🇲🇾 馬來西亞'] || 0,
+                id: stats['🇮🇩 印尼'] || 0,
+                other: 0
+            };
+            
+            // 計算「其他」：總數減去上述已知國家
+            var knownSum = breakdown.tw + breakdown.cn + breakdown.vn + breakdown.ph + breakdown.my + breakdown.id;
+            breakdown.other = count - knownSum;
 
-        // === 2. 動態載入掃描庫 ===
+            // 2. 準備 Payload
+            var payload = {
+                name: document.getElementById('inp_name').value,
+                loc: document.getElementById('inp_loc').value,
+                city: currentCity,
+                gps: document.getElementById('inp_gps').value,
+                total: count,
+                cnt_tw: breakdown.tw,
+                cnt_cn: breakdown.cn,
+                cnt_vn: breakdown.vn,
+                cnt_ph: breakdown.ph,
+                cnt_my: breakdown.my,
+                cnt_id: breakdown.id,
+                cnt_other: breakdown.other,
+                // 照片資料 (如果有的話)
+                fileData: uploadFileBase64 ? uploadFileBase64.split(',')[1] : "", // 去掉開頭的 data:image/jpeg;base64,
+                mimeType: "image/jpeg"
+            };
+
+            // 3. 發送 (嘗試上傳照片比較久，所以改文字提示)
+            btn.innerText = "☁️ 照片上傳中(約10秒)...";
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                alert("✅ 上傳成功！\n照片已存入雲端，資料已寫入試算表。");
+                btn.innerText = "☁️ 上傳成功";
+                btn.disabled = false;
+            }).catch(err => {
+                alert("❌ 上傳失敗 (網路可能逾時，但您可以檢查試算表是否已寫入)");
+                btn.innerText = "☁️ 重試上傳";
+                btn.disabled = false;
+            });
+        }
+
+        // === 3. 照片處理 (壓縮引擎) ===
+        function previewAndCompressImage(event) {
+            var file = event.target.files[0];
+            if(!file) return;
+
+            // 顯示縮圖
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = document.getElementById('out_img');
+                img.src = e.target.result;
+                img.style.display = 'block';
+
+                // === 啟動壓縮 ===
+                var tempImg = new Image();
+                tempImg.src = e.target.result;
+                tempImg.onload = function() {
+                    // 建立 Canvas 進行壓縮
+                    var canvas = document.createElement('canvas');
+                    var MAX_WIDTH = 1024; // 限制最大寬度
+                    var scaleSize = MAX_WIDTH / tempImg.width;
+                    if(scaleSize > 1) scaleSize = 1; // 如果圖片本來就小，不用放大
+
+                    canvas.width = tempImg.width * scaleSize;
+                    canvas.height = tempImg.height * scaleSize;
+
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
+
+                    // 轉回 Base64 (品質 0.7)
+                    uploadFileBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    console.log("照片已壓縮準備上傳");
+                }
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // === 4. 掃描與條碼辨識 ===
         function loadScannerAndStart() {
             if (isLibLoaded) { startCamera(); return; }
             document.getElementById('scan-loading').style.display = 'block';
@@ -138,93 +239,33 @@
             return "❓ 無法辨識";
         }
 
-        // === 3. GPS 與 逆向地理編碼 (新功能) ===
+        // === 5. 其他核心 ===
         function runGPS() {
             var field = document.getElementById('inp_gps');
-            var locField = document.getElementById('out_loc_city');
             field.value = "定位中...";
-            
             if(!navigator.geolocation) { alert("不支援 GPS"); return; }
-            
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
-                    var lat = pos.coords.latitude;
-                    var lng = pos.coords.longitude;
-                    var txt = lat.toFixed(5) + ", " + lng.toFixed(5);
+                    var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
                     field.value = txt;
                     document.getElementById('out_gps').innerText = txt;
-                    
-                    // 呼叫免費 API 查縣市
-                    fetchCityName(lat, lng);
+                    fetchCityName(pos.coords.latitude, pos.coords.longitude);
                 },
                 function(err) { field.value = "定位失敗"; alert("定位失敗"); }
             );
         }
 
         function fetchCityName(lat, lng) {
-            // 使用 BigDataCloud 免費 API (不需 Key，適合前端使用)
             var api = "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" + lat + "&longitude=" + lng + "&localityLanguage=zh";
-            
             document.getElementById('out_loc_city').innerText = "(查詢縣市中...)";
-            
-            fetch(api)
-            .then(response => response.json())
-            .then(data => {
-                // 嘗試抓取縣市名稱
+            fetch(api).then(res => res.json()).then(data => {
                 var city = data.principalSubdivision || data.locality || "未知縣市";
-                // 簡單過濾，只要台灣的縣市
                 city = city.replace("Province", "").trim(); 
-                
-                currentCity = city; // 存起來等等上傳用
+                currentCity = city;
                 document.getElementById('out_loc_city').innerText = city;
-                alert("定位成功！位於：" + city);
-            })
-            .catch(err => {
-                document.getElementById('out_loc_city').innerText = "未知";
-                alert("GPS 成功，但無法取得縣市名稱 (網路問題)");
-            });
+            }).catch(err => { document.getElementById('out_loc_city').innerText = "未知"; });
         }
 
-        // === 4. 上傳到 Google Sheets (新功能) ===
-        function uploadData() {
-            if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) {
-                alert("⚠️ 設定錯誤：\n請先在程式碼中貼上您的 Google Apps Script 網址！");
-                return;
-            }
-            if(count === 0) { alert("沒有資料可以上傳！"); return; }
-            if(!document.getElementById('inp_name').value) { alert("請先輸入姓名"); return; }
-
-            var btn = document.getElementById('btn-upload');
-            btn.innerText = "⏳ 上傳中...";
-            btn.disabled = true;
-
-            // 整理資料
-            var payload = {
-                name: document.getElementById('inp_name').value,
-                loc: document.getElementById('inp_loc').value,
-                city: currentCity,
-                gps: document.getElementById('inp_gps').value,
-                stats: JSON.stringify(stats) // 把統計物件轉成文字存
-            };
-
-            // 發送 (使用 no-cors 避免跨域錯誤，雖然收不到回應但會成功發送)
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors', 
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).then(() => {
-                alert("✅ 上傳成功！\n資料已傳送至 Google 試算表。");
-                btn.innerText = "☁️ 上傳成功";
-                btn.disabled = false;
-            }).catch(err => {
-                alert("❌ 上傳失敗 (網路問題)");
-                btn.innerText = "☁️ 重試上傳";
-                btn.disabled = false;
-            });
-        }
-
-        // === 5. 其他核心 ===
         function syncData() {
             document.getElementById('out_name').innerText = document.getElementById('inp_name').value;
             document.getElementById('out_loc').innerText = document.getElementById('inp_loc').value;
@@ -234,6 +275,8 @@
             var val = scannedVal;
             if(!val) val = document.getElementById('sel_country').value;
             if(!val) { alert("請選擇國家"); return; }
+
+            if(count >= target) { alert("已達 100 筆上限！"); return; }
 
             if(!stats[val]) stats[val] = 0;
             stats[val]++;
@@ -245,7 +288,7 @@
             renderTable();
             drawCssChart();
             
-            if(count == 10) alert("🎉 已滿 10 個！記得上傳資料喔！");
+            if(count == target) alert("🎉 已滿 100 個！請上傳資料。");
         }
 
         function undoRecord() {
@@ -283,24 +326,11 @@
             }
             document.getElementById('css-pie').style.background = "conic-gradient(" + gradientStr.join(", ") + ")";
         }
-
-        function previewImage(event) {
-            var file = event.target.files[0];
-            if(file) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var img = document.getElementById('out_img');
-                    img.src = e.target.result;
-                    img.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
-            }
-        }
     </script>
 </head>
 <body>
 
-    <h1>📋 海廢調查員 V24</h1>
+    <h1>📋 海廢 V25 旗艦版</h1>
 
     <div class="card">
         <h2>1. 設定</h2>
@@ -313,9 +343,9 @@
     </div>
 
     <div class="card">
-        <h2>2. 記錄</h2>
+        <h2>2. 記錄 (上限 100)</h2>
         <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">
-            數量：<span id="disp_count" style="color:red;">0</span> / 10
+            數量：<span id="disp_count" style="color:red;">0</span> / 100
         </div>
         
         <div id="scan-loading"></div>
@@ -334,6 +364,7 @@
             <option value="🇹🇭 泰國">🇹🇭 泰國</option>
             <option value="🇮🇩 印尼">🇮🇩 印尼</option>
             <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+            <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option>
             <option value="🇺🇸 美國">🇺🇸 美國</option>
             <option value="❓ 無法辨識">❓ 無法辨識</option>
         </select>
@@ -377,13 +408,13 @@
             </div>
         </div>
 
-        <label style="margin-top:10px;">📸 照片上傳 (選填)：</label>
-        <input type="file" accept="image/*" onchange="previewImage(event)">
+        <label style="margin-top:10px;">📸 上傳照片 (必選，將同步上傳)：</label>
+        <input type="file" accept="image/*" onchange="previewAndCompressImage(event)">
 
         <hr style="margin: 20px 0;">
         
-        <label>☁️ 雲端存檔 (需網路)：</label>
-        <button id="btn-upload" onclick="uploadData()" class="btn-upload">📤 上傳資料到 Google Sheets</button>
+        <label>☁️ 雲端存檔 (上傳時間視照片大小而定)：</label>
+        <button id="btn-upload" onclick="uploadData()" class="btn-upload">📤 上傳資料與照片到雲端</button>
     </div>
 
 </body>
