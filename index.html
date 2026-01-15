@@ -3,61 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V14</title>
+    <title>海廢調查員 V15</title>
     <style>
-        body { font-family: sans-serif; padding: 10px; background: #fff; color: #333; max-width: 600px; margin: 0 auto; }
+        body { font-family: sans-serif; padding: 10px; background: #f4f4f4; color: #333; max-width: 600px; margin: 0 auto; padding-bottom: 50px; }
         
-        /* 區塊樣式：只有邊框，不做隱藏 */
-        .section { border: 2px solid #333; padding: 15px; margin-bottom: 20px; border-radius: 10px; background: #f9f9f9; }
-        
-        h2 { margin-top: 0; background: #333; color: #fff; padding: 5px; font-size: 18px; }
-        label { font-weight: bold; display: block; margin-top: 10px; }
-        
-        input, select { width: 100%; padding: 10px; font-size: 16px; margin: 5px 0; box-sizing: border-box; border: 1px solid #999; }
-        
-        /* 按鈕：不做花俏特效，確保能按 */
-        button { width: 100%; padding: 15px; font-size: 18px; margin-top: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        button:active { background: #0056b3; }
-        
-        /* 表格樣式 */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background: #eee; }
+        /* 診斷日誌框 */
+        #system-log {
+            background: #000; color: #0f0; font-family: monospace; font-size: 12px;
+            padding: 10px; height: 100px; overflow-y: scroll; border-radius: 5px;
+            margin-bottom: 15px; border: 2px solid #333;
+        }
 
-        .big-text { font-size: 20px; color: red; font-weight: bold; }
+        .section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ddd; }
+        h2 { margin: 0 0 10px 0; font-size: 18px; color: #007bff; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        
+        label { display: block; font-weight: bold; margin-top: 10px; }
+        input, select { width: 100%; padding: 10px; font-size: 16px; margin: 5px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;}
+        
+        button { width: 100%; padding: 12px; font-size: 16px; margin-top: 10px; cursor: pointer; color: white; border: none; border-radius: 5px; }
+        .btn-blue { background: #007bff; }
+        .btn-green { background: #28a745; }
+        .btn-red { background: #dc3545; }
+        
+        /* 點擊回饋 */
+        button:active { opacity: 0.7; transform: translateY(2px); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ccc; padding: 5px; text-align: left; }
     </style>
 </head>
 <body>
 
-    <div style="text-align:center; padding:10px; background:#ffeb3b; margin-bottom:10px;" id="js-status">
-        ⚠️ 系統載入中...<br>(如果沒變字，代表 JS 被封鎖)
-    </div>
+    <div id="system-log">系統初始化...</div>
 
-    <h1>📋 海廢調查 (V14 直通版)</h1>
-    <p>說明：此版本不需要切換頁面，請從上往下操作。</p>
+    <h1>📋 海廢調查 V15</h1>
 
     <div class="section">
-        <h2>1. 設定與定位</h2>
-        <label>調查員姓名：</label>
-        <input type="text" id="inp_name" placeholder="請輸入姓名">
+        <h2>1. 設定</h2>
+        <input type="text" id="inp_name" placeholder="輸入姓名 (必填)">
         
-        <label>GPS 座標：</label>
-        <button onclick="getGPS()" style="background:#28a745;">📍 點我抓取 GPS</button>
-        <input type="text" id="inp_gps" readonly value="尚未定位">
-        
-        <label>地點名稱：</label>
-        <input type="text" id="inp_loc" placeholder="例如：沙灘">
+        <label>GPS:</label>
+        <button id="btn-gps" class="btn-blue">📍 抓取座標</button>
+        <div id="gps-status" style="margin-top:5px; color:#666;">尚未定位</div>
+        <input type="hidden" id="val_gps"> <label>地點名稱:</label>
+        <input type="text" id="inp_loc" placeholder="輸入地點">
     </div>
 
     <div class="section">
-        <h2>2. 開始記錄</h2>
-        <div style="text-align:center; margin-bottom:10px;">
-            目前數量：<span id="count_display" class="big-text">0</span> / 10
+        <h2>2. 記錄</h2>
+        <div style="text-align:center; font-size:18px; font-weight:bold; margin-bottom:10px;">
+            數量：<span id="disp_count" style="color:red;">0</span> / 10
         </div>
 
-        <label>選擇國家：</label>
         <select id="sel_country">
-            <option value="">👇 請點此選擇...</option>
+            <option value="">👇 選擇國家...</option>
             <option value="🇹🇼 台灣">🇹🇼 台灣</option>
             <option value="🇨🇳 中國">🇨🇳 中國</option>
             <option value="🇯🇵 日本">🇯🇵 日本</option>
@@ -70,51 +69,80 @@
             <option value="❓ 無法辨識">❓ 無法辨識</option>
         </select>
 
-        <button onclick="addRecord()" style="background:#007bff;">➕ 增加一筆</button>
-        <button onclick="undo()" style="background:#dc3545; margin-top:10px;">↩️ 刪除上一筆</button>
+        <button id="btn-add" class="btn-green">➕ 增加一筆</button>
+        <button id="btn-undo" class="btn-red">↩️ 刪除上一筆</button>
     </div>
 
-    <div class="section" id="report-area">
-        <h2>3. 調查成果 (即時更新)</h2>
-        <div style="font-size:14px; line-height:1.5;">
-            <strong>日期：</strong><span id="out_date"></span><br>
-            <strong>人員：</strong><span id="out_name"></span><br>
-            <strong>地點：</strong><span id="out_loc"></span><br>
-            <strong>GPS：</strong><span id="out_gps"></span>
+    <div class="section">
+        <h2>3. 結果列表</h2>
+        <div id="report-text" style="font-size:13px; color:#555; margin-bottom:10px;">
+            (資料將顯示於此)
         </div>
-        
         <table id="stats-table">
-            <thead>
-                <tr>
-                    <th>國家</th>
-                    <th>數量</th>
-                </tr>
-            </thead>
-            <tbody id="stats-body">
-                <tr><td colspan="2">尚未有資料</td></tr>
-            </tbody>
+            <thead><tr><th>國家</th><th>數量</th></tr></thead>
+            <tbody id="stats-body"></tbody>
         </table>
-
-        <label>步驟 4: 拍攝照片 (請手動截圖保存)</label>
-        <input type="file" accept="image/*" onchange="previewImage(event)">
-        <img id="out_img" style="width:100%; display:none; margin-top:10px; border:1px solid #000;">
+        
+        <label>📸 上傳照片:</label>
+        <input type="file" id="inp_file" accept="image/*">
+        <img id="preview-img" style="width:100%; display:none; margin-top:10px; border:1px solid #333;">
     </div>
 
     <script>
-        // === 自我檢測 ===
+        // === 工具：寫入日誌 ===
+        function log(msg) {
+            var box = document.getElementById('system-log');
+            var time = new Date().toLocaleTimeString();
+            box.innerHTML = "<div>[" + time + "] " + msg + "</div>" + box.innerHTML;
+        }
+
+        // === 1. 初始化 (綁定按鈕) ===
         window.onload = function() {
-            document.getElementById('js-status').innerText = "✅ 系統正常運作中";
-            document.getElementById('js-status').style.background = "#d4edda";
+            log("系統載入完成");
             
-            // 填入預設日期
-            var d = new Date();
-            document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+            // 綁定 GPS 按鈕
+            document.getElementById('btn-gps').addEventListener('click', function() {
+                doGPS();
+            });
+
+            // 綁定 增加 按鈕
+            document.getElementById('btn-add').addEventListener('click', function() {
+                addRecord();
+            });
+
+            // 綁定 刪除 按鈕
+            document.getElementById('btn-undo').addEventListener('click', function() {
+                undoRecord();
+            });
+
+            // 綁定 照片預覽
+            document.getElementById('inp_file').addEventListener('change', function(e) {
+                previewImage(e);
+            });
         };
 
-        // 變數
-        var count = 0;
-        var stats = {};
-        var historyStack = [];
+        // === 2. GPS 功能 ===
+        function doGPS() {
+            log("正在啟動 GPS...");
+            var statusDiv = document.getElementById('gps-status');
+            statusDiv.innerText = "定位中...";
 
-        // === 功能 1: GPS ===
-        function get
+            if (!navigator.geolocation) {
+                log("錯誤: 瀏覽器不支援 Geolocation API");
+                statusDiv.innerText = "瀏覽器不支援";
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var lat = pos.coords.latitude.toFixed(5);
+                    var lng = pos.coords.longitude.toFixed(5);
+                    var txt = lat + ", " + lng;
+                    
+                    document.getElementById('val_gps').value = txt;
+                    statusDiv.innerText = "✅ " + txt;
+                    statusDiv.style.color = "green";
+                    log("GPS 成功: " + txt);
+                    updateReport();
+                },
+                function(err
