@@ -3,96 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V20</title>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <title>海廢調查員 V21</title>
 
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 100px; color: #333; }
-        
-        /* 狀態列 */
-        #status-bar {
-            background: #333; color: #fff; font-size: 12px; padding: 5px; 
-            margin-bottom: 10px; border-radius: 5px; text-align: center;
-        }
-        .badge { padding: 2px 6px; border-radius: 4px; margin: 0 5px; font-weight: bold; }
-        .bg-green { background: #28a745; color: white; }
-        .bg-red { background: #dc3545; color: white; }
-
-        .card { 
-            background: white; padding: 15px; border-radius: 10px; 
-            margin-bottom: 15px; border: 1px solid #ccc; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        /* 1. 全域除錯視窗 */
+        #debug-console {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100px;
+            background: #000; color: #0f0; font-family: monospace; font-size: 12px;
+            padding: 5px; overflow-y: scroll; z-index: 10000; border-bottom: 2px solid red;
+            opacity: 0.95;
         }
 
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-top: 110px; padding-bottom: 50px; }
+
+        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; }
         h2 { margin-top: 0; color: #0056b3; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         
-        input, select { 
-            width: 100%; padding: 12px; font-size: 16px; margin: 5px 0 15px 0; 
-            border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; background: #fff;
-        }
-
-        button { 
-            width: 100%; padding: 15px; font-size: 18px; font-weight: bold; 
-            margin-top: 5px; cursor: pointer; color: white; border: none; border-radius: 5px; 
-        }
+        input, select { width: 100%; padding: 12px; font-size: 16px; margin: 5px 0 15px 0; border: 1px solid #999; border-radius: 5px; background:#fff; box-sizing: border-box;}
+        
+        button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; margin-top: 5px; cursor: pointer; color: white; border: none; border-radius: 5px; }
         .btn-blue { background: #007bff; }
         .btn-green { background: #28a745; }
         .btn-red { background: #dc3545; }
         .btn-orange { background: #fd7e14; }
 
-        /* 相機視窗 */
-        #reader { width: 100%; background: black; display: none; margin-bottom: 10px; border-radius: 5px; }
-
-        /* 報告區塊 */
-        #report-section {
-            background: #fff; border: 3px solid #0056b3; padding: 10px; display: block;
-        }
-
+        #reader { width: 100%; background: #000; display: none; margin-bottom: 10px; min-height: 200px; color: white; text-align: center; line-height: 200px; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #999; padding: 8px; text-align: left; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
     </style>
 
     <script>
+        // === 全域錯誤捕捉 ===
+        window.onerror = function(msg, url, line) {
+            var box = document.getElementById('debug-console');
+            if(box) box.innerHTML = "<div style='color:red;'>❌ 錯誤: " + msg + " (行:" + line + ")</div>" + box.innerHTML;
+        };
+
         // === 變數 ===
         var count = 0;
         var stats = {};
         var historyStack = [];
         var html5QrCode = null;
-        var myChart = null; // 圖表物件
+        var libStatus = { cam: false, chart: false };
 
-        // === 系統自我檢查 ===
+        // === 日誌工具 ===
+        function log(msg) {
+            var box = document.getElementById('debug-console');
+            var now = new Date();
+            var time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+            if(box) box.innerHTML = "<div>[" + time + "] " + msg + "</div>" + box.innerHTML;
+        }
+
+        // === 1. 初始化 (純 JS 邏輯) ===
         window.onload = function() {
-            var camStatus = document.getElementById('status-cam');
-            var chartStatus = document.getElementById('status-chart');
-
-            if(typeof Html5Qrcode !== 'undefined') {
-                camStatus.className = "badge bg-green"; camStatus.innerText = "相機 OK";
-            } else {
-                camStatus.className = "badge bg-red"; camStatus.innerText = "相機 X";
-            }
-
-            if(typeof Chart !== 'undefined') {
-                chartStatus.className = "badge bg-green"; chartStatus.innerText = "圖表 OK";
-            } else {
-                chartStatus.className = "badge bg-red"; chartStatus.innerText = "圖表 X";
-            }
-
+            log("步驟1: 頁面 UI 已渲染");
+            
             // 填入日期
             var d = new Date();
             document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+
+            // 開始異步載入外部庫
+            loadExternalLibs();
         };
 
-        // === 同步資料 ===
-        window.syncData = function() {
-            document.getElementById('out_name').innerText = document.getElementById('inp_name').value;
-            document.getElementById('out_loc').innerText = document.getElementById('inp_loc').value;
-        };
+        // === 2. 動態載入外部庫 (關鍵修復) ===
+        function loadExternalLibs() {
+            log("步驟2: 開始載入外部模組...");
 
-        // === GPS ===
+            // 載入 QR Code 庫
+            var scriptQr = document.createElement('script');
+            scriptQr.src = "https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js";
+            scriptQr.onload = function() { 
+                libStatus.cam = true; 
+                log("✅ 相機模組載入成功"); 
+                document.getElementById('btn-scan').style.display = 'block'; // 載入成功才顯示按鈕
+            };
+            scriptQr.onerror = function() { log("❌ 相機模組載入失敗 (網路封鎖)"); };
+            document.head.appendChild(scriptQr);
+
+            // 載入 Chart 庫
+            var scriptChart = document.createElement('script');
+            scriptChart.src = "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js";
+            scriptChart.onload = function() { 
+                libStatus.chart = true; 
+                log("✅ 圖表模組載入成功"); 
+            };
+            scriptChart.onerror = function() { log("❌ 圖表模組載入失敗"); };
+            document.head.appendChild(scriptChart);
+        }
+
+        // === 3. GPS 功能 ===
         window.runGPS = function() {
+            log("嘗試定位...");
             var field = document.getElementById('inp_gps');
             field.value = "定位中...";
 
-            if(!navigator.geolocation)
+            if(!navigator.geolocation) {
+                log("錯誤: 不支援 GPS");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
+                    field.value = txt;
+                    document.getElementById('out_gps').innerText = txt;
+                    log("定位成功: " + txt);
+                },
+                function(err) {
+                    log("定位失敗: " + err.message);
+                    field.value = "定位失敗";
+                },
+                { timeout: 10000 }
+            );
+        };
+
+        // === 4. 掃描功能 (防護版) ===
+        window.startScan = function() {
+            if(!libStatus.cam) {
+                alert("相機模組尚未載入完成，或載入失敗。");
+                return;
+            }
+            
+            document.getElementById('reader').style.display = 'block';
+            document.getElementById('btn-scan').style.display = 'none';
+            document.getElementById('btn-stop').style.display = 'inline-block';
+            log("啟動相機中...");
+
+            try {
+                html5QrCode = new Html5Qrcode("reader");
+                html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+                    function(decodedText) {
+                        // 掃描成功
+                        window.stopScan();
+                        var country = getCountry(decodedText);
+                        alert("掃描成功: " + country);
+                        log("掃到: " + decodedText + " -> " + country);
+                        window.addRecord(country);
+                    },
+                    function(errorMessage) {
+                        // 掃描中的錯誤忽略，避免洗版
+                    }
+                ).catch(err => {
+                    log("相機啟動錯誤: " + err);
+                    window.stopScan();
+                    alert("相機無法啟動 (HTTPS?)");
+                });
+            } catch
