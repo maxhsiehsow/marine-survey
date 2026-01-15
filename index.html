@@ -3,143 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V9 (診斷版)</title>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
+    <title>海廢調查員 V10 (純淨版)</title>
     <style>
-        body { font-family: sans-serif; background: #e0f2f1; text-align: center; padding: 10px; margin: 0; padding-bottom: 100px; }
-        .page { display: none; }
-        #p1 { display: block; } /* 預設顯示第一頁 */
-        
-        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left; border: 1px solid #ccc; }
-        input, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 2px solid #b2dfdb; border-radius: 5px; font-size: 16px; background: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
-        .btn-green { background: #2e7d32; }
-        .btn-blue { background: #0277bd; }
-        .btn-red { background: #c62828; }
-        .btn-orange { background: #ef6c00; }
-
-        /* 除錯視窗樣式 */
-        #debug-console {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
-            background: #333; color: #0f0; font-family: monospace;
-            font-size: 12px; overflow-y: scroll; text-align: left;
-            padding: 5px; z-index: 9999; opacity: 0.9;
-        }
-        
-        #reader { width: 100%; background: black; display: none; margin-bottom: 10px; }
-        #report-area { background: white; padding: 10px; text-align: center; border: 2px solid #00695c; }
-        .evidence-img { width: 100%; display: none; margin-top: 10px; }
+        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f0f0f0; }
+        .box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #ccc; }
+        button { width: 100%; padding: 15px; font-size: 18px; margin-top: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:active { background: #0056b3; transform: scale(0.98); } /* 按下變色 */
+        input { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div id="debug-console">系統啟動中...<br>若無反應請看這裡的錯誤訊息。<br></div>
+    <h1>🚀 測試模式 V10</h1>
+    <p style="color:red; font-size:12px;">此版本不依賴外部程式，測試按鈕反應</p>
 
-    <div id="p1" class="page">
-        <h1>🔍 海廢調查 V9</h1>
-        <div class="card">
-            <h3>1. 設定</h3>
-            <label>姓名：</label>
-            <input type="text" id="inp_name" placeholder="請輸入姓名">
-            <label>人數：</label>
-            <input type="number" id="inp_team" value="1">
-        </div>
-        <div class="card">
-            <h3>2. 定位</h3>
-            <button class="btn-blue" onclick="doGPS()">📍 抓取 GPS</button>
-            <input type="text" id="inp_gps" placeholder="尚未定位" readonly style="background:#eee;">
-            <label>地點：</label>
-            <input type="text" id="inp_loc" placeholder="例如：外澳">
-        </div>
-        <button class="btn-green" onclick="goP2()">下一步 ➡️</button>
+    <div id="p1" class="box">
+        <h3>步驟 1: 測試輸入與 GPS</h3>
+        <input type="text" id="name" placeholder="隨便輸入名字">
+        <button onclick="testGPS()">📍 測試 GPS (原生)</button>
+        <p id="gps-result" style="background:#eee; padding:5px;">等待定位...</p>
+        <button onclick="goP2()" style="background:#28a745;">下一步 (切換頁面)</button>
     </div>
 
-    <div id="p2" class="page">
-        <div class="card" style="text-align:center;">
-            <b>進度：<span id="txt_count" style="color:red; font-size:20px;">0</span> / 10</b>
-            <button class="btn-orange" id="force-btn" style="display:none; font-size:14px;" onclick="goP3()">🏁 強制結算</button>
-        </div>
+    <div id="p2" class="box hidden">
+        <h3>步驟 2: 測試記錄功能</h3>
+        <p>目前數量：<b id="count">0</b> / 10</p>
+        
+        <select id="country" style="width:100%; padding:10px; font-size:16px;">
+            <option value="🇹🇼 台灣">🇹🇼 台灣</option>
+            <option value="🇨🇳 中國">🇨🇳 中國</option>
+            <option value="🇯🇵 日本">🇯🇵 日本</option>
+        </select>
 
-        <div class="card">
-            <h3>📷 掃描</h3>
-            <div id="reader"></div>
-            <button class="btn-blue" id="btn-cam-start" onclick="startCam()">啟動相機</button>
-            <button class="btn-red" id="btn-cam-stop" onclick="stopCam()" style="display:none;">關閉相機</button>
-        </div>
-
-        <div class="card">
-            <h3>⌨️ 手動</h3>
-            <select id="sel_country">
-                <option value="">👇 選擇國家...</option>
-                <option value="🇹🇼 台灣">🇹🇼 台灣</option>
-                <option value="🇨🇳 中國">🇨🇳 中國</option>
-                <option value="🇯🇵 日本">🇯🇵 日本</option>
-                <option value="🇰🇷 韓國">🇰🇷 韓國</option>
-                <option value="🇻🇳 越南">🇻🇳 越南</option>
-                <option value="🇹🇭 泰國">🇹🇭 泰國</option>
-                <option value="🇮🇩 印尼">🇮🇩 印尼</option>
-                <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
-                <option value="❓ 無法辨識">❓ 無法辨識</option>
-            </select>
-            <button class="btn-green" onclick="addRec()">記錄</button>
-        </div>
-        <button class="btn-red" onclick="undo()" style="opacity:0.7">↩️ 刪除上一筆</button>
+        <button onclick="add()">➕ 增加一筆</button>
+        <button onclick="goP3()" style="background:#ffc107; color:black;">🏁 強制結算</button>
     </div>
 
-    <div id="p3" class="page">
-        <h1>🎉 完成</h1>
-        <div class="card">
-            <h3>📸 拍照</h3>
-            <input type="file" accept="image/*" onchange="loadImg(event)">
-        </div>
-        <div class="card">
-            <div id="report-area">
-                <h3 style="background:#00695c; color:white; margin:0; padding:5px;">海廢報告</h3>
-                <div style="text-align:left; font-size:14px; padding:5px;">
-                    日期：<span id="out_date"></span><br>
-                    人員：<span id="out_name"></span><br>
-                    GPS：<span id="out_gps"></span>
-                </div>
-                <canvas id="chart" style="max-height:200px;"></canvas>
-                <img id="out_img" class="evidence-img">
-            </div>
-        </div>
-        <button class="btn-orange" id="dl-btn" onclick="dlImg()">📥 下載圖片</button>
-        <button class="btn-blue" onclick="location.reload()">🔄 重來</button>
+    <div id="p3" class="box hidden">
+        <h3>步驟 3: 結果列表</h3>
+        <ul id="list" style="text-align:left;"></ul>
+        <button onclick="location.reload()" style="background:#6c757d;">重來</button>
     </div>
 
-<script>
-    // === 除錯工具 ===
-    function log(msg) {
-        var box = document.getElementById('debug-console');
-        var time = new Date().toLocaleTimeString();
-        box.innerHTML += "<div>[" + time + "] " + msg + "</div>";
-        box.scrollTop = box.scrollHeight; // 自動捲動到底部
-        console.log(msg);
-    }
+    <script>
+        // 1. 開場測試：確保 JS 有載入
+        window.onload = function() {
+            alert("✅ V10 系統已啟動！\n如果您看到這個視窗，代表程式碼沒壞。");
+        };
 
-    window.onerror = function(message, source, lineno, colno, error) {
-        log("❌ 錯誤: " + message);
-        return false;
-    };
+        // 變數
+        var count = 0;
+        var records = [];
 
-    // === 檢查程式庫 ===
-    window.onload = function() {
-        log("系統載入完成");
-        if(typeof Html5Qrcode === 'undefined') log("⚠️ 警告: QR Code 庫載入失敗");
-        if(typeof Chart === 'undefined') log("⚠️ 警告: Chart 庫載入失敗");
-        if(typeof html2canvas === 'undefined') log("⚠️ 警告: 截圖庫載入失敗");
-    }
+        // 2. GPS 測試
+        function testGPS() {
+            var display = document.getElementById('gps-result');
+            display.innerText = "定位中...";
+            
+            if(!navigator.geolocation) {
+                alert("瀏覽器不支援 GPS");
+                return;
+            }
 
-    // === 變數 ===
-    var count = 0;
-    var target = 10;
-    var stats = {};
-    var historyStack = [];
-    var html5QrCode = null;
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var txt = pos.coords.latitude.toFixed(4) + ", " + pos.coords.longitude.toFixed(4);
+                    display.innerText = txt;
+                    alert("✅ 定位成功: " + txt);
+                },
+                function(err) {
+                    display.innerText = "定位失敗: " + err.message;
+                    alert("❌ 定位失敗: " + err.message);
+                },
+                { timeout: 5000 }
+            );
+        }
 
-    // ===
+        // 3. 切換頁面測試
+        function goP2() {
+            var name = document.getElementById('name').value;
+            if(!name) { alert("請輸入名字測試"); return; }
+            
+            document.getElementById('p1').style.display = 'none';
+            document.getElementById('p2').style.display = 'block';
+        }
+
+        // 4. 記錄測試
+        function add() {
+            var val = document.getElementById('country').value;
+            count++;
+            records.push(val);
+            document.getElementById('count').innerText = count;
+            alert("已記錄: " + val);
+        }
+
+        // 5. 結算測試 (不做圖表，只列文字)
+        function goP3() {
+            document.getElementById('p2').style.display = 'none';
+            document.getElementById('p3').style.display = 'block';
+            
+            var ul = document.getElementById('list');
+            ul.innerHTML = "";
+            records.forEach(function(r) {
+                var li = document.createElement('li');
+                li.innerText = r;
+                ul.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
