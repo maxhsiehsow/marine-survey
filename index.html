@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V26</title>
+    <title>荒野瓶罐調查</title>
 
     <style>
         /* 基礎設定 */
@@ -56,6 +56,11 @@
         th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
         
         #scan-loading { display: none; color: #f57c00; font-weight: bold; margin-bottom: 5px; }
+        
+        /* V27 新增：輸入群組樣式 */
+        .input-group { display: flex; gap: 10px; align-items: center; }
+        .input-group select { flex: 2; }
+        .input-group input { flex: 1; text-align: center; }
     </style>
 
     <script>
@@ -72,14 +77,9 @@
         var currentCity = "未定位";
         var uploadFileBase64 = null;
 
-        // 固定顏色的國家
         var fixedColors = {
-            '🇹🇼 台灣': '#e53935', 
-            '🇨🇳 中國': '#1e88e5', 
-            '🇻🇳 越南': '#8e24aa', 
-            '🇵🇭 菲律賓': '#6d4c41', 
-            '🇲🇾 馬來西亞': '#8d6e63',
-            '🇮🇩 印尼': '#00acc1', 
+            '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', 
+            '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', 
             '其它': '#757575'
         };
 
@@ -89,7 +89,7 @@
             document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
         };
 
-        // === 2. 上傳核心 (格式修改版) ===
+        // === 2. 上傳核心 ===
         function uploadData() {
             if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { alert("請先設定 Google Script 網址！"); return; }
             if(count === 0) { alert("沒有資料！"); return; }
@@ -99,66 +99,45 @@
             btn.innerText = "⏳ 處理數據中...";
             btn.disabled = true;
 
-            // 1. 整理分類數據
+            // 整理數據
             var breakdown = {
-                tw: stats['🇹🇼 台灣'] || 0,
-                cn: stats['🇨🇳 中國'] || 0,
-                vn: stats['🇻🇳 越南'] || 0,
-                ph: stats['🇵🇭 菲律賓'] || 0,
-                my: stats['🇲🇾 馬來西亞'] || 0,
-                id: stats['🇮🇩 印尼'] || 0,
-                otherStr: [] // 這裡改用陣列來存字串
+                tw: stats['🇹🇼 台灣'] || 0, cn: stats['🇨🇳 中國'] || 0, vn: stats['🇻🇳 越南'] || 0,
+                ph: stats['🇵🇭 菲律賓'] || 0, my: stats['🇲🇾 馬來西亞'] || 0, id: stats['🇮🇩 印尼'] || 0,
+                otherStr: []
             };
             
-            // 遍歷所有統計項目，找出非主要6國的項目
             var mainKeys = ['🇹🇼 台灣', '🇨🇳 中國', '🇻🇳 越南', '🇵🇭 菲律賓', '🇲🇾 馬來西亞', '🇮🇩 印尼'];
-            
             for (var key in stats) {
                 if (mainKeys.indexOf(key) === -1) {
-                    // 這就是「其它」類 (包含 "880", "490", "其它" 等)
-                    // 格式： 項目名稱*數量
                     breakdown.otherStr.push(key + "*" + stats[key]);
                 }
             }
-            
-            // 將陣列轉成字串，例如 "880*2, 其它*1"
-            var otherColumnValue = breakdown.otherStr.join(", ");
-            if(otherColumnValue === "") otherColumnValue = "0";
+            var otherColumnValue = breakdown.otherStr.join(", ") || "0";
 
-            // 2. 準備 Payload
             var payload = {
                 name: document.getElementById('inp_name').value,
                 loc: document.getElementById('inp_loc').value,
                 city: currentCity,
                 gps: document.getElementById('inp_gps').value,
                 total: count,
-                cnt_tw: breakdown.tw,
-                cnt_cn: breakdown.cn,
-                cnt_vn: breakdown.vn,
-                cnt_ph: breakdown.ph,
-                cnt_my: breakdown.my,
-                cnt_id: breakdown.id,
-                cnt_other: otherColumnValue, // 這裡傳送字串
-                // 照片資料
+                cnt_tw: breakdown.tw, cnt_cn: breakdown.cn, cnt_vn: breakdown.vn,
+                cnt_ph: breakdown.ph, cnt_my: breakdown.my, cnt_id: breakdown.id,
+                cnt_other: otherColumnValue,
                 fileData: uploadFileBase64 ? uploadFileBase64.split(',')[1] : "",
                 mimeType: "image/jpeg"
             };
 
-            // 3. 發送
             btn.innerText = "☁️ 正在上傳...";
             fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
+                method: 'POST', mode: 'no-cors',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(() => {
-                alert("✅ 上傳成功！\n資料已寫入試算表 (M欄會顯示詳細雜項)。");
-                btn.innerText = "☁️ 上傳成功";
-                btn.disabled = false;
+                alert("✅ 上傳成功！");
+                btn.innerText = "☁️ 上傳成功"; btn.disabled = false;
             }).catch(err => {
                 alert("❌ 上傳失敗 (網路問題)");
-                btn.innerText = "☁️ 重試上傳";
-                btn.disabled = false;
+                btn.innerText = "☁️ 重試上傳"; btn.disabled = false;
             });
         }
 
@@ -171,7 +150,6 @@
                 var img = document.getElementById('out_img');
                 img.src = e.target.result;
                 img.style.display = 'block';
-                // 壓縮
                 var tempImg = new Image();
                 tempImg.src = e.target.result;
                 tempImg.onload = function() {
@@ -189,7 +167,7 @@
             reader.readAsDataURL(file);
         }
 
-        // === 4. 掃描與條碼辨識 (核心修改) ===
+        // === 4. 掃描 ===
         function loadScannerAndStart() {
             if (isLibLoaded) { startCamera(); return; }
             document.getElementById('scan-loading').style.display = 'block';
@@ -211,12 +189,11 @@
                     function(decodedText) {
                         if(navigator.vibrate) navigator.vibrate(200);
                         stopCamera();
-                        
-                        // 這裡會回傳 "🇹🇼 台灣" 或是 "880" (條碼前三碼)
                         var country = identifyBarcode(decodedText);
-                        
-                        alert("掃描成功！\n分類為: " + country);
-                        addRecord(country);
+                        // 掃描預設數量為 1，但詢問是否修改
+                        // 為了流暢，掃描通常是一次一個，這裡維持加 1
+                        alert("掃描成功！" + country);
+                        addRecord(country, 1);
                     }, function(err) {}
                 ).catch(err => { alert("相機啟動失敗"); stopCamera(); });
             } catch(e) { alert("相機錯誤"); stopCamera(); }
@@ -229,25 +206,19 @@
             document.getElementById('btn-stop').style.display = 'none';
         }
 
-        // 核心邏輯：動態分類
         function identifyBarcode(code) {
-            if(!code || code.length < 3) return "其它"; // 掃不到或太短
+            if(!code || code.length < 3) return "其它";
             var p = parseInt(code.substring(0,3));
-            
-            // 1. 檢查主要 6 國
             if(p==471) return "🇹🇼 台灣";
             if(p>=690 && p<=699) return "🇨🇳 中國";
             if(p==893) return "🇻🇳 越南";
             if(p==480) return "🇵🇭 菲律賓";
             if(p==955) return "🇲🇾 馬來西亞";
             if(p==899) return "🇮🇩 印尼";
-
-            // 2. 如果不是這 6 國，直接回傳前 3 碼 (例如 "880", "490")
-            // 為了讓表格好看，我們加上括號，例如 "[880]"
             return "[" + code.substring(0,3) + "]";
         }
 
-        // === 5. 其他功能 ===
+        // === 5. 核心邏輯 (修改點：支援數量輸入) ===
         function runGPS() {
             var field = document.getElementById('inp_gps');
             field.value = "定位中...";
@@ -279,20 +250,51 @@
             document.getElementById('out_loc').innerText = document.getElementById('inp_loc').value;
         }
 
-        function addRecord(scannedVal) {
-            var val = scannedVal;
-            if(!val) val = document.getElementById('sel_country').value;
+        // 新增：處理按鈕點擊
+        function handleManualAdd() {
+            var val = document.getElementById('sel_country').value;
+            // 讀取數量
+            var qtyInput = document.getElementById('inp_qty');
+            var qty = parseInt(qtyInput.value);
+
             if(!val) { alert("請選擇國家"); return; }
+            if(isNaN(qty) || qty < 1) { alert("數量至少為 1"); return; }
 
-            if(count >= target) { alert("已達 100 筆上限！"); return; }
+            // 如果數量很大，做個確認
+            if(qty > 10) {
+                if(!confirm("確定要一次增加 " + qty + " 個 " + val + " 嗎？")) return;
+            }
 
-            if(!stats[val]) stats[val] = 0;
-            stats[val]++;
-            count++;
-            historyStack.push(val);
+            addRecord(val, qty);
+            
+            // 重置數量為 1，方便下次輸入
+            qtyInput.value = 1;
+        }
+
+        function addRecord(country, quantity) {
+            // 檢查上限
+            if(count + quantity > target) { 
+                alert("增加後將超過 " + target + " 筆上限！\n目前: " + count + ", 欲加: " + quantity); 
+                return; 
+            }
+
+            if(!stats[country]) stats[country] = 0;
+            
+            stats[country] += quantity;
+            count += quantity;
+
+            // 歷史紀錄只推入名稱，undo 時一次扣除「最後一次動作的量」比較複雜
+            // 為了保持 V26 穩定性，這裡我們採取：
+            // 歷史紀錄推入 N 次，這樣 Undo 按一次只會扣 1 個 (比較安全，防止誤刪一大堆)
+            // 如果使用者想刪剛加的 20 個，就得按 20 次 Undo (或者重整網頁)
+            for(var i=0; i<quantity; i++) {
+                historyStack.push(country);
+            }
 
             document.getElementById('disp_count').innerText = count;
-            document.getElementById('sel_country').value = "🇹🇼 台灣"; // 重置回預設值 (台灣)
+            
+            // 掃描維持原樣，手動則保留選項
+            // document.getElementById('sel_country').value = "🇹🇼 台灣"; 
             
             renderTable();
             drawCssChart();
@@ -311,16 +313,12 @@
             drawCssChart();
         }
 
-        // 表格渲染：會自動顯示 "[880] 1個" 這種動態項目
         function renderTable() {
             var tbody = document.getElementById('stats-body');
             tbody.innerHTML = "";
             if(count === 0) { tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>"; return; }
-            
             for(var key in stats) {
-                // 決定顏色：如果有固定色就用，沒有就隨機算一個顏色 (雜湊)
                 var color = fixedColors[key] || stringToColor(key);
-                
                 var tr = document.createElement('tr');
                 tr.innerHTML = "<td><span style='color:"+color+"'>■</span> " + key + "</td><td>" + stats[key] + "</td>";
                 tbody.appendChild(tr);
@@ -341,24 +339,18 @@
             document.getElementById('css-pie').style.background = "conic-gradient(" + gradientStr.join(", ") + ")";
         }
 
-        // 輔助功能：產生隨機顏色 (讓動態條碼也有固定顏色)
         function stringToColor(str) {
             var hash = 0;
-            for (var i = 0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
+            for (var i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
             var c = '#';
-            for (var i = 0; i < 3; i++) {
-                var value = (hash >> (i * 8)) & 0xFF;
-                c += ('00' + value.toString(16)).substr(-2);
-            }
+            for (var i = 0; i < 3; i++) { var value = (hash >> (i * 8)) & 0xFF; c += ('00' + value.toString(16)).substr(-2); }
             return c;
         }
     </script>
 </head>
 <body>
 
-    <h1>📋 海廢 V26 精準版</h1>
+    <h1>📋 海廢 V27 批次版</h1>
 
     <div class="card">
         <h2>1. 設定</h2>
@@ -381,18 +373,22 @@
         <button id="btn-scan" onclick="loadScannerAndStart()" class="btn-orange">📷 啟動相機掃條碼</button>
         <button id="btn-stop" onclick="stopCamera()" class="btn-red" style="display:none;">⏹ 關閉相機</button>
 
-        <label style="margin-top:15px;">手動選擇 (預設台灣)：</label>
-        <select id="sel_country">
-            <option value="🇹🇼 台灣" selected>🇹🇼 台灣</option>
-            <option value="🇨🇳 中國">🇨🇳 中國</option>
-            <option value="🇻🇳 越南">🇻🇳 越南</option>
-            <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
-            <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option>
-            <option value="🇮🇩 印尼">🇮🇩 印尼</option>
-            <option value="其它">❓ 其它</option>
-        </select>
+        <label style="margin-top:15px;">手動選擇：</label>
+        
+        <div class="input-group">
+            <select id="sel_country">
+                <option value="🇹🇼 台灣" selected>🇹🇼 台灣</option>
+                <option value="🇨🇳 中國">🇨🇳 中國</option>
+                <option value="🇻🇳 越南">🇻🇳 越南</option>
+                <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+                <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option>
+                <option value="🇮🇩 印尼">🇮🇩 印尼</option>
+                <option value="其它">❓ 其它</option>
+            </select>
+            <input type="number" id="inp_qty" value="1" min="1" placeholder="數量" style="flex:1;">
+        </div>
 
-        <button onclick="addRecord()" class="btn-green">➕ 增加一筆</button>
+        <button onclick="handleManualAdd()" class="btn-green">➕ 增加記錄</button>
         <button onclick="undoRecord()" class="btn-red">↩️ 刪除上一筆</button>
     </div>
 
@@ -442,4 +438,3 @@
 
 </body>
 </html>
-
