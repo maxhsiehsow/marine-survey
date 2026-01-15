@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V32</title>
+    <title>海廢調查員 V33</title>
 
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 80px; color: #333; }
@@ -24,12 +24,13 @@
         
         /* 覆蓋在相機上的 AI 按鈕 */
         #ai-trigger-overlay {
-            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             z-index: 100; text-align: center; width: 90%;
         }
         .btn-ai-overlay {
             background: rgba(156, 39, 176, 0.9); border: 2px solid white;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3); padding: 10px 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); padding: 12px 20px; color: white; font-size: 16px; border-radius: 30px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
 
         .pie-chart { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#eee 0% 100%); margin: 10px auto; border: 1px solid #ccc; }
@@ -58,7 +59,7 @@
 
         window.onload = function() { var d = new Date(); document.getElementById('out_date').innerText = d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate(); };
 
-        // === 1. 智慧鏡頭核心 (條碼+AI) ===
+        // === 1. 智慧鏡頭核心 ===
         function startSmartCamera() {
             if(!isLibLoaded) {
                 showLoading("⏳ 下載掃描模組...");
@@ -90,7 +91,7 @@
                         alert("✅ 掃描條碼成功！\n" + country);
                         addRecord(country, 1);
                     },
-                    function(err) {} // 忽略掃描中的錯誤
+                    function(err) {} 
                 ).catch(err => { 
                     alert("相機啟動失敗: " + err); 
                     closeCamera(); 
@@ -105,71 +106,66 @@
             document.getElementById('btn-close-cam').style.display = 'none';
         }
 
-        // === 2. AI 辨識流程 (按鈕觸發) ===
-        function triggerAiCapture() {
-            // 因為從網頁截取視訊流會有解析度問題，最穩定的方法是呼叫手機原生相機拍照
-            // 所以我們先關閉掃描器，然後觸發 file input
-            closeCamera();
-            document.getElementById('inp_ai_file').click();
-        }
-
-        function handleAiFile(event) {
-            var file = event.target.files[0];
-            if(!file) return;
-            showLoading("🤖 AI 正在分析瓶罐...");
-
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                var tempImg = new Image();
-                tempImg.src = e.target.result;
-                tempImg.onload = function() {
-                    // 壓縮圖片 (AI 不需要太大張)
-                    var canvas = document.createElement('canvas');
-                    var MAX_WIDTH = 800;
-                    var scaleSize = MAX_WIDTH / tempImg.width;
-                    if(scaleSize > 1) scaleSize = 1;
-                    canvas.width = tempImg.width * scaleSize;
-                    canvas.height = tempImg.height * scaleSize;
-                    var ctx = canvas.getContext('2d');
-                    ctx.drawImage(tempImg, 0, 0, canvas.width, canvas.height);
-                    
-                    var base64 = canvas.toDataURL('image/jpeg', 0.6).split(',')[1];
-                    sendToGemini(base64);
-                }
+        // === 2. 直接截圖辨識 (Snapshot) ===
+        function captureAndIdentify() {
+            // 找出正在播放的 video 元素 (html5-qrcode 產生的)
+            var videoElement = document.querySelector("#reader video");
+            
+            if (!videoElement) {
+                alert("相機尚未啟動，請先開啟智慧鏡頭");
+                return;
             }
-            reader.readAsDataURL(file);
+
+            // 暫停畫面 (讓使用者感覺像拍了照)
+            videoElement.pause();
+            showLoading("🤖 截圖分析中...");
+
+            // 建立 Canvas 來截圖
+            var canvas = document.createElement("canvas");
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            var ctx = canvas.getContext("2d");
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            // 轉成 Base64
+            var base64Image = canvas.toDataURL("image/jpeg", 0.7).split(',')[1];
+
+            // 送出
+            sendToGemini(base64Image, videoElement);
         }
 
-        function sendToGemini(base64Image) {
+        function sendToGemini(base64Image, videoEl) {
             if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { 
-                hideLoading(); alert("請先設定 Google Script 網址！"); return; 
+                hideLoading(); videoEl.play(); alert("請先設定 Google Script 網址！"); return; 
             }
 
             var payload = { action: "identify", image: base64Image };
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
-                // 使用 text/plain 避免瀏覽器發送 OPTIONS preflight 請求 (這是關鍵修復)
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' }, 
                 body: JSON.stringify(payload)
             })
-            .then(response => response.json()) // 嘗試解析 JSON
+            .then(response => response.json())
             .then(data => {
                 hideLoading();
+                // 恢復相機播放，或者直接關閉 (這裡選擇直接關閉，因為要處理結果了)
+                closeCamera(); 
+
                 if(data.status === "success") {
                     var result = data.result;
                     alert("🤖 AI 分析結果：" + result);
-                    // 嘗試自動匹配
                     var matched = matchCountry(result);
                     addRecord(matched, 1);
                 } else {
-                    alert("AI 回傳錯誤: " + data.message);
+                    alert("AI 回傳錯誤: " + data.message + "\n(請確認已執行後端權限授權)");
                 }
             })
             .catch(err => {
                 hideLoading();
+                if(videoEl) videoEl.play(); // 失敗的話恢復播放
                 console.error(err);
-                alert("連線失敗！原因：" + err.message + "\n請確認 Script 權限已設為「所有人」。");
+                alert("連線失敗！\n1. 請確認已執行 Google Script 的權限授權。\n2. 錯誤訊息：" + err.message);
             });
         }
 
@@ -178,7 +174,6 @@
             for(var i=0; i<sel.options.length; i++) {
                 if(sel.options[i].text.includes(aiText)) return sel.options[i].value;
             }
-            // 沒對應到，直接回傳 AI 的文字
             return aiText;
         }
 
@@ -216,7 +211,7 @@
             };
 
             fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 使用 text/plain
+                method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify(payload)
             }).then(res => res.json()).then(data => {
                 if(data.status === "success") {
@@ -325,7 +320,6 @@
             document.getElementById('out_gps').innerText = "";
             document.getElementById('out_img').style.display = 'none';
             document.querySelector('input[type=file]').value = "";
-            document.getElementById('inp_ai_file').value = "";
             updateUI();
             window.scrollTo(0, 0);
         }
@@ -373,7 +367,7 @@
         <div id="loading-text">處理中...</div>
     </div>
 
-    <h1>📋 海廢 V32 智慧整合版</h1>
+    <h1>📋 海廢 V33 真・智慧鏡頭</h1>
 
     <div class="card">
         <h2>1. 設定</h2>
@@ -395,13 +389,13 @@
 
         <div id="camera-container">
             <div id="reader"></div>
+            
             <div id="ai-trigger-overlay">
-                <button onclick="triggerAiCapture()" class="btn-ai-overlay">
-                    📸 沒條碼？拍瓶身問 AI
+                <button onclick="captureAndIdentify()" class="btn-ai-overlay">
+                    <span>🤖</span> 沒條碼？點我截圖辨識
                 </button>
             </div>
         </div>
-        <input type="file" id="inp_ai_file" accept="image/*" style="display:none;" onchange="handleAiFile(event)">
 
         <hr style="margin: 15px 0;">
 
