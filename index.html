@@ -3,156 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V8 (安全模式)</title>
+    <title>海廢調查員 V9 (診斷版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        body {
-            font-family: sans-serif;
-            background-color: #e0f2f1;
-            text-align: center;
-            padding: 10px;
-            margin: 0;
-            color: #333;
-        }
-
-        /* 頁面區塊：預設全部隱藏，透過 JS 打開 */
-        #page1_setup, #page2_survey, #page3_report {
-            display: none;
-        }
-
-        /* 讓第一個頁面預設顯示 */
-        #page1_setup { display: block; }
-
-        .card {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            text-align: left;
-        }
-
-        h2 { margin-top: 0; color: #00695c; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+        body { font-family: sans-serif; background: #e0f2f1; text-align: center; padding: 10px; margin: 0; padding-bottom: 100px; }
+        .page { display: none; }
+        #p1 { display: block; } /* 預設顯示第一頁 */
         
-        input, select {
-            width: 100%; padding: 10px; margin: 5px 0 10px 0;
-            border: 2px solid #b2dfdb; border-radius: 5px; box-sizing: border-box;
-            font-size: 16px; background: #fff;
-        }
+        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; text-align: left; border: 1px solid #ccc; }
+        input, select { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 2px solid #b2dfdb; border-radius: 5px; font-size: 16px; background: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
+        .btn-green { background: #2e7d32; }
+        .btn-blue { background: #0277bd; }
+        .btn-red { background: #c62828; }
+        .btn-orange { background: #ef6c00; }
 
-        button {
-            width: 100%; padding: 12px; border: none; border-radius: 5px;
-            font-size: 18px; font-weight: bold; cursor: pointer; color: white;
-            margin-top: 10px;
+        /* 除錯視窗樣式 */
+        #debug-console {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 100px;
+            background: #333; color: #0f0; font-family: monospace;
+            font-size: 12px; overflow-y: scroll; text-align: left;
+            padding: 5px; z-index: 9999; opacity: 0.9;
         }
-        .btn-green { background-color: #2e7d32; }
-        .btn-blue { background-color: #0277bd; }
-        .btn-red { background-color: #c62828; }
-        .btn-orange { background-color: #ef6c00; }
         
-        /* 進度顯示 */
-        #progressInfo {
-            background: #fff; padding: 10px; margin-bottom: 10px; border-radius: 5px; font-weight: bold;
-        }
-
-        /* 掃描框 */
         #reader { width: 100%; background: black; display: none; margin-bottom: 10px; }
-
-        /* 報告截圖區 */
-        #reportArea {
-            background: white; padding: 15px; border: 2px solid #00695c;
-            text-align: center; margin-top: 10px;
-        }
-        .evidence-photo { width: 100%; margin-top: 10px; display: none; border: 1px solid #999; }
+        #report-area { background: white; padding: 10px; text-align: center; border: 2px solid #00695c; }
+        .evidence-img { width: 100%; display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="page1_setup">
-        <h1>📋 海廢調查設定 (V8)</h1>
-        
-        <div class="card">
-            <h2>1. 基本資料</h2>
-            <label>調查員姓名：</label>
-            <input type="text" id="setup_name" placeholder="請輸入姓名">
-            <label>同伴人數：</label>
-            <input type="number" id="setup_team" value="1">
-        </div>
+    <div id="debug-console">系統啟動中...<br>若無反應請看這裡的錯誤訊息。<br></div>
 
+    <div id="p1" class="page">
+        <h1>🔍 海廢調查 V9</h1>
         <div class="card">
-            <h2>2. 地點定位</h2>
-            <button class="btn-blue" onclick="tryGetGPS()">📍 點此抓取 GPS</button>
-            <input type="text" id="setup_gps" placeholder="尚未定位" style="background:#eee;" readonly>
-            <label>地點名稱：</label>
-            <input type="text" id="setup_loc" placeholder="例如：外澳沙灘">
+            <h3>1. 設定</h3>
+            <label>姓名：</label>
+            <input type="text" id="inp_name" placeholder="請輸入姓名">
+            <label>人數：</label>
+            <input type="number" id="inp_team" value="1">
         </div>
-
-        <button class="btn-green" onclick="goToSurvey()">下一步：開始調查 ➡️</button>
+        <div class="card">
+            <h3>2. 定位</h3>
+            <button class="btn-blue" onclick="doGPS()">📍 抓取 GPS</button>
+            <input type="text" id="inp_gps" placeholder="尚未定位" readonly style="background:#eee;">
+            <label>地點：</label>
+            <input type="text" id="inp_loc" placeholder="例如：外澳">
+        </div>
+        <button class="btn-green" onclick="goP2()">下一步 ➡️</button>
     </div>
 
-    <div id="page2_survey">
-        <div id="progressInfo">
-            進度：<span id="survey_count" style="color:red; font-size:20px;">0</span> / 10
-            <br>
-            <button class="btn-orange" onclick="forceFinish()" style="font-size:14px; padding:5px; margin-top:5px; display:none;" id="forceBtn">🏁 強制結束並查看結果</button>
+    <div id="p2" class="page">
+        <div class="card" style="text-align:center;">
+            <b>進度：<span id="txt_count" style="color:red; font-size:20px;">0</span> / 10</b>
+            <button class="btn-orange" id="force-btn" style="display:none; font-size:14px;" onclick="goP3()">🏁 強制結算</button>
         </div>
 
         <div class="card">
-            <h2>📷 掃描條碼</h2>
+            <h3>📷 掃描</h3>
             <div id="reader"></div>
-            <button id="btn_cam_start" class="btn-blue" onclick="startCam()">啟動相機</button>
-            <button id="btn_cam_stop" class="btn-red" onclick="stopCam()" style="display:none;">關閉相機</button>
+            <button class="btn-blue" id="btn-cam-start" onclick="startCam()">啟動相機</button>
+            <button class="btn-red" id="btn-cam-stop" onclick="stopCam()" style="display:none;">關閉相機</button>
         </div>
 
         <div class="card">
-            <h2>⌨️ 手動輸入</h2>
-            <input type="number" id="manual_code" placeholder="輸入前3碼 (如 471)">
-            <select id="manual_select">
-                <option value="">👇 或直接選擇國家...</option>
-                <option value="🇹🇼 台灣">🇹🇼 台灣 [471]</option>
-                <option value="🇨🇳 中國">🇨🇳 中國 [690-699]</option>
-                <option value="🇯🇵 日本">🇯🇵 日本 [450-499]</option>
-                <option value="🇰🇷 韓國">🇰🇷 韓國 [880]</option>
-                <option value="🇻🇳 越南">🇻🇳 越南 [893]</option>
-                <option value="🇹🇭 泰國">🇹🇭 泰國 [885]</option>
-                <option value="🇮🇩 印尼">🇮🇩 印尼 [899]</option>
-                <option value="🇵🇭 菲律賓">🇵🇭 菲律賓 [480]</option>
-                <option value="🇺🇸 美國">🇺🇸 美國 [000-139]</option>
-                <option value="❓ 無法辨識">❓ 無法辨識/其他</option>
+            <h3>⌨️ 手動</h3>
+            <select id="sel_country">
+                <option value="">👇 選擇國家...</option>
+                <option value="🇹🇼 台灣">🇹🇼 台灣</option>
+                <option value="🇨🇳 中國">🇨🇳 中國</option>
+                <option value="🇯🇵 日本">🇯🇵 日本</option>
+                <option value="🇰🇷 韓國">🇰🇷 韓國</option>
+                <option value="🇻🇳 越南">🇻🇳 越南</option>
+                <option value="🇹🇭 泰國">🇹🇭 泰國</option>
+                <option value="🇮🇩 印尼">🇮🇩 印尼</option>
+                <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+                <option value="❓ 無法辨識">❓ 無法辨識</option>
             </select>
-            <button class="btn-green" onclick="addRecord()">記錄一筆</button>
+            <button class="btn-green" onclick="addRec()">記錄</button>
         </div>
-        
-        <button class="btn-red" onclick="undo()" style="opacity:0.7;">↩️ 刪除上一筆</button>
+        <button class="btn-red" onclick="undo()" style="opacity:0.7">↩️ 刪除上一筆</button>
     </div>
 
-    <div id="page3_report">
-        <h1>🎉 調查完成</h1>
-        
-        <div class="card" style="border: 2px dashed orange;">
-            <h2>📸 步驟1：拍照存證</h2>
-            <p>請拍攝瓶罐合照：</p>
-            <input type="file" accept="image/*" onchange="previewImg(event)">
-        </div>
-
+    <div id="p3" class="page">
+        <h1>🎉 完成</h1>
         <div class="card">
-            <h2>📄 步驟2：產生報告</h2>
-            <div id="reportArea">
-                <h3 style="background:#00695c; color:white; padding:5px;">🌊 海廢調查報告</h3>
-                <div style="text-align:left; font-size:14px; line-height:1.5;">
-                    日期：<span id="rep_date"></span><br>
-                    人員：<span id="rep_name"></span> (<span id="rep_team"></span>人)<br>
-                    地點：<span id="rep_loc"></span><br>
-                    GPS：<span id="rep_gps"></span>
+            <h3>📸 拍照</h3>
+            <input type="file" accept="image/*" onchange="loadImg(event)">
+        </div>
+        <div class="card">
+            <div id="report-area">
+                <h3 style="background:#00695c; color:white; margin:0; padding:5px;">海廢報告</h3>
+                <div style="text-align:left; font-size:14px; padding:5px;">
+                    日期：<span id="out_date"></span><br>
+                    人員：<span id="out_name"></span><br>
+                    GPS：<span id="out_gps"></span>
                 </div>
-                <hr>
-                <canvas id="myChart" style="max-height:250px;"></canvas>
-                <img id="rep_img" class="evidence-photo">
+                <canvas id="chart" style="max-height:200px;"></canvas>
+                <img id="out_img" class="evidence-img">
             </div>
-            </div>
+        </div>
+        <button class="btn-orange" id="dl-btn" onclick="dlImg()">📥 下載圖片</button>
+        <button class="btn-blue" onclick="location.reload()">🔄 重來</button>
+    </div>
 
-        <button class="btn-orange" onclick="dlImg()" id="
+<script>
+    // === 除錯工具 ===
+    function log(msg) {
+        var box = document.getElementById('debug-console');
+        var time = new Date().toLocaleTimeString();
+        box.innerHTML += "<div>[" + time + "] " + msg + "</div>";
+        box.scrollTop = box.scrollHeight; // 自動捲動到底部
+        console.log(msg);
+    }
+
+    window.onerror = function(message, source, lineno, colno, error) {
+        log("❌ 錯誤: " + message);
+        return false;
+    };
+
+    // === 檢查程式庫 ===
+    window.onload = function() {
+        log("系統載入完成");
+        if(typeof Html5Qrcode === 'undefined') log("⚠️ 警告: QR Code 庫載入失敗");
+        if(typeof Chart === 'undefined') log("⚠️ 警告: Chart 庫載入失敗");
+        if(typeof html2canvas === 'undefined') log("⚠️ 警告: 截圖庫載入失敗");
+    }
+
+    // === 變數 ===
+    var count = 0;
+    var target = 10;
+    var stats = {};
+    var historyStack = [];
+    var html5QrCode = null;
+
+    // ===
