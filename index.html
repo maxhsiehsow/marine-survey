@@ -55,9 +55,11 @@
         table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 13px; }
         th, td { border: 1px solid #ccc; padding: 4px; text-align: left; }
         
+        /* 總計行樣式 */
+        .total-row { background-color: #e3f2fd; font-weight: bold; }
+
         #scan-loading { display: none; color: #f57c00; font-weight: bold; margin-bottom: 5px; }
         
-        /* V27 新增：輸入群組樣式 */
         .input-group { display: flex; gap: 10px; align-items: center; }
         .input-group select { flex: 2; }
         .input-group input { flex: 1; text-align: center; }
@@ -99,7 +101,6 @@
             btn.innerText = "⏳ 處理數據中...";
             btn.disabled = true;
 
-            // 整理數據
             var breakdown = {
                 tw: stats['🇹🇼 台灣'] || 0, cn: stats['🇨🇳 中國'] || 0, vn: stats['🇻🇳 越南'] || 0,
                 ph: stats['🇵🇭 菲律賓'] || 0, my: stats['🇲🇾 馬來西亞'] || 0, id: stats['🇮🇩 印尼'] || 0,
@@ -190,8 +191,6 @@
                         if(navigator.vibrate) navigator.vibrate(200);
                         stopCamera();
                         var country = identifyBarcode(decodedText);
-                        // 掃描預設數量為 1，但詢問是否修改
-                        // 為了流暢，掃描通常是一次一個，這裡維持加 1
                         alert("掃描成功！" + country);
                         addRecord(country, 1);
                     }, function(err) {}
@@ -218,7 +217,7 @@
             return "[" + code.substring(0,3) + "]";
         }
 
-        // === 5. 核心邏輯 (修改點：支援數量輸入) ===
+        // === 5. 核心邏輯 ===
         function runGPS() {
             var field = document.getElementById('inp_gps');
             field.value = "定位中...";
@@ -250,52 +249,29 @@
             document.getElementById('out_loc').innerText = document.getElementById('inp_loc').value;
         }
 
-        // 新增：處理按鈕點擊
         function handleManualAdd() {
             var val = document.getElementById('sel_country').value;
-            // 讀取數量
             var qtyInput = document.getElementById('inp_qty');
             var qty = parseInt(qtyInput.value);
 
             if(!val) { alert("請選擇國家"); return; }
             if(isNaN(qty) || qty < 1) { alert("數量至少為 1"); return; }
-
-            // 如果數量很大，做個確認
-            if(qty > 10) {
-                if(!confirm("確定要一次增加 " + qty + " 個 " + val + " 嗎？")) return;
-            }
+            if(qty > 10) { if(!confirm("確定要一次增加 " + qty + " 個 " + val + " 嗎？")) return; }
 
             addRecord(val, qty);
-            
-            // 重置數量為 1，方便下次輸入
             qtyInput.value = 1;
         }
 
         function addRecord(country, quantity) {
-            // 檢查上限
-            if(count + quantity > target) { 
-                alert("增加後將超過 " + target + " 筆上限！\n目前: " + count + ", 欲加: " + quantity); 
-                return; 
-            }
+            if(count + quantity > target) { alert("超過 " + target + " 筆上限！"); return; }
 
             if(!stats[country]) stats[country] = 0;
-            
             stats[country] += quantity;
             count += quantity;
 
-            // 歷史紀錄只推入名稱，undo 時一次扣除「最後一次動作的量」比較複雜
-            // 為了保持 V26 穩定性，這裡我們採取：
-            // 歷史紀錄推入 N 次，這樣 Undo 按一次只會扣 1 個 (比較安全，防止誤刪一大堆)
-            // 如果使用者想刪剛加的 20 個，就得按 20 次 Undo (或者重整網頁)
-            for(var i=0; i<quantity; i++) {
-                historyStack.push(country);
-            }
+            for(var i=0; i<quantity; i++) historyStack.push(country);
 
             document.getElementById('disp_count').innerText = count;
-            
-            // 掃描維持原樣，手動則保留選項
-            // document.getElementById('sel_country').value = "🇹🇼 台灣"; 
-            
             renderTable();
             drawCssChart();
             
@@ -316,13 +292,27 @@
         function renderTable() {
             var tbody = document.getElementById('stats-body');
             tbody.innerHTML = "";
-            if(count === 0) { tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>"; return; }
+            if(count === 0) { 
+                tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>"; 
+                document.getElementById('out_total').innerText = "0"; // 重置總數
+                return; 
+            }
+            
             for(var key in stats) {
                 var color = fixedColors[key] || stringToColor(key);
                 var tr = document.createElement('tr');
                 tr.innerHTML = "<td><span style='color:"+color+"'>■</span> " + key + "</td><td>" + stats[key] + "</td>";
                 tbody.appendChild(tr);
             }
+            
+            // 新增：總計列
+            var totalRow = document.createElement('tr');
+            totalRow.className = "total-row";
+            totalRow.innerHTML = "<td>總計</td><td>" + count + "</td>";
+            tbody.appendChild(totalRow);
+            
+            // 更新圓餅圖下方的總數
+            document.getElementById('out_total').innerText = count;
         }
 
         function drawCssChart() {
@@ -415,6 +405,7 @@
                 <div style="display:flex; align-items:center;">
                     <div style="flex:1; text-align:center;">
                         <div id="css-pie" class="pie-chart"></div>
+                        <div style="margin-top:5px; font-weight:bold; color:#d32f2f;">總數: <span id="out_total">0</span></div>
                     </div>
                     <div style="flex:1; padding-left:10px;">
                         <table id="stats-table">
@@ -438,4 +429,3 @@
 
 </body>
 </html>
-
