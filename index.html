@@ -3,79 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V11 (穩健版)</title>
+    <title>海廢調查員 V12 (安全版)</title>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #e0f7fa; text-align: center; padding: 15px; margin: 0; padding-bottom: 80px; }
+        body { font-family: sans-serif; background: #e0f2f1; text-align: center; padding: 15px; margin: 0; padding-bottom: 80px; }
         .page { display: none; }
-        #p1 { display: block; } /* 預設顯示首頁 */
+        #p1 { display: block; }
 
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h2 { margin-top: 0; color: #006064; font-size: 18px; border-bottom: 1px solid #b2ebf2; padding-bottom: 8px; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; border: 1px solid #b2dfdb; }
+        h2 { margin-top: 0; color: #00796b; font-size: 18px; border-bottom: 1px solid #b2dfdb; padding-bottom: 8px; }
         
-        input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 2px solid #b2ebf2; border-radius: 8px; font-size: 16px; background: #fff; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 2px solid #80cbc4; border-radius: 8px; font-size: 16px; background: #fff; box-sizing: border-box; }
         
-        /* 按鈕樣式 */
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        button:active { transform: scale(0.98); }
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; }
+        button:active { opacity: 0.8; }
         .btn-green { background: #00897b; }
-        .btn-blue { background: #039be5; }
-        .btn-red { background: #e53935; }
-        .btn-orange { background: #fb8c00; }
+        .btn-blue { background: #0288d1; }
+        .btn-red { background: #d32f2f; }
+        .btn-orange { background: #f57c00; }
 
-        /* 進度條 */
-        #progress-box { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #006064; }
+        #status-bar { position: fixed; bottom: 0; left: 0; width: 100%; padding: 5px; font-size: 12px; background: #333; color: white; text-align: center; }
         
-        /* 掃描視窗 */
-        #reader { width: 100%; background: black; display: none; border-radius: 8px; margin-bottom: 10px; }
-
-        /* 報告截圖區 */
+        #reader { width: 100%; background: black; display: none; margin-bottom: 10px; }
         #report-area { background: white; padding: 15px; border: 1px solid #ccc; text-align: center; }
-        .evidence-img { width: 100%; max-height: 300px; object-fit: cover; margin-top: 10px; display: none; border: 1px solid #999; }
+        .evidence-img { width: 100%; margin-top: 10px; display: none; border: 1px solid #999; }
     </style>
 </head>
 <body>
 
     <div id="p1" class="page">
-        <h1 style="color:#006064; margin-bottom:10px;">📋 海廢調查 V11</h1>
+        <h1>📋 海廢調查 V12</h1>
         
         <div class="card">
             <h2>1. 基本資料</h2>
-            <label>調查員姓名：</label>
+            <label>姓名：</label>
             <input type="text" id="inp_name" placeholder="請輸入姓名">
-            <label>同伴人數：</label>
+            <label>人數：</label>
             <input type="number" id="inp_team" value="1">
         </div>
 
         <div class="card">
-            <h2>2. 地點定位</h2>
+            <h2>2. 定位</h2>
             <button class="btn-blue" onclick="doGPS()">📍 抓取 GPS</button>
             <input type="text" id="inp_gps" placeholder="尚未定位" readonly style="background:#f1f8e9;">
-            <label>地點名稱：</label>
+            <label>地點：</label>
             <input type="text" id="inp_loc" placeholder="例如：外澳沙灘">
         </div>
 
-        <button class="btn-green" onclick="goP2()">下一步：開始調查 ➡️</button>
+        <button class="btn-green" onclick="goP2()">下一步 ➡️</button>
     </div>
 
     <div id="p2" class="page">
-        <div id="progress-box">
-            進度：<span id="txt_count" style="color:#e53935; font-size:22px;">0</span> / 10
-            <button class="btn-orange" id="force-btn" onclick="goP3()" style="display:none; margin-top:5px; font-size:14px; padding:8px;">🏁 結算成果</button>
+        <div class="card" style="text-align:center;">
+            進度：<b id="txt_count" style="color:red; font-size:22px;">0</b> / 10
+            <button class="btn-orange" id="force-btn" onclick="goP3()" style="display:none; margin-top:5px; font-size:14px;">🏁 結算成果</button>
         </div>
 
         <div class="card">
-            <h2>📷 掃描條碼</h2>
+            <h2>📷 掃描 (外掛功能)</h2>
             <div id="reader"></div>
             <button id="btn-cam-start" class="btn-blue" onclick="startCam()">啟動相機</button>
             <button id="btn-cam-stop" class="btn-red" onclick="stopCam()" style="display:none;">關閉相機</button>
         </div>
 
         <div class="card">
-            <h2>⌨️ 手動記錄</h2>
+            <h2>⌨️ 手動記錄 (核心功能)</h2>
             <select id="sel_country">
-                <option value="">👇 請選擇國家...</option
+                <option value="">👇 請選擇國家...</option>
+                <option value="🇹🇼 台灣">🇹🇼 台灣</option>
+                <option value="🇨🇳 中國">🇨🇳 中國</option>
+                <option value="🇯🇵 日本">🇯🇵 日本</option>
+                <option value="🇰🇷 韓國">🇰🇷 韓國</option>
+                <option value="🇻🇳 越南">🇻🇳 越南</option>
+                <option value="🇹🇭 泰國">🇹🇭 泰國</option>
+                <option value="🇮🇩 印尼">🇮🇩 印尼</option>
+                <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+                <option value="🇺🇸 美國">🇺🇸 美國</option>
+                <option value="❓ 無法辨識">❓ 無法辨識</option>
+            </select>
+            <button class="btn-green" onclick="addRec()">記錄這一筆</button>
+        </div>
+        <button class="btn-red" onclick="undo()" style="opacity:0.7;">↩️ 刪除上一筆</button>
+    </div>
+
+    <div id="p3" class="page">
+        <h1>🎉 完成</h1>
+        
+        <div class="card">
+            <h2>📸 步驟 1: 拍照</h2>
+            <input type="file" accept="image/*" onchange="loadImg(event)">
+        </div>
+
+        <div class="card">
+            <h2>📄 步驟 2: 報告</h2>
+            <div id="report-area">
+                <div style="background:#00796b; color:white; padding:10px;">
+                    <h3>海廢調查報告</h3>
+                </div>
+                <div style="text-align:left; font-size:14px; padding:10px;">
+                    日期：<span id="out_date"></span><br>
+                    人員：<span id="out_name"></span> (<span id="out_team"></span>人)<br>
+                    GPS：<span id="out_gps"></span>
+                </div>
+                <canvas id="myChart" style="max-height:250px;"></canvas>
+                <div id="chart-msg" style="display:none; color:red;">(圖表載入失敗，但不影響數據)</div>
+                <img id="out_img" class="evidence-img">
+            </div>
+        </div>
+
+        <button class="btn-orange" onclick="dlImg()">📥 下載圖片</button>
+        <button class="btn-blue" onclick="location.reload()" style="margin-top:20px;">🔄 重來</button>
+    </div>
+
+    <div id="status-bar">系統檢查中...</div>
+
+<script>
+    // === 核心變數 (使用最傳統的 var) ===
+    var count = 0;
+    var target = 10;
+    var stats = {};
+    var historyStack = [];
+    var html5QrCode = null;
+
+    // === 系統自我檢查 ===
+    window.onload = function() {
+        var status = [];
+        if(typeof Html5Qrcode !== 'undefined') status.push("相機OK"); else status.push("相機X");
+        if(typeof Chart !== 'undefined') status.push("圖表OK"); else status.push("圖表X");
+        
+        var msg = "系統就緒: " + status.join(", ");
+        document
