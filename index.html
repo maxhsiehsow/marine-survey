@@ -3,114 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V10 (純淨版)</title>
+    <title>海廢調查員 V11 (穩健版)</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+
     <style>
-        body { font-family: sans-serif; padding: 20px; text-align: center; background: #f0f0f0; }
-        .box { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #ccc; }
-        button { width: 100%; padding: 15px; font-size: 18px; margin-top: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
-        button:active { background: #0056b3; transform: scale(0.98); } /* 按下變色 */
-        input { width: 100%; padding: 10px; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; }
-        .hidden { display: none; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #e0f7fa; text-align: center; padding: 15px; margin: 0; padding-bottom: 80px; }
+        .page { display: none; }
+        #p1 { display: block; } /* 預設顯示首頁 */
+
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: left; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #006064; font-size: 18px; border-bottom: 1px solid #b2ebf2; padding-bottom: 8px; }
+        
+        input, select { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 2px solid #b2ebf2; border-radius: 8px; font-size: 16px; background: #fff; box-sizing: border-box; }
+        
+        /* 按鈕樣式 */
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; margin-top: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        button:active { transform: scale(0.98); }
+        .btn-green { background: #00897b; }
+        .btn-blue { background: #039be5; }
+        .btn-red { background: #e53935; }
+        .btn-orange { background: #fb8c00; }
+
+        /* 進度條 */
+        #progress-box { background: white; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-weight: bold; color: #006064; }
+        
+        /* 掃描視窗 */
+        #reader { width: 100%; background: black; display: none; border-radius: 8px; margin-bottom: 10px; }
+
+        /* 報告截圖區 */
+        #report-area { background: white; padding: 15px; border: 1px solid #ccc; text-align: center; }
+        .evidence-img { width: 100%; max-height: 300px; object-fit: cover; margin-top: 10px; display: none; border: 1px solid #999; }
     </style>
 </head>
 <body>
 
-    <h1>🚀 測試模式 V10</h1>
-    <p style="color:red; font-size:12px;">此版本不依賴外部程式，測試按鈕反應</p>
-
-    <div id="p1" class="box">
-        <h3>步驟 1: 測試輸入與 GPS</h3>
-        <input type="text" id="name" placeholder="隨便輸入名字">
-        <button onclick="testGPS()">📍 測試 GPS (原生)</button>
-        <p id="gps-result" style="background:#eee; padding:5px;">等待定位...</p>
-        <button onclick="goP2()" style="background:#28a745;">下一步 (切換頁面)</button>
-    </div>
-
-    <div id="p2" class="box hidden">
-        <h3>步驟 2: 測試記錄功能</h3>
-        <p>目前數量：<b id="count">0</b> / 10</p>
+    <div id="p1" class="page">
+        <h1 style="color:#006064; margin-bottom:10px;">📋 海廢調查 V11</h1>
         
-        <select id="country" style="width:100%; padding:10px; font-size:16px;">
-            <option value="🇹🇼 台灣">🇹🇼 台灣</option>
-            <option value="🇨🇳 中國">🇨🇳 中國</option>
-            <option value="🇯🇵 日本">🇯🇵 日本</option>
-        </select>
+        <div class="card">
+            <h2>1. 基本資料</h2>
+            <label>調查員姓名：</label>
+            <input type="text" id="inp_name" placeholder="請輸入姓名">
+            <label>同伴人數：</label>
+            <input type="number" id="inp_team" value="1">
+        </div>
 
-        <button onclick="add()">➕ 增加一筆</button>
-        <button onclick="goP3()" style="background:#ffc107; color:black;">🏁 強制結算</button>
+        <div class="card">
+            <h2>2. 地點定位</h2>
+            <button class="btn-blue" onclick="doGPS()">📍 抓取 GPS</button>
+            <input type="text" id="inp_gps" placeholder="尚未定位" readonly style="background:#f1f8e9;">
+            <label>地點名稱：</label>
+            <input type="text" id="inp_loc" placeholder="例如：外澳沙灘">
+        </div>
+
+        <button class="btn-green" onclick="goP2()">下一步：開始調查 ➡️</button>
     </div>
 
-    <div id="p3" class="box hidden">
-        <h3>步驟 3: 結果列表</h3>
-        <ul id="list" style="text-align:left;"></ul>
-        <button onclick="location.reload()" style="background:#6c757d;">重來</button>
-    </div>
+    <div id="p2" class="page">
+        <div id="progress-box">
+            進度：<span id="txt_count" style="color:#e53935; font-size:22px;">0</span> / 10
+            <button class="btn-orange" id="force-btn" onclick="goP3()" style="display:none; margin-top:5px; font-size:14px; padding:8px;">🏁 結算成果</button>
+        </div>
 
-    <script>
-        // 1. 開場測試：確保 JS 有載入
-        window.onload = function() {
-            alert("✅ V10 系統已啟動！\n如果您看到這個視窗，代表程式碼沒壞。");
-        };
+        <div class="card">
+            <h2>📷 掃描條碼</h2>
+            <div id="reader"></div>
+            <button id="btn-cam-start" class="btn-blue" onclick="startCam()">啟動相機</button>
+            <button id="btn-cam-stop" class="btn-red" onclick="stopCam()" style="display:none;">關閉相機</button>
+        </div>
 
-        // 變數
-        var count = 0;
-        var records = [];
-
-        // 2. GPS 測試
-        function testGPS() {
-            var display = document.getElementById('gps-result');
-            display.innerText = "定位中...";
-            
-            if(!navigator.geolocation) {
-                alert("瀏覽器不支援 GPS");
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                function(pos) {
-                    var txt = pos.coords.latitude.toFixed(4) + ", " + pos.coords.longitude.toFixed(4);
-                    display.innerText = txt;
-                    alert("✅ 定位成功: " + txt);
-                },
-                function(err) {
-                    display.innerText = "定位失敗: " + err.message;
-                    alert("❌ 定位失敗: " + err.message);
-                },
-                { timeout: 5000 }
-            );
-        }
-
-        // 3. 切換頁面測試
-        function goP2() {
-            var name = document.getElementById('name').value;
-            if(!name) { alert("請輸入名字測試"); return; }
-            
-            document.getElementById('p1').style.display = 'none';
-            document.getElementById('p2').style.display = 'block';
-        }
-
-        // 4. 記錄測試
-        function add() {
-            var val = document.getElementById('country').value;
-            count++;
-            records.push(val);
-            document.getElementById('count').innerText = count;
-            alert("已記錄: " + val);
-        }
-
-        // 5. 結算測試 (不做圖表，只列文字)
-        function goP3() {
-            document.getElementById('p2').style.display = 'none';
-            document.getElementById('p3').style.display = 'block';
-            
-            var ul = document.getElementById('list');
-            ul.innerHTML = "";
-            records.forEach(function(r) {
-                var li = document.createElement('li');
-                li.innerText = r;
-                ul.appendChild(li);
-            });
-        }
-    </script>
-</body>
-</html>
+        <div class="card">
+            <h2>⌨️ 手動記錄</h2>
+            <select id="sel_country">
+                <option value="">👇 請選擇國家...</option
