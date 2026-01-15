@@ -3,78 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V18</title>
-    <style>
-        /* 1. 全域除錯視窗 (這是最重要的部分) */
-        #debug-console {
-            position: fixed; top: 0; left: 0; width: 100%; height: 80px;
-            background: #000; color: #0f0; font-family: monospace; font-size: 12px;
-            padding: 5px; overflow-y: scroll; z-index: 10000; border-bottom: 2px solid red;
-            opacity: 0.9;
-        }
-        
-        /* 內容往下推，避免被除錯視窗擋住 */
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-top: 90px; padding-bottom: 50px; }
+    <title>海廢調查員 V19</title>
 
-        /* 卡片樣式 */
-        .card { background: white; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; }
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 100px; }
         
-        h2 { margin-top: 0; color: #007bff; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        label { font-weight: bold; display: block; margin-top: 10px; }
+        /* 診斷框 */
+        #debug-box {
+            background: #333; color: #fff; font-size: 12px; padding: 5px; 
+            margin-bottom: 10px; border-radius: 5px;
+        }
+
+        .card { 
+            background: white; padding: 15px; border-radius: 10px; 
+            margin-bottom: 15px; border: 1px solid #ccc; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h2 { margin-top: 0; color: #0056b3; font-size: 18px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         
-        /* 輸入與按鈕 */
-        input, select { width: 100%; padding: 10px; font-size: 16px; margin: 5px 0; border: 1px solid #999; border-radius: 5px; box-sizing: border-box; background:#fff; }
-        
-        /* 強制設定 button type 以避免表單送出問題 */
-        button { width: 100%; padding: 15px; font-size: 18px; font-weight: bold; margin-top: 10px; cursor: pointer; color: white; border: none; border-radius: 5px; }
+        input, select { 
+            width: 100%; padding: 12px; font-size: 16px; margin: 5px 0 15px 0; 
+            border: 2px solid #ccc; border-radius: 5px; box-sizing: border-box; background: #fff;
+        }
+
+        button { 
+            width: 100%; padding: 15px; font-size: 18px; font-weight: bold; 
+            margin-top: 5px; cursor: pointer; color: white; border: none; border-radius: 5px; 
+        }
         .btn-blue { background: #007bff; }
         .btn-green { background: #28a745; }
         .btn-red { background: #dc3545; }
-        
-        /* 表格 */
+
+        /* 報告區塊 - 確保絕對顯示 */
+        #report-section {
+            display: block !important; /* 強制顯示 */
+            background: #fff;
+            border: 3px solid #0056b3;
+            padding: 10px;
+        }
+
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        .big-num { font-size: 24px; color: red; font-weight: bold; }
+        th, td { border: 1px solid #999; padding: 8px; text-align: left; }
     </style>
 
     <script>
-        window.onerror = function(msg, url, line, col, error) {
-            var box = document.getElementById('debug-console');
-            if(box) {
-                box.innerHTML = "<div style='color:red; font-weight:bold;'>❌ 錯誤: " + msg + " (行:" + line + ")</div>" + box.innerHTML;
-            } else {
-                alert("錯誤: " + msg);
+        // === 變數 ===
+        var count = 0;
+        var stats = {};
+        var historyStack = [];
+
+        // === 系統日誌 ===
+        function log(msg) {
+            var box = document.getElementById('debug-msg');
+            if(box) box.innerText = msg;
+        }
+
+        // === 1. 初始化 ===
+        window.onload = function() {
+            log("系統已就緒 (JS Loaded)");
+            document.getElementById('debug-box').style.background = "#28a745"; // 變綠色代表成功
+            
+            // 填入日期
+            var d = new Date();
+            var dateStr = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
+            document.getElementById('out_date').innerText = dateStr;
+        };
+
+        // === 2. 同步資料 (修復 syncData is not defined) ===
+        window.syncData = function() {
+            var name = document.getElementById('inp_name').value;
+            var loc = document.getElementById('inp_loc').value;
+            
+            document.getElementById('out_name').innerText = name;
+            document.getElementById('out_loc').innerText = loc;
+        };
+
+        // === 3. GPS (修復 runGPS is not defined) ===
+        window.runGPS = function() {
+            log("正在定位...");
+            var field = document.getElementById('inp_gps');
+            field.value = "定位中...";
+
+            if(!navigator.geolocation) {
+                alert("手機不支援 GPS");
+                field.value = "不支援";
+                return;
             }
-            return false;
+
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
+                    field.value = txt;
+                    document.getElementById('out_gps').innerText = txt; // 同步到報告
+                    log("定位成功");
+                    alert("定位成功！");
+                },
+                function(err) {
+                    field.value = "定位失敗";
+                    log("定位失敗: " + err.message);
+                    alert("定位失敗，請手動輸入");
+                },
+                { timeout: 10000 }
+            );
+        };
+
+        // === 4. 增加記錄 (修復 addRecord is not defined) ===
+        window.addRecord = function() {
+            var sel = document.getElementById('sel_country');
+            var val = sel.value;
+
+            if(!val) { alert("請選擇國家"); return; }
+
+            // 邏輯
+            if(!stats[val]) stats[val] = 0;
+            stats[val]++;
+            count++;
+            historyStack.push(val);
+
+            // 更新畫面
+            document.getElementById('disp_count').innerText = count;
+            log("已新增: " + val);
+
+            // 更新表格
+            renderTable();
+        };
+
+        // === 5. 刪除記錄 (修復 undoRecord is not defined) ===
+        window.undoRecord = function() {
+            if(count <= 0) return;
+            var last = historyStack.pop();
+            stats[last]--;
+            if(stats[last] === 0) delete stats[last];
+            count--;
+
+            document.getElementById('disp_count').innerText = count;
+            log("已刪除: " + last);
+            renderTable();
+        };
+
+        // === 6. 渲染表格 ===
+        function renderTable() {
+            var tbody = document.getElementById('stats-body');
+            tbody.innerHTML = "";
+
+            if(count === 0) {
+                tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>";
+                return;
+            }
+
+            for(var key in stats) {
+                var tr = document.createElement('tr');
+                tr.innerHTML = "<td>" + key + "</td><td>" + stats[key] + "</td>";
+                tbody.appendChild(tr);
+            }
+        }
+
+        // === 7. 照片 ===
+        window.previewImage = function(event) {
+            var file = event.target.files[0];
+            if(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var img = document.getElementById('out_img');
+                    img.src = e.target.result;
+                    img.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
         };
     </script>
 </head>
 <body>
 
-    <div id="debug-console">系統啟動中...</div>
+    <div id="debug-box">
+        狀態：<span id="debug-msg">等待載入...</span>
+    </div>
 
-    <h1>📋 海廢 V18 顯影版</h1>
+    <h1>📋 海廢調查 V19</h1>
 
     <div class="card">
         <h2>1. 設定</h2>
         <label>姓名：</label>
-        <input type="text" id="inp_name" placeholder="輸入姓名" onkeyup="syncData()">
+        <input type="text" id="inp_name" placeholder="輸入姓名" oninput="syncData()">
         
         <label>GPS：</label>
-        <button type="button" class="btn-blue" onclick="runGPS()">📍 抓取 GPS</button>
+        <button onclick="runGPS()" class="btn-blue">📍 抓取 GPS</button>
         <input type="text" id="inp_gps" readonly value="尚未定位" style="background:#eee;">
         
         <label>地點：</label>
-        <input type="text" id="inp_loc" placeholder="輸入地點" onkeyup="syncData()">
+        <input type="text" id="inp_loc" placeholder="輸入地點" oninput="syncData()">
     </div>
 
     <div class="card">
         <h2>2. 記錄</h2>
-        <div style="text-align:center;">數量：<span id="disp_count" class="big-num">0</span> / 10</div>
+        <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">
+            數量：<span id="disp_count" style="color:red;">0</span> / 10
+        </div>
         
-        <label>選擇國家：</label>
         <select id="sel_country">
-            <option value="">👇 點此選擇...</option>
+            <option value="">👇 選擇國家...</option>
             <option value="🇹🇼 台灣">🇹🇼 台灣</option>
             <option value="🇨🇳 中國">🇨🇳 中國</option>
             <option value="🇯🇵 日本">🇯🇵 日本</option>
@@ -87,11 +215,31 @@
             <option value="❓ 無法辨識">❓ 無法辨識</option>
         </select>
 
-        <button type="button" class="btn-green" onclick="addRecord()">➕ 增加一筆</button>
-        <button type="button" class="btn-red" onclick="undoRecord()">↩️ 刪除上一筆</button>
+        <button onclick="addRecord()" class="btn-green">➕ 增加一筆</button>
+        <button onclick="undoRecord()" class="btn-red">↩️ 刪除上一筆</button>
     </div>
 
-    <div class="card" id="report-area">
+    <div class="card">
         <h2>3. 報告預覽 (請截圖)</h2>
-        <div style="font-size:14px; line-height:1.6; border: 2px solid #007bff; padding:10px;">
-            <div style="background:#007bff;
+        
+        <div id="report-section">
+            <div style="background:#0056b3; color:white; padding:5px; text-align:center; font-weight:bold;">
+                海廢調查報告
+            </div>
+            <div style="font-size:14px; line-height:1.6; margin-top:10px;">
+                <strong>日期：</strong><span id="out_date"></span><br>
+                <strong>姓名：</strong><span id="out_name"></span><br>
+                <strong>GPS：</strong><span id="out_gps"></span><br>
+                <strong>地點：</strong><span id="out_loc"></span>
+            </div>
+            
+            <table id="stats-table">
+                <thead><tr><th>國家</th><th>數量</th></tr></thead>
+                <tbody id="stats-body"><tr><td colspan="2">尚未有資料</td></tr></tbody>
+            </table>
+
+            <img id="out_img" style="width:100%; display:none; margin-top:10px; border:1px solid #000;">
+        </div>
+
+        <label style="margin-top:15px;">📸 上傳照片：</label>
+        <input type="file" accept="image/*" onchange="
