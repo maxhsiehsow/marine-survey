@@ -1,143 +1,239 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢 V16 檢測</title>
+    <title>海廢調查員 V17</title>
     <style>
-        body { font-family: sans-serif; padding: 10px; background: #fff; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; padding-bottom: 80px; color: #333; }
         
-        /* 超級顯眼的診斷框 */
-        #debug-box {
-            position: fixed; top: 0; left: 0; width: 100%; height: 120px;
-            background: #000; color: #0f0; font-family: monospace; font-size: 14px;
-            padding: 5px; overflow-y: scroll; z-index: 9999; border-bottom: 2px solid red;
+        /* 標題 */
+        h1 { text-align: center; color: #006064; margin-bottom: 10px; font-size: 22px; }
+        .subtitle { text-align: center; color: #666; font-size: 13px; margin-bottom: 20px; }
+
+        /* 卡片區塊 */
+        .card {
+            background: white; border-radius: 12px; padding: 15px; margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); border: 1px solid #e1e4e8;
         }
-
-        /* 內容往下推，避免被診斷框擋住 */
-        #content { margin-top: 130px; }
-
+        h2 { margin: 0 0 10px 0; font-size: 18px; color: #0277bd; border-bottom: 2px solid #e1f5fe; padding-bottom: 8px; }
+        
+        /* 輸入元件 */
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 14px; }
+        input, select {
+            width: 100%; padding: 12px; font-size: 16px; margin: 5px 0; 
+            border: 2px solid #b0bec5; border-radius: 8px; box-sizing: border-box; background: #fff;
+        }
+        
+        /* 按鈕優化 */
         button {
-            width: 100%; padding: 15px; font-size: 18px; margin-top: 10px;
-            background: #007bff; color: white; border: none; border-radius: 5px;
+            width: 100%; padding: 14px; font-size: 16px; font-weight: bold; margin-top: 10px;
+            border: none; border-radius: 8px; cursor: pointer; color: white;
+            transition: opacity 0.2s;
         }
-        input, select { width: 100%; padding: 10px; font-size: 16px; margin: 5px 0; box-sizing: border-box; }
-        .row { margin-bottom: 15px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; }
+        button:active { opacity: 0.7; transform: scale(0.98); }
+        .btn-green { background: #2e7d32; }
+        .btn-blue { background: #0288d1; }
+        .btn-red { background: #c62828; }
+        
+        /* 進度與統計 */
+        .count-box { text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .big-num { font-size: 24px; color: #d32f2f; }
+        
+        /* 報告區 (專門設計給截圖用) */
+        #report-card {
+            border: 4px solid #006064; padding: 0; overflow: hidden;
+        }
+        .report-header {
+            background: #006064; color: white; padding: 15px; text-align: center;
+        }
+        .report-body { padding: 15px; }
+        .report-info { font-size: 14px; line-height: 1.6; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 10px;}
+        
+        /* 統計表格 */
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 10px; }
+        th { background: #f5f5f5; text-align: left; padding: 8px; border-bottom: 2px solid #ddd; }
+        td { padding: 8px; border-bottom: 1px solid #eee; }
+        
+        .evidence-img { width: 100%; display: none; margin-top: 10px; border: 2px solid #333; border-radius: 4px; }
     </style>
 </head>
 <body>
 
-    <div id="debug-box">等待程式啟動...</div>
+    <h1>📋 海廢調查員</h1>
+    <div class="subtitle">穩定版 V17 - 請由上往下操作</div>
 
-    <div id="content">
-        <h1>🛠️ V16 相容性檢測</h1>
+    <div class="card">
+        <h2>1. 設定與定位</h2>
         
-        <div class="row">
-            <h3>1. JS 測試</h3>
-            <button onclick="testHello()">👆 點我測試按鈕</button>
-            <p>如果點了沒反應，代表 JS 被鎖死。</p>
+        <label>調查員姓名：</label>
+        <input type="text" id="inp_name" placeholder="請輸入姓名" oninput="updateReport()">
+        
+        <label>GPS 座標：</label>
+        <button onclick="runGPS()" class="btn-blue">📍 點此抓取 GPS</button>
+        <input type="text" id="inp_gps" readonly value="尚未定位" style="background:#f1f8e9; color:#2e7d32; font-weight:bold;">
+        
+        <label>地點名稱：</label>
+        <input type="text" id="inp_loc" placeholder="例如：外澳沙灘" oninput="updateReport()">
+    </div>
+
+    <div class="card" style="border: 2px solid #81d4fa;">
+        <h2>2. 海廢記錄</h2>
+        <div class="count-box">
+            目前數量：<span id="disp_count" class="big-num">0</span> / 10
         </div>
 
-        <div class="row">
-            <h3>2. GPS 測試</h3>
-            <button onclick="runGPS()">📍 抓取 GPS</button>
-            <input type="text" id="gps-val" placeholder="座標會顯示在這">
-        </div>
+        <label>選擇來源國：</label>
+        <select id="sel_country">
+            <option value="">👇 請點選國家...</option>
+            <option value="🇹🇼 台灣 (Taiwan)">🇹🇼 台灣</option>
+            <option value="🇨🇳 中國 (China)">🇨🇳 中國</option>
+            <option value="🇯🇵 日本 (Japan)">🇯🇵 日本</option>
+            <option value="🇰🇷 韓國 (Korea)">🇰🇷 韓國</option>
+            <option value="🇻🇳 越南 (Vietnam)">🇻🇳 越南</option>
+            <option value="🇹🇭 泰國 (Thailand)">🇹🇭 泰國</option>
+            <option value="🇮🇩 印尼 (Indonesia)">🇮🇩 印尼</option>
+            <option value="🇵🇭 菲律賓 (Philippines)">🇵🇭 菲律賓</option>
+            <option value="🇺🇸 美國 (USA)">🇺🇸 美國</option>
+            <option value="❓ 無法辨識">❓ 無法辨識</option>
+        </select>
 
-        <div class="row">
-            <h3>3. 記錄測試</h3>
-            <select id="sel-country">
-                <option value="台灣">台灣</option>
-                <option value="中國">中國</option>
-                <option value="日本">日本</option>
-            </select>
-            <button onclick="addItem()">➕ 增加一筆</button>
-            <div id="list" style="margin-top:10px; font-weight:bold;">目前數量：0</div>
+        <button onclick="addRecord()" class="btn-green">➕ 增加一筆</button>
+        <button onclick="undoRecord()" class="btn-red" style="opacity:0.8; margin-top:15px;">↩️ 刪除上一筆</button>
+    </div>
+
+    <div class="card">
+        <h2>3. 拍攝成果照</h2>
+        <p style="font-size:13px; color:#666; margin-top:0;">請將撿到的瓶罐排好並拍照：</p>
+        <input type="file" accept="image/*" onchange="previewImage(event)">
+    </div>
+
+    <div class="card" id="report-card">
+        <div class="report-header">
+            <h3 style="margin:0;">🌊 海廢調查電子報告</h3>
+        </div>
+        <div class="report-body">
+            <div class="report-info">
+                <strong>📅 日期：</strong><span id="out_date"></span><br>
+                <strong>👤 調查員：</strong><span id="out_name"></span><br>
+                <strong>📍 地點：</strong><span id="out_loc"></span><br>
+                <strong>🌍 GPS：</strong><span id="out_gps"></span>
+            </div>
+
+            <strong>📊 統計結果：</strong>
+            <table id="stats-table">
+                <thead>
+                    <tr>
+                        <th>來源國</th>
+                        <th style="width:50px;">數量</th>
+                    </tr>
+                </thead>
+                <tbody id="stats-body">
+                    <tr><td colspan="2" style="color:#999; text-align:center;">尚未記錄資料</td></tr>
+                </tbody>
+            </table>
+
+            <img id="out_img" class="evidence-img">
+            
+            <div style="margin-top:15px; font-size:12px; color:#999; text-align:center;">
+                Powered by Marine Debris Tool V17
+            </div>
         </div>
     </div>
 
+    <div style="text-align:center; margin-top:20px; color:#666; font-size:14px;">
+        ✅ 調查完成後，請直接<b>「手機截圖」</b>上方的報告卡片保存。
+    </div>
+    
+    <button onclick="location.reload()" style="background:#546e7a; margin-top:20px;">🔄 清除重來</button>
+
+
     <script>
-        // === 1. 全域錯誤捕捉 (放在最前面) ===
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            var box = document.getElementById('debug-box');
-            var txt = "❌ 錯誤: " + msg + " (行:" + lineNo + ")";
-            box.innerHTML = "<div>" + txt + "</div>" + box.innerHTML;
-            return false;
-        };
+        // === 1. 初始化 ===
+        // 設定今天的日期
+        var d = new Date();
+        document.getElementById('out_date').innerText = d.getFullYear() + "/" + (d.getMonth()+1) + "/" + d.getDate();
 
-        // === 2. 立即執行的日誌工具 ===
-        function log(msg) {
-            var box = document.getElementById('debug-box');
-            // 加上時間戳記
-            var now = new Date();
-            var time = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
-            box.innerHTML = "<div>[" + time + "] " + msg + "</div>" + box.innerHTML;
-        }
+        // 變數
+        var count = 0;
+        var stats = {};
+        var historyStack = [];
 
-        // === 3. 程式啟動檢測 ===
-        try {
-            log("步驟1: 腳本已載入");
-            
-            // 直接修改 DOM，不等待 window.onload
-            var testDiv = document.getElementById('debug-box');
-            if(testDiv) {
-                log("步驟2: 抓到診斷框，系統正常");
-                testDiv.style.borderColor = "green"; // 變綠色代表成功
-            } else {
-                alert("嚴重錯誤: 找不到診斷框");
-            }
-
-        } catch(e) {
-            alert("啟動失敗: " + e.message);
-        }
-
-        // === 4. 功能函數 (使用最簡單寫法) ===
-        
-        // 測試按鈕
-        function testHello() {
-            log("按鈕反應正常！");
-            alert("按鈕有效！");
-        }
-
-        // GPS
+        // === 2. GPS 功能 (使用 V16 的成功代碼) ===
         function runGPS() {
-            log("正在請求 GPS...");
-            var inp = document.getElementById('gps-val');
-            inp.value = "定位中...";
+            var field = document.getElementById('inp_gps');
+            field.value = "定位中...";
 
             if(!navigator.geolocation) {
-                log("失敗: 瀏覽器不支援 API");
-                inp.value = "不支援";
+                alert("瀏覽器不支援 GPS");
+                field.value = "不支援";
                 return;
             }
 
             navigator.geolocation.getCurrentPosition(
                 function(pos) {
-                    var txt = pos.coords.latitude + "," + pos.coords.longitude;
-                    log("GPS 成功: " + txt);
-                    inp.value = txt;
+                    var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
+                    field.value = txt;
+                    alert("定位成功！");
+                    updateReport(); // 同步更新到報告
                 },
                 function(err) {
-                    log("GPS 錯誤代碼: " + err.code + " (" + err.message + ")");
-                    inp.value = "失敗";
-                    alert("定位失敗，請確認權限。");
+                    alert("定位失敗，請確認權限或手動輸入");
+                    field.value = "";
                 },
                 { timeout: 10000 }
             );
         }
 
-        // 增加記錄
-        var count = 0;
-        function addItem() {
-            try {
-                var val = document.getElementById('sel-country').value;
-                count = count + 1;
-                document.getElementById('list').innerText = "目前數量：" + count + " (剛加入: " + val + ")";
-                log("已記錄: " + val);
-            } catch(e) {
-                log("記錄錯誤: " + e.message);
+        // === 3. 增加記錄 ===
+        function addRecord() {
+            var sel = document.getElementById('sel_country');
+            var val = sel.value;
+
+            if(!val) {
+                alert("❌ 請先選擇一個國家！");
+                return;
+            }
+
+            // 更新數據
+            if(!stats[val]) stats[val] = 0;
+            stats[val]++;
+            count++;
+            historyStack.push(val);
+
+            // 更新畫面
+            document.getElementById('disp_count').innerText = count;
+            sel.value = ""; // 重置選單
+            
+            // 嘗試震動 (有些手機支援)
+            try { if(navigator.vibrate) navigator.vibrate(50); } catch(e){}
+
+            // 更新下方表格
+            renderTable();
+            
+            // 提示
+            if(count == 10) {
+                alert("🎉 已收集滿 10 個！\n請往下滑動，拍攝照片並截圖保存報告。");
             }
         }
-    </script>
-</body>
-</html>
+
+        // === 4. 刪除記錄 ===
+        function undoRecord() {
+            if(count <= 0) return;
+
+            var last = historyStack.pop();
+            stats[last]--;
+            if(stats[last] === 0) delete stats[last];
+            count--;
+
+            document.getElementById('disp_count').innerText = count;
+            alert("已刪除上一筆: " + last);
+            renderTable();
+        }
+
+        // === 5. 渲染表格 ===
+        function renderTable() {
+            var tbody = document.getElementById('stats-body');
+            tbody.innerHTML = ""; // 清空
+
+            if(count === 0) {
