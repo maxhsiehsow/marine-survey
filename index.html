@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V41</title>
+    <title>海廢調查員 V44</title>
 
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 10px; padding-bottom: 80px; color: #333; }
@@ -44,12 +44,11 @@
         
         #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:white; z-index:9999; text-align:center; padding-top:50%; font-size:18px; }
         
-        /* 版本標籤 */
         .version-tag { text-align: center; font-size: 10px; color: #999; margin-top: 20px; }
     </style>
 
     <script>
-        // ⚠️⚠️⚠️【重要】請在這裡貼上剛剛複製的「全新」網址 ⚠️⚠️⚠️
+        // ⚠️⚠️⚠️【重要】請在這裡貼上您的 Google Script 網址 ⚠️⚠️⚠️
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzszmfO_5CLnNQFen8qWKujGFYlFI-trtxiBXcyhfk7dyd2LDJq6SfXKniyARtjsusl6g/exec"; 
 
         var count = 0; var target = 100;
@@ -59,10 +58,14 @@
         var fixedColors = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '其它': '#757575' };
 
         window.onload = function() { 
+            resetDate(); // 初始化日期
+            console.log("Frontend V44 Loaded");
+        };
+
+        function resetDate() {
             var d = new Date(); 
             document.getElementById('out_date').innerText = d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate(); 
-            console.log("Frontend V41 Loaded");
-        };
+        }
 
         function startSmartCamera() {
             if(!isLibLoaded) {
@@ -113,23 +116,26 @@
             var videoElement = document.querySelector("#reader video");
             if (!videoElement) { alert("相機尚未啟動"); return; }
             videoElement.pause();
-            showLoading("🤖 V41 正在連線 AI...");
+            showLoading("🤖 AI 正在連線分析...");
 
             var canvas = document.createElement("canvas");
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
             var ctx = canvas.getContext("2d");
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            var base64Image = canvas.toDataURL("image/jpeg", 0.7).split(',')[1];
-            sendToGemini(base64Image, videoElement);
+            // 轉成 Base64
+            var fullBase64 = canvas.toDataURL("image/jpeg", 0.7);
+            var base64Data = fullBase64.split(',')[1];
+            
+            sendToGemini(base64Data, videoElement, fullBase64);
         }
 
-        function sendToGemini(base64Image, videoEl) {
+        function sendToGemini(base64Data, videoEl, fullBase64) {
             if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { 
-                hideLoading(); if(videoEl) videoEl.play(); alert("請更新程式碼中的 Google Script 網址！"); return; 
+                hideLoading(); if(videoEl) videoEl.play(); alert("請設定 Google Script 網址！"); return; 
             }
 
-            var payload = { action: "identify", image: base64Image };
+            var payload = { action: "identify", image: base64Data };
 
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
@@ -142,9 +148,19 @@
                 closeCamera(); 
                 if(data.status === "success") {
                     var result = data.result;
-                    alert("🤖 AI 分析結果：" + result);
+                    
+                    // 1. 自動填入
                     var matched = matchCountry(result);
                     addRecord(matched, 1);
+                    alert("🤖 AI 辨識成功：" + result);
+
+                    // 2. 詢問是否要用這張照片
+                    if(confirm("📸 系統提示：\n是否要將剛剛這張照片，直接設為「上傳證據照片」？\n(按取消則保留空白)")) {
+                        uploadFileBase64 = fullBase64;
+                        document.getElementById('out_img').src = fullBase64;
+                        document.getElementById('out_img').style.display = 'block';
+                    }
+
                 } else {
                     alert("AI 回傳錯誤:\n" + data.message);
                 }
@@ -152,7 +168,7 @@
             .catch(err => {
                 hideLoading();
                 if(videoEl) videoEl.play();
-                alert("連線失敗！請確認網址是否正確。\n錯誤: " + err.message);
+                alert("連線失敗！錯誤: " + err.message);
             });
         }
 
@@ -201,7 +217,7 @@
                 body: JSON.stringify(payload)
             }).then(res => res.json()).then(data => {
                 if(data.status === "success") {
-                    alert("✅ 上傳成功！" + (data.message || ""));
+                    alert("✅ 上傳成功！\n" + (data.message || ""));
                     resetForm();
                 } else {
                     alert("上傳錯誤: " + data.message);
@@ -266,6 +282,7 @@
             updateUI();
         }
 
+        // === 修改：顯示百分比 ===
         function updateUI() {
             document.getElementById('disp_count').innerText = count;
             document.getElementById('out_total').innerText = count;
@@ -273,9 +290,15 @@
             var grad = [], deg=0;
             for(var key in stats) {
                 var color = fixedColors[key] || stringToColor(key);
+                
+                // 計算百分比
+                var percent = (stats[key] / count * 100).toFixed(1);
+                
                 var tr = document.createElement('tr');
-                tr.innerHTML = "<td><span style='color:"+color+"'>■</span> "+key+"</td><td>"+stats[key]+"</td>";
+                // 這裡加入百分比顯示
+                tr.innerHTML = "<td><span style='color:"+color+"'>■</span> "+key+" <small>("+percent+"%)</small></td><td>"+stats[key]+"</td>";
                 tbody.appendChild(tr);
+                
                 var p = stats[key]/count, d = p*360;
                 grad.push(color + " " + deg.toFixed(1) + "deg " + (deg+d).toFixed(1) + "deg");
                 deg += d;
@@ -290,6 +313,7 @@
             }
         }
 
+        // === 修改：徹底歸零 (包含報表文字) ===
         function resetForm() {
             count=0; stats={}; historyStack=[]; currentCity="未定位"; uploadFileBase64=null;
             document.getElementById('inp_name').value = "";
@@ -297,11 +321,20 @@
             document.getElementById('inp_gps').value = "尚未定位";
             document.getElementById('inp_note').value = "";
             document.getElementById('inp_qty').value = "1";
+            
+            // 歸零報表區
             document.getElementById('out_name').innerText = "";
             document.getElementById('out_loc').innerText = "";
+            document.getElementById('out_loc_city').innerText = "(未定位縣市)";
             document.getElementById('out_gps').innerText = "";
+            resetDate(); // 重置日期為今天
+            
             document.getElementById('out_img').style.display = 'none';
+            document.getElementById('out_img').src = "";
+            
+            // 清空 file input (這招很重要，不然選同一張圖會沒反應)
             document.querySelector('input[type=file]').value = "";
+            
             updateUI();
             window.scrollTo(0, 0);
         }
@@ -349,7 +382,7 @@
         <div id="loading-text">處理中...</div>
     </div>
 
-    <h1>📋 海廢 V41 同步版</h1>
+    <h1>📋 海廢 V44 完美版</h1>
 
     <div class="card">
         <h2>1. 設定</h2>
@@ -406,7 +439,7 @@
             <div class="rep-body">
                 <div style="display:flex; justify-content:space-between;">
                     <div><strong>日期：</strong><span id="out_date"></span><br><strong>姓名：</strong><span id="out_name"></span></div>
-                    <div style="text-align:right;"><strong>地點：</strong><span id="out_loc"></span><br><span id="out_loc_city" style="color:#e91e63;"></span><br><span id="out_gps" style="font-size:11px;"></span></div>
+                    <div style="text-align:right;"><strong>地點：</strong><span id="out_loc"></span><br><span id="out_loc_city" style="color:#e91e63;">(未定位縣市)</span><br><span id="out_gps" style="font-size:11px;"></span></div>
                 </div>
                 <hr>
                 <div style="display:flex; align-items:center;">
@@ -429,6 +462,6 @@
         <button id="btn-upload" onclick="uploadData()" class="btn-upload">📤 上傳資料與照片到雲端</button>
     </div>
     
-    <div class="version-tag">Build: V41 | Sync Check</div>
+    <div class="version-tag">Build: V44 | Perfect Edition</div>
 </body>
 </html>
