@@ -329,6 +329,21 @@
             "893": "🇻🇳 越南", "480": "🇵🇭 菲律賓", "955": "🇲🇾 馬來西亞", "899": "🇮🇩 印尼", "885": "🇹🇭 泰國", "880": "🇰🇷 韓國", "450": "🇯🇵 日本", "490": "🇯🇵 日本"
         };
 
+        // ... (在 PREFIX_DB 下方加入這段) ...
+
+        // === 老王新增：AI 名稱正規化對照表 ===
+        const AI_NAME_MAPPING = {
+            "台灣": "🇹🇼 台灣", "Taiwan": "🇹🇼 台灣", "ROC": "🇹🇼 台灣", "中華民國": "🇹🇼 台灣",
+            "中國": "🇨🇳 中國", "China": "🇨🇳 中國", "CN": "🇨🇳 中國", "PRC": "🇨🇳 中國",
+            "越南": "🇻🇳 越南", "Vietnam": "🇻🇳 越南", "Viet Nam": "🇻🇳 越南",
+            "菲律賓": "🇵🇭 菲律賓", "Philippines": "🇵🇭 菲律賓",
+            "泰國": "🇹🇭 泰國", "Thailand": "🇹🇭 泰國",
+            "印尼": "🇮🇩 印尼", "Indonesia": "🇮🇩 印尼",
+            "馬來西亞": "🇲🇾 馬來西亞", "Malaysia": "🇲🇾 馬來西亞",
+            "韓國": "🇰🇷 韓國", "Korea": "🇰🇷 韓國", "South Korea": "🇰🇷 韓國", "南韓": "🇰🇷 韓國",
+            "日本": "🇯🇵 日本", "Japan": "🇯🇵 日本"
+        };
+        
         // ⚠️⚠️⚠️ 請在此填入您的 Google Apps Script 網址 ⚠️⚠️⚠️
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
@@ -595,24 +610,43 @@
             });
         }
 
+        // === 修改後的 AI 結果顯示函式 ===
         function displayAiResult(data, imgSrc) {
             const box = document.getElementById('ai-result-box');
             box.style.display = 'block';
             
+            // 顯示 AI 原始回傳的文字
             document.getElementById('ai-country-text').innerText = data.country || "無法辨識";
             document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵描述";
             document.getElementById('ai-preview-img').src = imgSrc;
-
-            // 設定按鈕
+        
+            // 設定 Google 搜尋按鈕
             const searchBtn = document.getElementById('btn-google-check');
-            const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(data.keywords + " marine debris")}`;
+            const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent((data.keywords || "") + " marine debris")}`;
             searchBtn.onclick = () => window.open(searchUrl, '_blank');
-
+        
+            // === 老王重點修改：確認按鈕邏輯 ===
             const addBtn = document.getElementById('btn-confirm-add');
             addBtn.onclick = () => {
-                addRecord(data.country || "其它", 1);
+                // 1. 取得 AI 回傳的原始名稱 (去除前後空白)
+                let rawName = (data.country || "其它").trim();
+                
+                // 2. 透過對照表進行「正規化」 (查表翻譯)
+                // 如果查得到就用標準名稱 (如 🇹🇼 台灣)，查不到就用原始名稱
+                let standardizedName = AI_NAME_MAPPING[rawName] || rawName;
+        
+                // 3. 如果還是沒有對應到標準名稱，且不是「其它」，這可能是 AI 亂回答
+                // 這裡可以選擇是否要強制歸類到「其它」，目前先保留原樣
+        
+                // 4. 加入記錄
+                addRecord(standardizedName, 1);
+                
+                // 5. 關閉視窗並切換
                 box.style.display = 'none';
                 switchTab('record');
+                
+                // 6. 給使用者一個反饋
+                showToast(`✅ 已將「${rawName}」歸類為「${standardizedName}」`, "success");
             };
         }
 
@@ -739,3 +773,4 @@
     </script>
 </body>
 </html>
+
