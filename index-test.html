@@ -331,18 +331,31 @@
 
         // ... (在 PREFIX_DB 下方加入這段) ...
 
-        // === 老王新增：AI 名稱正規化對照表 ===
-        const AI_NAME_MAPPING = {
-            "台灣": "🇹🇼 台灣", "Taiwan": "🇹🇼 台灣", "ROC": "🇹🇼 台灣", "中華民國": "🇹🇼 台灣",
-            "中國": "🇨🇳 中國", "China": "🇨🇳 中國", "CN": "🇨🇳 中國", "PRC": "🇨🇳 中國",
-            "越南": "🇻🇳 越南", "Vietnam": "🇻🇳 越南", "Viet Nam": "🇻🇳 越南",
-            "菲律賓": "🇵🇭 菲律賓", "Philippines": "🇵🇭 菲律賓",
-            "泰國": "🇹🇭 泰國", "Thailand": "🇹🇭 泰國",
-            "印尼": "🇮🇩 印尼", "Indonesia": "🇮🇩 印尼",
-            "馬來西亞": "🇲🇾 馬來西亞", "Malaysia": "🇲🇾 馬來西亞",
-            "韓國": "🇰🇷 韓國", "Korea": "🇰🇷 韓國", "South Korea": "🇰🇷 韓國", "南韓": "🇰🇷 韓國",
-            "日本": "🇯🇵 日本", "Japan": "🇯🇵 日本"
-        };
+       // === 老王強效版：名稱標準化邏輯 ===
+function normalizeName(rawName) {
+    if (!rawName) return "未知";
+    
+    // 1. 去除前後空白
+    let cleanName = rawName.toString().trim();
+    
+    // 2. 關鍵字暴力對應 (只要包含這些字，就強制歸類)
+    // 這樣可以解決 "Taiwan R.O.C", "made in China", " 台灣 " 等問題
+    if (cleanName.includes("台灣") || cleanName.includes("Taiwan") || cleanName.includes("ROC")) return "🇹🇼 台灣";
+    if (cleanName.includes("中國") || cleanName.includes("China") || cleanName.includes("PRC") || cleanName.includes("CN")) return "🇨🇳 中國";
+    if (cleanName.includes("越南") || cleanName.includes("Vietnam")) return "🇻🇳 越南";
+    if (cleanName.includes("菲律賓") || cleanName.includes("Philippines")) return "🇵🇭 菲律賓";
+    if (cleanName.includes("泰國") || cleanName.includes("Thailand")) return "🇹🇭 泰國";
+    if (cleanName.includes("印尼") || cleanName.includes("Indonesia")) return "🇮🇩 印尼";
+    if (cleanName.includes("馬來西亞") || cleanName.includes("Malaysia")) return "🇲🇾 馬來西亞";
+    if (cleanName.includes("韓國") || cleanName.includes("Korea")) return "🇰🇷 韓國";
+    if (cleanName.includes("日本") || cleanName.includes("Japan")) return "🇯🇵 日本";
+
+    // 3. 如果原本就已經是標準格式 (例如已經有國旗了)，就直接回傳
+    if (cleanName.includes("🇹🇼") || cleanName.includes("🇨🇳")) return cleanName;
+
+    // 4. 真的都對不上，就回傳原始名稱 (或歸類為其它)
+    return cleanName;
+}
         
         // ⚠️⚠️⚠️ 請在此填入您的 Google Apps Script 網址 ⚠️⚠️⚠️
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
@@ -473,23 +486,34 @@
             return PREFIX_DB[prefix] || `[${prefix}] 未知來源`;
         }
 
-        // === 功能 3: 數據管理 ===
-        function addRecord(country, qty) {
-            if (STATE.count + qty > STATE.target) {
-                showToast("⚠️ 已達目標數量，請先上傳資料", "error");
-                return;
-            }
-            
-            if (!STATE.stats[country]) STATE.stats[country] = 0;
-            STATE.stats[country] += qty;
-            STATE.count += qty;
-            
-            // 記錄歷史以便復原
-            for(let i=0; i<qty; i++) STATE.historyStack.push({key: country, qty: 1});
-            
-            updateUI();
-            showToast(`已加入: ${country}`, "success");
-        }
+        // === 修改後的 addRecord (資料寫入核心) ===
+function addRecord(country, qty) {
+    // 🔥 老王修改：在這裡加上強制正規化
+    // 無論來源是掃描、AI 還是手動，進來前都要先被「洗」一次
+    let safeCountry = normalizeName(country);
+
+    if (STATE.count + qty > STATE.target) {
+        showToast("⚠️ 已達目標數量，請先上傳資料", "error");
+        return;
+    }
+    
+    // 注意：這裡變數要改成 safeCountry
+    if (!STATE.stats[safeCountry]) STATE.stats[safeCountry] = 0;
+    STATE.stats[safeCountry] += qty;
+    STATE.count += qty;
+    
+    // 記錄歷史 (這裡也要用 safeCountry)
+    for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeCountry, qty: 1});
+    
+    updateUI();
+    
+    // 如果修正後的名稱跟原本不同，提示一下使用者
+    if (safeCountry !== country && !country.includes(safeCountry)) {
+        showToast(`已將「${country}」自動歸類為「${safeCountry}」`, "success");
+    } else {
+        showToast(`已加入: ${safeCountry}`, "success");
+    }
+}
 
         function undoRecord() {
             if (STATE.historyStack.length === 0) {
@@ -612,42 +636,15 @@
 
         // === 修改後的 AI 結果顯示函式 ===
         function displayAiResult(data, imgSrc) {
-            const box = document.getElementById('ai-result-box');
-            box.style.display = 'block';
-            
-            // 顯示 AI 原始回傳的文字
-            document.getElementById('ai-country-text').innerText = data.country || "無法辨識";
-            document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵描述";
-            document.getElementById('ai-preview-img').src = imgSrc;
+            // ... 在 displayAiResult 裡面 ...
+    const addBtn = document.getElementById('btn-confirm-add');
+    addBtn.onclick = () => {
+        // 直接把 AI 的原始文字丟進去，addRecord 會自己負責正規化
+        addRecord(data.country || "其它", 1);
         
-            // 設定 Google 搜尋按鈕
-            const searchBtn = document.getElementById('btn-google-check');
-            const searchUrl = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent((data.keywords || "") + " marine debris")}`;
-            searchBtn.onclick = () => window.open(searchUrl, '_blank');
-        
-            // === 老王重點修改：確認按鈕邏輯 ===
-            const addBtn = document.getElementById('btn-confirm-add');
-            addBtn.onclick = () => {
-                // 1. 取得 AI 回傳的原始名稱 (去除前後空白)
-                let rawName = (data.country || "其它").trim();
-                
-                // 2. 透過對照表進行「正規化」 (查表翻譯)
-                // 如果查得到就用標準名稱 (如 🇹🇼 台灣)，查不到就用原始名稱
-                let standardizedName = AI_NAME_MAPPING[rawName] || rawName;
-        
-                // 3. 如果還是沒有對應到標準名稱，且不是「其它」，這可能是 AI 亂回答
-                // 這裡可以選擇是否要強制歸類到「其它」，目前先保留原樣
-        
-                // 4. 加入記錄
-                addRecord(standardizedName, 1);
-                
-                // 5. 關閉視窗並切換
-                box.style.display = 'none';
-                switchTab('record');
-                
-                // 6. 給使用者一個反饋
-                showToast(`✅ 已將「${rawName}」歸類為「${standardizedName}」`, "success");
-            };
+        box.style.display = 'none';
+        switchTab('record');
+    };
         }
 
         // === 功能 5: 檔案上傳與圖片壓縮 ===
@@ -773,4 +770,5 @@
     </script>
 </body>
 </html>
+
 
