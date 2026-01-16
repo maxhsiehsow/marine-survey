@@ -594,23 +594,22 @@ function addRecord(country, qty) {
         }
 
         // === 修改後的拍照函式 (防止閃退版) ===
+// === 前端修復版：takeAiSnapshot (含智慧拆包裝功能) ===
 function takeAiSnapshot() {
     var videoEl = document.querySelector("#reader-ai video");
     if (!videoEl) { showToast("相機未啟動", "error"); return; }
 
-    // 1. 暫停畫面，讓使用者感覺有拍到
+    // 1. 暫停畫面
     videoEl.pause();
-    showLoading(true, "正在壓縮影像並分析...");
+    showLoading(true, "AI 正在分析中..."); // 顯示轉圈圈
 
-    // 2. 建立 Canvas 進行「瘦身」(縮圖)
-    // AI 不需要 4K 畫質，800px 寬度已經非常足夠
+    // 2. 建立 Canvas 進行縮圖 (保持 800px)
     var canvas = document.createElement("canvas");
-    var maxDim = 800; // 設定最大邊長
+    var maxDim = 800; 
     var w = videoEl.videoWidth;
     var h = videoEl.videoHeight;
     var scale = 1;
 
-    // 計算縮放比例
     if (w > h) {
         if (w > maxDim) scale = maxDim / w;
     } else {
@@ -620,48 +619,50 @@ function takeAiSnapshot() {
     canvas.width = w * scale;
     canvas.height = h * scale;
     
-    // 繪製縮小後的圖
     var ctx = canvas.getContext("2d");
     ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
 
-    // 3. 轉成 Base64 (品質設定 0.6)
-    // 這樣產生的字串長度會從幾百萬降到十幾萬，非常安全
+    // 3. 轉成 Base64
     var fullBase64 = canvas.toDataURL("image/jpeg", 0.6);
     var base64Data = fullBase64.split(',')[1];
 
-    // 4. 停止相機 (釋放資源)
+    // 4. 停止相機
     stopAiScanner();
 
     // 5. 發送請求
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        // 加入 keepalive 防止網路請求被瀏覽器回收
         keepalive: true, 
         body: JSON.stringify({ action: "identify", image: base64Data })
     })
     .then(function(res) { return res.json(); })
     .then(function(data) {
-        showLoading(false);
+        showLoading(false); // 關閉轉圈圈
+
         if (data.status === "success") {
             try {
-                // 嘗試解析 AI 回傳的 JSON (有時候 AI 會多包一層引號)
-                var aiRes;
-                if (typeof data.result === 'string') {
-                    // 清理可能殘留的 Markdown
-                    var cleanJson = data.result.replace(/```json/g, "").replace(/```/g, "").trim();
-                    aiRes = JSON.parse(cleanJson);
-                } else {
-                    aiRes = data.result;
-                }
+                // 🔥 老王修改：智慧提取 JSON
+                // 不管 AI 回傳什麼 markdown，我們只抓第一個 '{' 到最後一個 '}' 之間的內容
+                var rawResult = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
                 
-                // 成功顯示！
-                displayAiResult(aiRes, fullBase64);
+                // 正則表達式：尋找 { ... } 結構 (包含換行)
+                var jsonMatch = rawResult.match(/\{[\s\S]*\}/);
+                
+                if (jsonMatch) {
+                    var cleanJson = jsonMatch[0]; // 抓到了！
+                    var aiRes = JSON.parse(cleanJson);
+                    
+                    // 🎉 成功！顯示漂亮的結果視窗
+                    displayAiResult(aiRes, fullBase64);
+                } else {
+                    throw new Error("找不到 JSON 結構");
+                }
                 
             } catch(e) { 
                 console.error(e);
-                showToast("AI 回傳格式錯誤: " + data.result, "error"); 
-                // 就算格式錯，也先把原始文字顯示出來給你看
-                alert("AI 原始回應: " + data.result);
+                // 萬一真的還是失敗，至少用 Toast 提示，不要跳 Alert 嚇人
+                showToast("AI 資料解析失敗，請重試", "error");
+                console.log("原始資料:", data.result);
             }
         } else { 
             showToast("AI 錯誤: " + data.message, "error"); 
@@ -669,12 +670,10 @@ function takeAiSnapshot() {
     })
     .catch(function(err) { 
         showLoading(false);
-        // 如果這裡跳出來，通常是網路斷線或後端沒回應
-        alert("連線失敗細節: " + err.message); 
         showToast("連線失敗，請檢查網路", "error"); 
+        console.error("Fetch Error:", err);
     });
 }
-
         // === 修改後的 AI 結果顯示函式 ===
         function displayAiResult(data, imgSrc) {
             // ... 在 displayAiResult 裡面 ...
@@ -811,6 +810,7 @@ function takeAiSnapshot() {
     </script>
 </body>
 </html>
+
 
 
 
