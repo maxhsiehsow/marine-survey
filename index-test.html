@@ -593,15 +593,15 @@ function addRecord(country, qty) {
             document.getElementById('btn-ai-start').style.display = 'inline-block';
         }
 
-        // === 修改後的拍照函式 (防止閃退版) ===
-// === 前端修復版：takeAiSnapshot (含智慧拆包裝功能) ===
+// === 老王最終修正版：takeAiSnapshot (解除封印版) ===
 function takeAiSnapshot() {
     var videoEl = document.querySelector("#reader-ai video");
-    if (!videoEl) { showToast("相機未啟動", "error"); return; }
+    if (!videoEl) { alert("相機未啟動"); return; }
 
     // 1. 暫停畫面
     videoEl.pause();
-    showLoading(true, "AI 正在分析中..."); // 顯示轉圈圈
+    document.getElementById('loading-mask').style.display = 'flex'; // 強制顯示轉圈圈
+    document.querySelector('#loading-mask p').innerText = "AI 正在分析影像...";
 
     // 2. 建立 Canvas 進行縮圖 (保持 800px)
     var canvas = document.createElement("canvas");
@@ -626,52 +626,49 @@ function takeAiSnapshot() {
     var fullBase64 = canvas.toDataURL("image/jpeg", 0.6);
     var base64Data = fullBase64.split(',')[1];
 
-    // 4. 停止相機
+    // 4. 先停止相機 UI (讓使用者知道拍好了)
     stopAiScanner();
 
-    // 5. 發送請求
+    // 5. 發送請求 (🔥 移除 keepalive 限制)
     fetch(GOOGLE_SCRIPT_URL, {
         method: 'POST',
-        keepalive: true, 
+        // keepalive: true, <--- 兇手就是這一行，刪掉它！
         body: JSON.stringify({ action: "identify", image: base64Data })
     })
-    .then(function(res) { return res.json(); })
+    .then(function(res) { 
+        if (!res.ok) { throw new Error("網路回應異常: " + res.status); }
+        return res.json(); 
+    })
     .then(function(data) {
-        showLoading(false); // 關閉轉圈圈
+        document.getElementById('loading-mask').style.display = 'none'; // 關閉轉圈圈
 
         if (data.status === "success") {
             try {
-                // 🔥 老王修改：智慧提取 JSON
-                // 不管 AI 回傳什麼 markdown，我們只抓第一個 '{' 到最後一個 '}' 之間的內容
+                // 智慧提取 JSON (防止包裝紙問題)
                 var rawResult = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
-                
-                // 正則表達式：尋找 { ... } 結構 (包含換行)
                 var jsonMatch = rawResult.match(/\{[\s\S]*\}/);
                 
                 if (jsonMatch) {
-                    var cleanJson = jsonMatch[0]; // 抓到了！
+                    var cleanJson = jsonMatch[0];
                     var aiRes = JSON.parse(cleanJson);
-                    
-                    // 🎉 成功！顯示漂亮的結果視窗
                     displayAiResult(aiRes, fullBase64);
                 } else {
-                    throw new Error("找不到 JSON 結構");
+                    // 萬一 AI 真的沒回傳 JSON，顯示原始文字
+                    alert("AI 回傳格式不符，原始內容：" + rawResult);
                 }
-                
             } catch(e) { 
                 console.error(e);
-                // 萬一真的還是失敗，至少用 Toast 提示，不要跳 Alert 嚇人
-                showToast("AI 資料解析失敗，請重試", "error");
-                console.log("原始資料:", data.result);
+                alert("解析失敗: " + e.message);
             }
         } else { 
-            showToast("AI 錯誤: " + data.message, "error"); 
+            alert("後端錯誤: " + data.message); 
         }
     })
     .catch(function(err) { 
-        showLoading(false);
-        showToast("連線失敗，請檢查網路", "error"); 
+        document.getElementById('loading-mask').style.display = 'none'; // 關閉轉圈圈
         console.error("Fetch Error:", err);
+        // 🔥 用 alert 強制顯示錯誤，確保你看得到
+        alert("連線失敗 (請檢查網路或 URL): " + err.message);
     });
 }
         // === 修改後的 AI 結果顯示函式 ===
@@ -810,6 +807,7 @@ function takeAiSnapshot() {
     </script>
 </body>
 </html>
+
 
 
 
