@@ -3,9 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V48</title>
+    <title>海廢調查員 V49</title>
     
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            var errorMsg = "⚠️ 發生錯誤: " + msg + "\n行數: " + lineNo;
+            // 如果畫面是白的，直接寫入錯誤訊息到頁面
+            if(document.body) {
+                document.body.innerHTML += '<div style="background:red;color:white;padding:20px;font-size:16px;z-index:99999;position:fixed;top:0;left:0;width:100%;">' + errorMsg + '</div>';
+            } else {
+                alert(errorMsg);
+            }
+            return false;
+        };
+    </script>
 
     <style>
         /* 全局樣式 */
@@ -41,7 +52,6 @@
         .camera-box { position: relative; display: none; margin-bottom: 15px; background: #000; border-radius: 8px; overflow: hidden; }
         .scanner-view { width: 100%; min-height: 250px; }
         
-        /* Tab 3 AI 相機的覆蓋按鈕 */
         #ai-cam-overlay {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             z-index: 100; text-align: center; width: 90%;
@@ -61,123 +71,95 @@
         .ai-result-box { border: 2px solid #0056b3; background: #e3f2fd; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
         .evidence-img { width: 100%; height: 150px; object-fit: cover; display: none; margin-top: 5px; border: 1px solid #333; }
     </style>
+</head>
+<body>
+    <div id="loading-mask"><div id="loading-text">處理中...</div></div>
 
+    <div id="view-basic" class="container">
+        <h2>1. 基本資訊</h2>
+        <div class="card">
+            <label>填表人：</label><input type="text" id="inp_name" placeholder="您的姓名">
+            <label>參與人數：</label><input type="number" id="inp_participants" value="1" min="1">
+            <label>地點 / GPS：</label>
+            <button onclick="runGPS()" class="btn-blue">📍 獲取 GPS 與縣市</button>
+            <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="background:#f1f8e9; text-align:center;">
+            <input type="text" id="inp_loc" placeholder="輸入地點名稱">
+        </div>
+    </div>
+
+    <div id="view-record" class="container">
+        <h2>2. 記錄與報告</h2>
+        <div class="card">
+            <div style="text-align:center; font-size:24px; font-weight:bold; margin-bottom:10px;"><span id="disp_count" style="color:red;">0</span> / 100</div>
+            <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼</button>
+            <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
+            <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
+            <hr style="margin: 15px 0;">
+            <div class="input-group" style="display:flex; gap:10px;">
+                <select id="sel_country" style="flex:2;">
+                    <option value="🇹🇼 台灣">🇹🇼 台灣</option>
+                    <option value="🇨🇳 中國">🇨🇳 中國</option>
+                    <option value="🇻🇳 越南">🇻🇳 越南</option>
+                    <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+                    <option value="🇹🇭 泰國">🇹🇭 泰國</option>
+                    <option value="🇰🇷 韓國">🇰🇷 韓國</option>
+                    <option value="🇯🇵 日本">🇯🇵 日本</option>
+                    <option value="其它">❓ 其它</option>
+                </select>
+                <input type="number" id="inp_qty" value="1" min="1" style="flex:1; text-align:center;">
+            </div>
+            <button onclick="handleManualAdd()" class="btn-green">➕ 增加記錄</button>
+            <button onclick="undoRecord()" class="btn-red">↩️ 刪除上一筆</button>
+        </div>
+        <div class="card">
+            <h3>📊 統計報告</h3>
+            <div style="display:flex; justify-content:space-between; font-size:13px; color:#666; margin-bottom:5px;"><span id="out_date"></span><span id="out_loc_city">(未定位)</span></div>
+            <div style="display:flex; align-items:center;">
+                <div style="flex:1; text-align:center;"><div id="css-pie" class="pie-chart"></div><div style="margin-top:5px; font-weight:bold;">總數: <span id="out_total">0</span></div></div>
+                <div style="flex:1; padding-left:10px;"><table id="stats-table"><tbody id="stats-body"><tr><td>無資料</td></tr></tbody></table></div>
+            </div>
+            <label style="margin-top:15px;">備註：</label><textarea id="inp_note" rows="2"></textarea>
+            <label style="margin-top:10px;">上傳照片 (必選)：</label><input type="file" accept="image/*" onchange="previewAndCompress(event)"><img id="out_img" class="evidence-img">
+            <hr style="margin: 20px 0;"><button id="btn-upload" onclick="uploadData()" class="btn-upload">📤 上傳資料至雲端</button>
+        </div>
+    </div>
+
+    <div id="view-ai" class="container">
+        <h2>3. AI 鑑定室</h2>
+        <div class="card" style="text-align:center;">
+            <p>遇到無法辨識的瓶罐？<br>啟動相機，拍照讓 AI 幫您找。</p>
+            <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue" style="font-size:18px; padding:20px; width:100%;">📷 啟動 AI 相機</button>
+            <div id="camera-box-ai" class="camera-box">
+                <div id="reader-ai" class="scanner-view"></div>
+                <div id="ai-cam-overlay"><button onclick="takeAiSnapshot()" class="btn-snap">📸 拍照並分析</button></div>
+            </div>
+            <div id="ai-result-box" class="ai-result-box">
+                <img id="ai-preview-img" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:1px solid #fff;">
+                <h3 style="color:#0056b3; margin:10px 0;">AI 認為是：<span id="ai-country-text"></span></h3>
+                <p style="font-size:13px; color:#666;">特徵：<span id="ai-desc-text"></span></p>
+                <hr style="border-top:1px dashed #0056b3;">
+                <button id="btn-google-check" class="btn-link" disabled>🔄 正在準備搜尋連結...</button>
+                <div style="height:10px;"></div>
+                <button id="btn-confirm-add" class="btn-green">✅ 確認正確，加入記錄</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" id="nav-basic" onclick="switchTab('basic')"><span>📝</span>基本資訊</div>
+        <div class="nav-item" id="nav-record" onclick="switchTab('record')"><span>📊</span>記錄</div>
+        <div class="nav-item" id="nav-ai" onclick="switchTab('ai')"><span>🤖</span>AI 鑑定</div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
     <script>
+        // ⚠️⚠️⚠️ 請在此貼上您的 Google Script 網址 ⚠️⚠️⚠️
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec"; 
+
         // === 全局變數 ===
         var count = 0; var target = 100;
         var stats = {}; var historyStack = [];
         var html5QrCodeRecord = null; var html5QrCodeAi = null;
         var currentCity = "未定位"; var uploadFileBase64 = null;
-        var fixedColors = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#000000', '🇯🇵 日本': '#fbc02d', '其它': '#757575' };
-        
-        const prefixDB = {
-            "471": "🇹🇼 台灣", "690": "🇨🇳 中國", "691": "🇨🇳 中國", "692": "🇨🇳 中國", "693": "🇨🇳 中國", "694": "🇨🇳 中國", "695": "🇨🇳 中國", "696": "🇨🇳 中國", "697": "🇨🇳 中國",
-            "893": "🇻🇳 越南", "480": "🇵🇭 菲律賓", "955": "🇲🇾 馬來西亞", "899": "🇮🇩 印尼", "885": "🇹🇭 泰國", "880": "🇰🇷 韓國", "450": "🇯🇵 日本", "490": "🇯🇵 日本"
-        };
-
-        window.onload = function() { resetDate(); switchTab('basic'); };
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.container').forEach(el => el.classList.remove('active-tab'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + tabName).classList.add('active-tab');
-            document.getElementById('nav-' + tabName).classList.add('active');
-            stopRecordScanner();
-            stopAiScanner();
-        }
-
-        // === Tab 1 Basic ===
-        function runGPS() {
-            document.getElementById('inp_gps').value = "定位中...";
-            if(!navigator.geolocation) { alert("不支援 GPS"); return; }
-            navigator.geolocation.getCurrentPosition(pos => {
-                var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
-                document.getElementById('inp_gps').value = txt;
-                fetchCityName(pos.coords.latitude, pos.coords.longitude);
-            }, err => { alert("定位失敗"); });
-        }
-        function fetchCityName(lat, lng) {
-            fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+lat+"&longitude="+lng+"&localityLanguage=zh")
-            .then(res => res.json()).then(data => {
-                currentCity = (data.principalSubdivision || data.locality || "未知").replace("Province", "").trim();
-                document.getElementById('out_loc_city').innerText = currentCity;
-                alert("📍 定位成功："+currentCity);
-            });
-        }
-
-        // === Tab 2 Record (條碼掃描) ===
-        function startRecordScanner() {
-            // V48 修改：直接啟動，不需要等待 loadScannerLib
-            document.getElementById('camera-box-record').style.display = 'block';
-            document.getElementById('btn-scan-start').style.display = 'none';
-            document.getElementById('btn-scan-stop').style.display = 'inline-block';
-            try {
-                html5QrCodeRecord = new Html5Qrcode("reader-record");
-                html5QrCodeRecord.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                    function(decodedText) {
-                        if(navigator.vibrate) navigator.vibrate(200);
-                        var country = getCountryFromCode(decodedText);
-                        if(confirm("✅ 掃到：" + country + "\n要加入記錄嗎？")) { addRecord(country, 1); }
-                    }, () => {} 
-                );
-            } catch(e) { alert("相機啟動錯誤 (請確保網址為 https): " + e); stopRecordScanner(); }
-        }
-
-        function stopRecordScanner() {
-            if(html5QrCodeRecord && html5QrCodeRecord.isScanning) { html5QrCodeRecord.stop().then(() => html5QrCodeRecord.clear()).catch(()=>{}); }
-            document.getElementById('camera-box-record').style.display = 'none';
-            document.getElementById('btn-scan-start').style.display = 'inline-block';
-            document.getElementById('btn-scan-stop').style.display = 'none';
-        }
-
-        function getCountryFromCode(code) {
-            if(!code || code.length < 3) return "未知條碼";
-            var p3 = code.substring(0,3);
-            return prefixDB[p3] || "[" + p3 + "]";
-        }
-
-        // === Tab 3 AI (拍照辨識) ===
-        function startAiCamera() {
-            document.getElementById('ai-result-box').style.display = 'none';
-            // V48 修改：直接啟動
-            document.getElementById('camera-box-ai').style.display = 'block';
-            document.getElementById('btn-ai-start').style.display = 'none';
-            try {
-                html5QrCodeAi = new Html5Qrcode("reader-ai");
-                html5QrCodeAi.start({ facingMode: "environment" }, { fps: 10 }, () => {}, () => {});
-            } catch(e) { alert("相機啟動失敗: " + e); stopAiScanner(); }
-        }
-
-        function stopAiScanner() {
-            if(html5QrCodeAi && html5QrCodeAi.isScanning) { html5QrCodeAi.stop().then(() => html5QrCodeAi.clear()).catch(()=>{}); }
-            document.getElementById('camera-box-ai').style.display = 'none';
-            document.getElementById('btn-ai-start').style.display = 'inline-block';
-        }
-
-        function takeAiSnapshot() {
-            var videoEl = document.querySelector("#reader-ai video");
-            if (!videoEl) { alert("相機未啟動"); return; }
-            videoEl.pause();
-            showLoading("🤖 正在分析並建立搜尋連結...");
-            
-            var canvas = document.createElement("canvas");
-            canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight;
-            canvas.getContext("2d").drawImage(videoEl, 0, 0);
-            var fullBase64 = canvas.toDataURL("image/jpeg", 0.7);
-            var base64Data = fullBase64.split(',')[1];
-            
-            stopAiScanner();
-            
-            sendToGemini(base64Data, fullBase64);
-        }
-
-        // ⚠️⚠️⚠️ 請在此貼上您的 Google Script 網址 ⚠️⚠️⚠️
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec"; 
-
-        function sendToGemini(base64Data, previewSrc) {
-            if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { hideLoading(); alert("請設定 Google Script 網址！"); return; }
-            
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST', body: JSON.stringify({ action: "identify", image: base64Data })
-            })
-            .
+        var fixedColors = { '🇹🇼 台灣': '#e53935', '
