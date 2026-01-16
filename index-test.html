@@ -279,7 +279,7 @@
             <div id="camera-box-ai" class="camera-box">
                 <div id="reader-ai" class="scanner-view"></div>
                 <div id="ai-cam-overlay">
-                    <button onclick="takeAiSnapshot()" class="btn-snap" aria-label="拍照"></button>
+                    <button type="button" onclick="takeAiSnapshot()" class="btn-snap" aria-label="拍照"></button>
                 </div>
             </div>
 
@@ -593,46 +593,87 @@ function addRecord(country, qty) {
             document.getElementById('btn-ai-start').style.display = 'inline-block';
         }
 
-        function takeAiSnapshot() {
-            const videoEl = document.querySelector("#reader-ai video");
-            if (!videoEl) return;
+        // === 修改後的拍照函式 (防止閃退版) ===
+function takeAiSnapshot() {
+    var videoEl = document.querySelector("#reader-ai video");
+    if (!videoEl) { showToast("相機未啟動", "error"); return; }
 
-            // 擷取影像
-            const canvas = document.createElement("canvas");
-            canvas.width = videoEl.videoWidth; 
-            canvas.height = videoEl.videoHeight;
-            canvas.getContext("2d").drawImage(videoEl, 0, 0);
-            
-            // 壓縮
-            const fullBase64 = canvas.toDataURL("image/jpeg", 0.6); // 品質 0.6
-            const base64Data = fullBase64.split(',')[1];
+    // 1. 暫停畫面，讓使用者感覺有拍到
+    videoEl.pause();
+    showLoading(true, "正在壓縮影像並分析...");
 
-            stopAiScanner();
-            
-            // 呼叫後端
-            showLoading(true, "AI 正在分析影像...");
-            
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "identify", image: base64Data })
-            })
-            .then(res => res.json())
-            .then(data => {
-                showLoading(false);
-                if (data.status === "success") {
-                    try {
-                        const result = JSON.parse(data.result);
-                        displayAiResult(result, fullBase64);
-                    } catch (e) { showToast("AI 回傳格式無法解析", "error"); }
+    // 2. 建立 Canvas 進行「瘦身」(縮圖)
+    // AI 不需要 4K 畫質，800px 寬度已經非常足夠
+    var canvas = document.createElement("canvas");
+    var maxDim = 800; // 設定最大邊長
+    var w = videoEl.videoWidth;
+    var h = videoEl.videoHeight;
+    var scale = 1;
+
+    // 計算縮放比例
+    if (w > h) {
+        if (w > maxDim) scale = maxDim / w;
+    } else {
+        if (h > maxDim) scale = maxDim / h;
+    }
+
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    
+    // 繪製縮小後的圖
+    var ctx = canvas.getContext("2d");
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+
+    // 3. 轉成 Base64 (品質設定 0.6)
+    // 這樣產生的字串長度會從幾百萬降到十幾萬，非常安全
+    var fullBase64 = canvas.toDataURL("image/jpeg", 0.6);
+    var base64Data = fullBase64.split(',')[1];
+
+    // 4. 停止相機 (釋放資源)
+    stopAiScanner();
+
+    // 5. 發送請求
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        // 加入 keepalive 防止網路請求被瀏覽器回收
+        keepalive: true, 
+        body: JSON.stringify({ action: "identify", image: base64Data })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        showLoading(false);
+        if (data.status === "success") {
+            try {
+                // 嘗試解析 AI 回傳的 JSON (有時候 AI 會多包一層引號)
+                var aiRes;
+                if (typeof data.result === 'string') {
+                    // 清理可能殘留的 Markdown
+                    var cleanJson = data.result.replace(/```json/g, "").replace(/```/g, "").trim();
+                    aiRes = JSON.parse(cleanJson);
                 } else {
-                    showToast("AI 分析失敗: " + data.message, "error");
+                    aiRes = data.result;
                 }
-            })
-            .catch(err => {
-                showLoading(false);
-                showToast("連線錯誤，請檢查網路", "error");
-            });
+                
+                // 成功顯示！
+                displayAiResult(aiRes, fullBase64);
+                
+            } catch(e) { 
+                console.error(e);
+                showToast("AI 回傳格式錯誤: " + data.result, "error"); 
+                // 就算格式錯，也先把原始文字顯示出來給你看
+                alert("AI 原始回應: " + data.result);
+            }
+        } else { 
+            showToast("AI 錯誤: " + data.message, "error"); 
         }
+    })
+    .catch(function(err) { 
+        showLoading(false);
+        // 如果這裡跳出來，通常是網路斷線或後端沒回應
+        alert("連線失敗細節: " + err.message); 
+        showToast("連線失敗，請檢查網路", "error"); 
+    });
+}
 
         // === 修改後的 AI 結果顯示函式 ===
         function displayAiResult(data, imgSrc) {
@@ -770,5 +811,6 @@ function addRecord(country, qty) {
     </script>
 </body>
 </html>
+
 
 
