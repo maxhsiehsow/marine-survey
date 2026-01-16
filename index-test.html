@@ -3,24 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V49</title>
-    
-    <script>
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            var errorMsg = "⚠️ 發生錯誤: " + msg + "\n行數: " + lineNo;
-            // 如果畫面是白的，直接寫入錯誤訊息到頁面
-            if(document.body) {
-                document.body.innerHTML += '<div style="background:red;color:white;padding:20px;font-size:16px;z-index:99999;position:fixed;top:0;left:0;width:100%;">' + errorMsg + '</div>';
-            } else {
-                alert(errorMsg);
-            }
-            return false;
-        };
-    </script>
+    <title>海廢調查員 V50</title>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <style>
         /* 全局樣式 */
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 0; padding-bottom: 70px; color: #333; }
+        
+        /* 預設隱藏所有分頁，透過 active-tab 顯示 */
         .container { padding: 15px; display: none; } 
         .active-tab { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -67,10 +58,286 @@
         
         #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); color:white; z-index:9999; text-align:center; padding-top:50%; font-size:18px; }
         
-        /* AI 結果卡片 */
         .ai-result-box { border: 2px solid #0056b3; background: #e3f2fd; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
         .evidence-img { width: 100%; height: 150px; object-fit: cover; display: none; margin-top: 5px; border: 1px solid #333; }
     </style>
+
+    <script>
+        // === 全局變數 ===
+        var count = 0; var target = 100;
+        var stats = {}; var historyStack = [];
+        var html5QrCodeRecord = null; var html5QrCodeAi = null;
+        var currentCity = "未定位"; var uploadFileBase64 = null;
+        var fixedColors = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#000000', '🇯🇵 日本': '#fbc02d', '其它': '#757575' };
+        
+        const prefixDB = {
+            "471": "🇹🇼 台灣", "690": "🇨🇳 中國", "691": "🇨🇳 中國", "692": "🇨🇳 中國", "693": "🇨🇳 中國", "694": "🇨🇳 中國", "695": "🇨🇳 中國", "696": "🇨🇳 中國", "697": "🇨🇳 中國",
+            "893": "🇻🇳 越南", "480": "🇵🇭 菲律賓", "955": "🇲🇾 馬來西亞", "899": "🇮🇩 印尼", "885": "🇹🇭 泰國", "880": "🇰🇷 韓國", "450": "🇯🇵 日本", "490": "🇯🇵 日本"
+        };
+
+        // 初始化
+        window.addEventListener('load', function() {
+            resetDate();
+            switchTab('basic');
+        });
+
+        // 頁籤切換 (這次定義在最上面，絕對不會找不到)
+        function switchTab(tabName) {
+            document.querySelectorAll('.container').forEach(function(el) {
+                el.classList.remove('active-tab');
+            });
+            document.querySelectorAll('.nav-item').forEach(function(el) {
+                el.classList.remove('active');
+            });
+            
+            var targetView = document.getElementById('view-' + tabName);
+            if(targetView) targetView.classList.add('active-tab');
+            
+            var targetNav = document.getElementById('nav-' + tabName);
+            if(targetNav) targetNav.classList.add('active');
+
+            stopRecordScanner();
+            stopAiScanner();
+        }
+
+        // GPS
+        function runGPS() {
+            document.getElementById('inp_gps').value = "定位中...";
+            if(!navigator.geolocation) { alert("不支援 GPS"); return; }
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                var txt = pos.coords.latitude.toFixed(5) + ", " + pos.coords.longitude.toFixed(5);
+                document.getElementById('inp_gps').value = txt;
+                fetchCityName(pos.coords.latitude, pos.coords.longitude);
+            }, function(err) { alert("定位失敗"); });
+        }
+
+        function fetchCityName(lat, lng) {
+            fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+lat+"&longitude="+lng+"&localityLanguage=zh")
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                currentCity = (data.principalSubdivision || data.locality || "未知").replace("Province", "").trim();
+                document.getElementById('out_loc_city').innerText = currentCity;
+                alert("📍 定位成功："+currentCity);
+            });
+        }
+
+        // Tab 2: 掃描
+        function startRecordScanner() {
+            if(typeof Html5Qrcode === "undefined") { alert("相機模組尚未載入，請重新整理網頁"); return; }
+            document.getElementById('camera-box-record').style.display = 'block';
+            document.getElementById('btn-scan-start').style.display = 'none';
+            document.getElementById('btn-scan-stop').style.display = 'inline-block';
+            
+            try {
+                html5QrCodeRecord = new Html5Qrcode("reader-record");
+                html5QrCodeRecord.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+                    function(decodedText) {
+                        if(navigator.vibrate) navigator.vibrate(200);
+                        var country = getCountryFromCode(decodedText);
+                        // 暫停一下避免重複觸發
+                        html5QrCodeRecord.pause();
+                        if(confirm("✅ 掃到：" + country + "\n要加入記錄嗎？")) { 
+                            addRecord(country, 1); 
+                        }
+                        html5QrCodeRecord.resume();
+                    }, function() {} 
+                );
+            } catch(e) { alert("相機錯誤: " + e); stopRecordScanner(); }
+        }
+
+        function stopRecordScanner() {
+            if(html5QrCodeRecord) { 
+                try { html5QrCodeRecord.stop().then(function(){ html5QrCodeRecord.clear(); }); } catch(e){} 
+            }
+            document.getElementById('camera-box-record').style.display = 'none';
+            document.getElementById('btn-scan-start').style.display = 'inline-block';
+            document.getElementById('btn-scan-stop').style.display = 'none';
+        }
+
+        function getCountryFromCode(code) {
+            if(!code || code.length < 3) return "未知條碼";
+            var p3 = code.substring(0,3);
+            return prefixDB[p3] || "[" + p3 + "]";
+        }
+
+        // Tab 3: AI
+        function startAiCamera() {
+            if(typeof Html5Qrcode === "undefined") { alert("相機模組載入失敗"); return; }
+            document.getElementById('ai-result-box').style.display = 'none';
+            document.getElementById('camera-box-ai').style.display = 'block';
+            document.getElementById('btn-ai-start').style.display = 'none';
+            
+            try {
+                html5QrCodeAi = new Html5Qrcode("reader-ai");
+                html5QrCodeAi.start({ facingMode: "environment" }, { fps: 10 }, function() {}, function() {});
+            } catch(e) { alert("相機錯誤: " + e); stopAiScanner(); }
+        }
+
+        function stopAiScanner() {
+            if(html5QrCodeAi) { 
+                try { html5QrCodeAi.stop().then(function(){ html5QrCodeAi.clear(); }); } catch(e){} 
+            }
+            document.getElementById('camera-box-ai').style.display = 'none';
+            document.getElementById('btn-ai-start').style.display = 'inline-block';
+        }
+
+        function takeAiSnapshot() {
+            var videoEl = document.querySelector("#reader-ai video");
+            if (!videoEl) { alert("相機未啟動"); return; }
+            videoEl.pause();
+            showLoading("🤖 正在分析並建立搜尋連結...");
+            
+            var canvas = document.createElement("canvas");
+            canvas.width = videoEl.videoWidth; canvas.height = videoEl.videoHeight;
+            canvas.getContext("2d").drawImage(videoEl, 0, 0);
+            var fullBase64 = canvas.toDataURL("image/jpeg", 0.7);
+            var base64Data = fullBase64.split(',')[1];
+            
+            stopAiScanner();
+            sendToGemini(base64Data, fullBase64);
+        }
+
+        // ⚠️⚠️⚠️ 3. 請設定您的 Google Script 網址 ⚠️⚠️⚠️
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec"; 
+
+        function sendToGemini(base64Data, previewSrc) {
+            if(GOOGLE_SCRIPT_URL.indexOf("貼在這裡") > -1) { hideLoading(); alert("請設定 Google Script 網址！"); return; }
+            
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST', body: JSON.stringify({ action: "identify", image: base64Data })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                hideLoading();
+                if(data.status === "success") {
+                    try {
+                        var aiRes = JSON.parse(data.result);
+                        showAiResult(aiRes, previewSrc);
+                    } catch(e) { alert("AI 回傳格式錯誤: " + data.result); }
+                } else { alert("AI 錯誤: " + data.message); }
+            })
+            .catch(function(err) { hideLoading(); alert("連線失敗: " + err.message); });
+        }
+
+        function showAiResult(aiRes, imgSrc) {
+            var box = document.getElementById('ai-result-box');
+            box.style.display = 'block';
+            document.getElementById('ai-country-text').innerText = aiRes.country || "未知";
+            document.getElementById('ai-desc-text').innerText = aiRes.keywords || "無特徵";
+            document.getElementById('ai-preview-img').src = imgSrc;
+
+            var searchBtn = document.getElementById('btn-google-check');
+            if (aiRes.imageUrl && aiRes.imageUrl.startsWith("http")) {
+                var searchUrl = "https://www.google.com/searchbyimage?image_url=" + encodeURIComponent(aiRes.imageUrl);
+                searchBtn.onclick = function() { window.open(searchUrl, '_blank'); };
+                searchBtn.innerText = "🔍 點此去 Google「以圖搜圖」核對";
+                searchBtn.disabled = false;
+            } else {
+                 var keywordSearchUrl = "https://www.google.com/search?tbm=isch&q=" + encodeURIComponent(aiRes.keywords + " " + aiRes.country + " bottle");
+                 searchBtn.onclick = function() { window.open(keywordSearchUrl, '_blank'); };
+                 searchBtn.innerText = "⚠️ 無法以圖搜圖，點此用「文字搜尋」";
+            }
+
+            document.getElementById('btn-confirm-add').onclick = function() {
+                if(confirm("確定將[" + aiRes.country + "]加入記錄？")) {
+                    addRecord(aiRes.country, 1);
+                    box.style.display = 'none'; switchTab('record');
+                }
+            };
+        }
+
+        function uploadData() {
+            if(count === 0) { alert("無資料"); return; }
+            if(!document.getElementById('inp_name').value) { alert("請填寫填表人"); switchTab('basic'); return; }
+            var btn = document.getElementById('btn-upload');
+            btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
+
+            var breakdown = { otherStr: [] };
+            var mainKeys = ['🇹🇼 台灣', '🇨🇳 中國', '🇻🇳 越南', '🇵🇭 菲律賓', '🇲🇾 馬來西亞', '🇮🇩 印尼', '🇹🇭 泰國', '🇰🇷 韓國', '🇯🇵 日本'];
+            var uploadStats = { tw:0, cn:0, vn:0, ph:0, my:0, id:0, th:0, kr:0, jp:0 };
+            
+            for(var k in stats) {
+                if(mainKeys.indexOf(k) > -1) {
+                    if(k.includes("台灣")) uploadStats.tw = stats[k];
+                    else if(k.includes("中國")) uploadStats.cn = stats[k];
+                    else if(k.includes("越南")) uploadStats.vn = stats[k];
+                    else if(k.includes("菲律賓")) uploadStats.ph = stats[k];
+                    else if(k.includes("馬來西亞")) uploadStats.my = stats[k];
+                    else if(k.includes("印尼")) uploadStats.id = stats[k];
+                    else if(k.includes("泰國")) uploadStats.th = stats[k];
+                    else if(k.includes("韓國")) uploadStats.kr = stats[k];
+                    else if(k.includes("日本")) uploadStats.jp = stats[k];
+                    else breakdown.otherStr.push(k + "*" + stats[k]);
+                } else { breakdown.otherStr.push(k + "*" + stats[k]); }
+            }
+
+            var payload = {
+                action: "save", name: document.getElementById('inp_name').value,
+                participants: document.getElementById('inp_participants').value || "1",
+                loc: document.getElementById('inp_loc').value, city: currentCity, gps: document.getElementById('inp_gps').value,
+                total: count, 
+                cnt_tw: uploadStats.tw, cnt_cn: uploadStats.cn, cnt_vn: uploadStats.vn,
+                cnt_ph: uploadStats.ph, cnt_my: uploadStats.my, cnt_id: uploadStats.id, cnt_other: breakdown.otherStr.join(", "),
+                note: document.getElementById('inp_note').value,
+                fileData: uploadFileBase64 ? uploadFileBase64.split(',')[1] : "", mimeType: "image/jpeg"
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(function(res) { 
+                if (!res.ok) throw new Error("網路回應異常"); 
+                return res.json(); 
+            })
+            .then(function(data) {
+                if(data.status === "success") {
+                    alert("✅ 上傳成功！\n" + (data.message || "")); resetForm();
+                } else { throw new Error(data.message || "未知後端錯誤"); }
+            })
+            .catch(function(err) { alert("❌ 上傳失敗: " + err.message); })
+            .finally(function() { btn.innerText = "📤 上傳資料至雲端"; btn.disabled = false; });
+        }
+
+        // 輔助函式
+        function addRecord(country, quantity) {
+            if(count + quantity > target) { alert("超過上限！"); return; }
+            if(!stats[country]) stats[country] = 0;
+            stats[country] += quantity; count += quantity;
+            for(var i=0; i<quantity; i++) historyStack.push({key: country, qty: quantity});
+            updateUI();
+        }
+        function undoRecord() {
+            if(historyStack.length === 0) return;
+            var last = historyStack.pop(); stats[last.key] -= last.qty;
+            if(stats[last.key] <= 0) delete stats[last.key]; count -= last.qty; updateUI();
+        }
+        function updateUI() {
+            document.getElementById('disp_count').innerText = count; document.getElementById('out_total').innerText = count;
+            var tbody = document.getElementById('stats-body'); tbody.innerHTML = "";
+            var grad = [], deg=0;
+            for(var key in stats) {
+                var color = fixedColors[key] || stringToColor(key);
+                var percent = (stats[key] / count * 100).toFixed(1);
+                var tr = document.createElement('tr');
+                tr.innerHTML = "<td><span style='color:"+color+"'>■</span> "+key+" <small>("+percent+"%)</small></td><td>"+stats[key]+"</td>";
+                tbody.appendChild(tr);
+                var p = stats[key]/count, d = p*360;
+                grad.push(color + " " + deg.toFixed(1) + "deg " + (deg+d).toFixed(1) + "deg"); deg += d;
+            }
+            var pie = document.getElementById('css-pie');
+            if(count>0) { pie.style.background = "conic-gradient("+grad.join(", ")+")"; } 
+            else { pie.style.background = "#eee"; tbody.innerHTML = "<tr><td colspan='2'>無資料</td></tr>"; }
+        }
+        function resetForm() {
+            count=0; stats={}; historyStack=[]; uploadFileBase64=null;
+            document.getElementById('inp_qty').value = "1"; document.getElementById('out_img').style.display='none'; document.getElementById('out_img').src="";
+            updateUI(); switchTab('basic');
+        }
+        function handleManualAdd() { var v = document.getElementById('sel_country').value; var q = parseInt(document.getElementById('inp_qty').value); if(q>0) addRecord(v, q); document.getElementById('inp_qty').value = 1; }
+        function previewAndCompress(e) { var file = e.target.files[0]; if(!file) return; var reader = new FileReader(); reader.onload = function(evt) { var img = document.getElementById('out_img'); img.src = evt.target.result; img.style.display='block'; var temp = new Image(); temp.src = evt.target.result; temp.onload = function() { var cvs = document.createElement('canvas'); var s = 1024/temp.width; if(s>1) s=1; cvs.width = temp.width*s; cvs.height = temp.height*s; cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height); uploadFileBase64 = cvs.toDataURL('image/jpeg', 0.7); } }; reader.readAsDataURL(file); }
+        function resetDate() { var d = new Date(); document.getElementById('out_date').innerText = d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate(); }
+        function stringToColor(str) { var hash=0; for(var i=0; i<str.length; i++) hash=str.charCodeAt(i)+((hash<<5)-hash); var c='#'; for(var i=0; i<3; i++) { var v=(hash>>(i*8))&0xFF; c+=('00'+v.toString(16)).substr(-2); } return c; }
+        function showLoading(msg) { document.getElementById('loading-mask').style.display='block'; document.getElementById('loading-text').innerText=msg; }
+        function hideLoading() { document.getElementById('loading-mask').style.display='none'; }
+    </script>
 </head>
 <body>
     <div id="loading-mask"><div id="loading-text">處理中...</div></div>
@@ -111,55 +378,3 @@
             <button onclick="handleManualAdd()" class="btn-green">➕ 增加記錄</button>
             <button onclick="undoRecord()" class="btn-red">↩️ 刪除上一筆</button>
         </div>
-        <div class="card">
-            <h3>📊 統計報告</h3>
-            <div style="display:flex; justify-content:space-between; font-size:13px; color:#666; margin-bottom:5px;"><span id="out_date"></span><span id="out_loc_city">(未定位)</span></div>
-            <div style="display:flex; align-items:center;">
-                <div style="flex:1; text-align:center;"><div id="css-pie" class="pie-chart"></div><div style="margin-top:5px; font-weight:bold;">總數: <span id="out_total">0</span></div></div>
-                <div style="flex:1; padding-left:10px;"><table id="stats-table"><tbody id="stats-body"><tr><td>無資料</td></tr></tbody></table></div>
-            </div>
-            <label style="margin-top:15px;">備註：</label><textarea id="inp_note" rows="2"></textarea>
-            <label style="margin-top:10px;">上傳照片 (必選)：</label><input type="file" accept="image/*" onchange="previewAndCompress(event)"><img id="out_img" class="evidence-img">
-            <hr style="margin: 20px 0;"><button id="btn-upload" onclick="uploadData()" class="btn-upload">📤 上傳資料至雲端</button>
-        </div>
-    </div>
-
-    <div id="view-ai" class="container">
-        <h2>3. AI 鑑定室</h2>
-        <div class="card" style="text-align:center;">
-            <p>遇到無法辨識的瓶罐？<br>啟動相機，拍照讓 AI 幫您找。</p>
-            <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue" style="font-size:18px; padding:20px; width:100%;">📷 啟動 AI 相機</button>
-            <div id="camera-box-ai" class="camera-box">
-                <div id="reader-ai" class="scanner-view"></div>
-                <div id="ai-cam-overlay"><button onclick="takeAiSnapshot()" class="btn-snap">📸 拍照並分析</button></div>
-            </div>
-            <div id="ai-result-box" class="ai-result-box">
-                <img id="ai-preview-img" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:1px solid #fff;">
-                <h3 style="color:#0056b3; margin:10px 0;">AI 認為是：<span id="ai-country-text"></span></h3>
-                <p style="font-size:13px; color:#666;">特徵：<span id="ai-desc-text"></span></p>
-                <hr style="border-top:1px dashed #0056b3;">
-                <button id="btn-google-check" class="btn-link" disabled>🔄 正在準備搜尋連結...</button>
-                <div style="height:10px;"></div>
-                <button id="btn-confirm-add" class="btn-green">✅ 確認正確，加入記錄</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="nav-bar">
-        <div class="nav-item active" id="nav-basic" onclick="switchTab('basic')"><span>📝</span>基本資訊</div>
-        <div class="nav-item" id="nav-record" onclick="switchTab('record')"><span>📊</span>記錄</div>
-        <div class="nav-item" id="nav-ai" onclick="switchTab('ai')"><span>🤖</span>AI 鑑定</div>
-    </div>
-
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    
-    <script>
-        // ⚠️⚠️⚠️ 請在此貼上您的 Google Script 網址 ⚠️⚠️⚠️
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec"; 
-
-        // === 全局變數 ===
-        var count = 0; var target = 100;
-        var stats = {}; var historyStack = [];
-        var html5QrCodeRecord = null; var html5QrCodeAi = null;
-        var currentCity = "未定位"; var uploadFileBase64 = null;
-        var fixedColors = { '🇹🇼 台灣': '#e53935', '
