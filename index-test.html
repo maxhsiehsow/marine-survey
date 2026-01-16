@@ -306,8 +306,8 @@
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-    <script>
-        // === 全局狀態管理 (使用 const/let) ===
+  <script>
+        // === 1. 全局變數與設定 ===
         const STATE = {
             count: 0,
             target: 100,
@@ -318,6 +318,14 @@
             scanners: { record: null, ai: null }
         };
 
+        // 條碼前綴資料庫
+        const PREFIX_DB = {
+            "471": "🇹🇼 台灣", "690": "🇨🇳 中國", "691": "🇨🇳 中國", "692": "🇨🇳 中國", "693": "🇨🇳 中國", 
+            "694": "🇨🇳 中國", "695": "🇨🇳 中國", "696": "🇨🇳 中國", "697": "🇨🇳 中國",
+            "893": "🇻🇳 越南", "480": "🇵🇭 菲律賓", "955": "🇲🇾 馬來西亞", "899": "🇮🇩 印尼", 
+            "885": "🇹🇭 泰國", "880": "🇰🇷 韓國", "450": "🇯🇵 日本", "490": "🇯🇵 日本"
+        };
+
         // 國家顏色映射
         const COLORS = {
             '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', 
@@ -325,44 +333,30 @@
             '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '其它': '#757575'
         };
 
-        // 條碼前綴資料庫
-        const PREFIX_DB = {
-            "471": "🇹🇼 台灣", "690": "🇨🇳 中國", "691": "🇨🇳 中國", "692": "🇨🇳 中國", "693": "🇨🇳 中國", "694": "🇨🇳 中國", "695": "🇨🇳 中國", "696": "🇨🇳 中國", "697": "🇨🇳 中國",
-            "893": "🇻🇳 越南", "480": "🇵🇭 菲律賓", "955": "🇲🇾 馬來西亞", "899": "🇮🇩 印尼", "885": "🇹🇭 泰國", "880": "🇰🇷 韓國", "450": "🇯🇵 日本", "490": "🇯🇵 日本"
-        };
-
-        // ... (在 PREFIX_DB 下方加入這段) ...
-
-       // === 老王強效版：名稱標準化邏輯 ===
-function normalizeName(rawName) {
-    if (!rawName) return "未知";
-    
-    // 1. 去除前後空白
-    let cleanName = rawName.toString().trim();
-    
-    // 2. 關鍵字暴力對應 (只要包含這些字，就強制歸類)
-    // 這樣可以解決 "Taiwan R.O.C", "made in China", " 台灣 " 等問題
-    if (cleanName.includes("台灣") || cleanName.includes("Taiwan") || cleanName.includes("ROC")) return "🇹🇼 台灣";
-    if (cleanName.includes("中國") || cleanName.includes("China") || cleanName.includes("PRC") || cleanName.includes("CN")) return "🇨🇳 中國";
-    if (cleanName.includes("越南") || cleanName.includes("Vietnam")) return "🇻🇳 越南";
-    if (cleanName.includes("菲律賓") || cleanName.includes("Philippines")) return "🇵🇭 菲律賓";
-    if (cleanName.includes("泰國") || cleanName.includes("Thailand")) return "🇹🇭 泰國";
-    if (cleanName.includes("印尼") || cleanName.includes("Indonesia")) return "🇮🇩 印尼";
-    if (cleanName.includes("馬來西亞") || cleanName.includes("Malaysia")) return "🇲🇾 馬來西亞";
-    if (cleanName.includes("韓國") || cleanName.includes("Korea")) return "🇰🇷 韓國";
-    if (cleanName.includes("日本") || cleanName.includes("Japan")) return "🇯🇵 日本";
-
-    // 3. 如果原本就已經是標準格式 (例如已經有國旗了)，就直接回傳
-    if (cleanName.includes("🇹🇼") || cleanName.includes("🇨🇳")) return cleanName;
-
-    // 4. 真的都對不上，就回傳原始名稱 (或歸類為其它)
-    return cleanName;
-}
-        
-        // ⚠️⚠️⚠️ 請在此填入您的 Google Apps Script 網址 ⚠️⚠️⚠️
+        // ⚠️ 請確認這是你部署 V65 後的網址
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
-        // === 初始化 ===
+        // === 2. 核心邏輯：名稱正規化 ===
+        function normalizeName(rawName) {
+            if (!rawName) return "未知";
+            let clean = rawName.toString().trim();
+            
+            // 關鍵字對應 (解決 AI 回傳 "中國大陸" 或 "Taiwan" 的問題)
+            if (clean.includes("台灣") || clean.includes("Taiwan") || clean.includes("ROC")) return "🇹🇼 台灣";
+            if (clean.includes("中國") || clean.includes("China") || clean.includes("CN") || clean.includes("大陸")) return "🇨🇳 中國";
+            if (clean.includes("越南") || clean.includes("Vietnam")) return "🇻🇳 越南";
+            if (clean.includes("菲律賓") || clean.includes("Philippines")) return "🇵🇭 菲律賓";
+            if (clean.includes("泰國") || clean.includes("Thailand")) return "🇹🇭 泰國";
+            if (clean.includes("印尼") || clean.includes("Indonesia")) return "🇮🇩 印尼";
+            if (clean.includes("馬來西亞") || clean.includes("Malaysia")) return "🇲🇾 馬來西亞";
+            if (clean.includes("韓國") || clean.includes("Korea")) return "🇰🇷 韓國";
+            if (clean.includes("日本") || clean.includes("Japan")) return "🇯🇵 日本";
+
+            if (clean.includes("🇹🇼") || clean.includes("🇨🇳")) return clean;
+            return clean; // 沒對應到就回傳原名
+        }
+
+        // === 3. 初始化 ===
         window.onload = () => {
             setTimeout(() => {
                 document.getElementById('loading-mask').style.display = 'none';
@@ -370,15 +364,11 @@ function normalizeName(rawName) {
             }, 800);
         };
 
-        // === UI 互動邏輯 ===
         function switchTab(tabName) {
-            // 切換 CSS
             document.querySelectorAll('.container').forEach(el => el.classList.remove('active-tab'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById('view-' + tabName).classList.add('active-tab');
             document.getElementById('nav-' + tabName).classList.add('active');
-
-            // 自動關閉相機以節省資源並避免衝突
             stopRecordScanner();
             stopAiScanner();
         }
@@ -390,7 +380,6 @@ function normalizeName(rawName) {
             el.innerText = msg;
             if (type === 'error') el.style.background = '#d32f2f';
             if (type === 'success') el.style.background = '#2e7d32';
-            
             container.appendChild(el);
             setTimeout(() => {
                 el.style.opacity = '0';
@@ -399,75 +388,47 @@ function normalizeName(rawName) {
             }, 3000);
         }
 
-        // === 功能 1: GPS 定位 ===
+        // === 4. GPS 定位 ===
         function runGPS() {
             const gpsInput = document.getElementById('inp_gps');
             gpsInput.value = "定位中...";
-            
-            if (!navigator.geolocation) { 
-                showToast("您的裝置不支援 GPS", "error"); 
-                return; 
-            }
-
+            if (!navigator.geolocation) { showToast("不支援 GPS", "error"); return; }
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     const { latitude, longitude } = pos.coords;
                     gpsInput.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
                     fetchCityName(latitude, longitude);
                 },
-                (err) => {
-                    showToast("定位失敗，請確認已授權瀏覽器使用 GPS", "error");
-                    gpsInput.value = "";
-                }
+                () => { showToast("定位失敗", "error"); gpsInput.value = ""; }
             );
         }
 
         function fetchCityName(lat, lng) {
-            // 使用免費 API 反查地名
             fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=zh`)
                 .then(res => res.json())
                 .then(data => {
                     STATE.currentCity = (data.principalSubdivision || data.locality || "未知").replace("Province", "").trim();
-                    document.getElementById('inp_loc').value = STATE.currentCity + " (自動帶入)";
+                    document.getElementById('inp_loc').value = STATE.currentCity;
                     showToast(`📍 定位成功：${STATE.currentCity}`, "success");
-                })
-                .catch(() => showToast("無法取得地名，請手動輸入", "error"));
+                });
         }
 
-        // === 功能 2: 掃描條碼 (使用 Promise 確保相機狀態) ===
+        // === 5. 掃描條碼 ===
         function startRecordScanner() {
-            if (STATE.scanners.record) return; // 避免重複啟動
-
+            if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
             document.getElementById('btn-scan-start').style.display = 'none';
             document.getElementById('btn-scan-stop').style.display = 'inline-block';
-
-            STATE.scanners.record = new Html5Qrcode("reader-record");
             
-            STATE.scanners.record.start(
-                { facingMode: "environment" }, 
-                { fps: 10, qrbox: 250 },
+            STATE.scanners.record = new Html5Qrcode("reader-record");
+            STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
                 (decodedText) => {
-                    // 掃描成功回調
-                    if (navigator.vibrate) navigator.vibrate(50); // 輕微震動回饋
                     STATE.scanners.record.pause();
-                    
                     const country = getCountryFromCode(decodedText);
-                    
-                    // 使用 setTimeout 讓 UI 先渲染暫停狀態，避免卡頓
-                    setTimeout(() => {
-                        if (confirm(`📦 掃描結果：${country}\n條碼：${decodedText}\n\n要加入記錄嗎？`)) {
-                            addRecord(country, 1);
-                        }
-                        STATE.scanners.record.resume();
-                    }, 100);
-                },
-                () => {} // 忽略掃描失敗的錯誤 (每幀都會觸發)
-            ).catch(err => {
-                console.error(err);
-                showToast("無法啟動相機，請確認權限", "error");
-                stopRecordScanner();
-            });
+                    if (confirm(`📦 掃到：${country}\n要加入嗎？`)) { addRecord(country, 1); }
+                    setTimeout(() => STATE.scanners.record.resume(), 500);
+                }, () => {}
+            );
         }
 
         function stopRecordScanner() {
@@ -475,7 +436,7 @@ function normalizeName(rawName) {
                 STATE.scanners.record.stop().then(() => {
                     STATE.scanners.record.clear();
                     STATE.scanners.record = null;
-                }).catch(err => console.log("Stop failed", err));
+                }).catch(() => {});
             }
             document.getElementById('camera-box-record').style.display = 'none';
             document.getElementById('btn-scan-start').style.display = 'inline-block';
@@ -483,73 +444,47 @@ function normalizeName(rawName) {
         }
 
         function getCountryFromCode(code) {
-            if (!code || code.length < 3) return "未知條碼";
-            const prefix = code.substring(0, 3);
-            return PREFIX_DB[prefix] || `[${prefix}] 未知來源`;
+            if (!code || code.length < 3) return "未知";
+            return PREFIX_DB[code.substring(0, 3)] || "未知來源";
         }
 
-        // === 修改後的 addRecord (資料寫入核心) ===
-function addRecord(country, qty) {
-    // 🔥 老王修改：在這裡加上強制正規化
-    // 無論來源是掃描、AI 還是手動，進來前都要先被「洗」一次
-    let safeCountry = normalizeName(country);
+        // === 6. 資料管理 (核心) ===
+        function addRecord(country, qty) {
+            // 🔥 強制正規化：不管是 AI 還是掃描，進來都先洗一遍
+            let safeCountry = normalizeName(country);
 
-    if (STATE.count + qty > STATE.target) {
-        showToast("⚠️ 已達目標數量，請先上傳資料", "error");
-        return;
-    }
-    
-    // 注意：這裡變數要改成 safeCountry
-    if (!STATE.stats[safeCountry]) STATE.stats[safeCountry] = 0;
-    STATE.stats[safeCountry] += qty;
-    STATE.count += qty;
-    
-    // 記錄歷史 (這裡也要用 safeCountry)
-    for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeCountry, qty: 1});
-    
-    updateUI();
-    
-    // 如果修正後的名稱跟原本不同，提示一下使用者
-    if (safeCountry !== country && !country.includes(safeCountry)) {
-        showToast(`已將「${country}」自動歸類為「${safeCountry}」`, "success");
-    } else {
-        showToast(`已加入: ${safeCountry}`, "success");
-    }
-}
+            if (STATE.count + qty > STATE.target) { showToast("已達目標上限", "error"); return; }
+            if (!STATE.stats[safeCountry]) STATE.stats[safeCountry] = 0;
+            
+            STATE.stats[safeCountry] += qty;
+            STATE.count += qty;
+            for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeCountry, qty: 1});
+            
+            updateUI();
+            showToast(`已加入: ${safeCountry}`, "success");
+        }
 
         function undoRecord() {
-            if (STATE.historyStack.length === 0) {
-                showToast("沒有可復原的動作");
-                return;
-            }
+            if (STATE.historyStack.length === 0) return;
             const last = STATE.historyStack.pop();
             STATE.stats[last.key] -= last.qty;
             if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key];
             STATE.count -= last.qty;
             updateUI();
-            showToast("已復原上一筆", "info");
         }
 
         function handleManualAdd() {
-            const country = document.getElementById('sel_country').value;
-            const qty = parseInt(document.getElementById('inp_qty').value);
-            if (qty > 0) {
-                addRecord(country, qty);
-                document.getElementById('inp_qty').value = 1;
-            }
+            addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value));
         }
 
         function updateUI() {
-            // 更新數字
             document.getElementById('disp_count').innerText = STATE.count;
-            
-            // 更新列表與圓餅圖
             const tbody = document.getElementById('stats-body');
             tbody.innerHTML = "";
-            let gradientStr = [], deg = 0;
+            let grad = [], deg = 0;
 
             if (STATE.count === 0) {
-                tbody.innerHTML = "<tr><td colspan='2' style='text-align:center'>尚無資料</td></tr>";
+                tbody.innerHTML = "<tr><td colspan='2' style='text-align:center'>無資料</td></tr>";
                 document.getElementById('css-pie').style.background = "#eee";
                 return;
             }
@@ -557,31 +492,22 @@ function addRecord(country, qty) {
             for (const [key, val] of Object.entries(STATE.stats)) {
                 const color = COLORS[key] || '#999';
                 const percent = ((val / STATE.count) * 100).toFixed(1);
+                tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${percent}%)</small></td><td>${val}</td></tr>`;
                 
-                // 列表
-                const tr = document.createElement('tr');
-                tr.innerHTML = `<td><span style='color:${color}'>■</span> ${key} <small style='color:#999'>(${percent}%)</small></td><td>${val}</td>`;
-                tbody.appendChild(tr);
-
-                // 圓餅圖 CSS 計算
-                const p = val / STATE.count;
-                const d = p * 360;
-                gradientStr.push(`${color} ${deg.toFixed(1)}deg ${(deg + d).toFixed(1)}deg`);
+                const d = (val / STATE.count) * 360;
+                grad.push(`${color} ${deg}deg ${deg + d}deg`);
                 deg += d;
             }
-            
-            document.getElementById('css-pie').style.background = `conic-gradient(${gradientStr.join(", ")})`;
+            document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
         }
 
-        // === 功能 4: AI 鑑定 ===
+        // === 7. AI 鑑定 (最終乾淨版) ===
         function startAiCamera() {
             document.getElementById('ai-result-box').style.display = 'none';
             document.getElementById('camera-box-ai').style.display = 'block';
             document.getElementById('btn-ai-start').style.display = 'none';
-
             STATE.scanners.ai = new Html5Qrcode("reader-ai");
-            STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, () => {}, () => {})
-                .catch(err => showToast("AI 相機啟動失敗", "error"));
+            STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, () => {}, () => {});
         }
 
         function stopAiScanner() {
@@ -595,182 +521,122 @@ function addRecord(country, qty) {
             document.getElementById('btn-ai-start').style.display = 'inline-block';
         }
 
-// === 🕵️‍♂️ 老王抓鬼版：takeAiSnapshot (絕對防禦 + 顯影劑) ===
-function takeAiSnapshot(event) {
-    // 1. 強制阻止瀏覽器預設行為 (防閃退第一道鎖)
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-
-    // 2. 建立紅色除錯框 (顯影劑)
-    // 如果網頁有重整，這個框框會瞬間消失；如果沒重整，它會留著。
-    var dbg = document.getElementById('debug-console');
-    if (!dbg) {
-        dbg = document.createElement('div');
-        dbg.id = 'debug-console';
-        // 設定為紅色背景，非常顯眼，擋住畫面也沒關係
-        dbg.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:60%; background:rgba(100,0,0,0.95); color:#fff; z-index:99999; overflow-y:scroll; font-size:14px; padding:15px; line-height:1.5;';
-        document.body.appendChild(dbg);
-    }
-    
-    // 記錄函式
-    function log(msg) {
-        var time = new Date().toLocaleTimeString();
-        dbg.innerHTML = `[${time}] ${msg}<br>` + dbg.innerHTML;
-        console.log(msg);
-    }
-
-    log("🚀 1. 按鈕被按下了！開始執行...");
-
-    var videoEl = document.querySelector("#reader-ai video");
-    if (!videoEl) { 
-        log("❌ 錯誤：找不到相機元件 <video>，請確認相機是否開啟");
-        return; 
-    }
-
-    try {
-        log("📷 2. 暫停相機畫面");
-        videoEl.pause();
-
-        log("🎨 3. 建立 Canvas 截圖 (寬度限制 600px)...");
-        var canvas = document.createElement("canvas");
-        var maxDim = 600; 
-        var w = videoEl.videoWidth;
-        var h = videoEl.videoHeight;
-        var scale = 1;
-        if (w > h) { if (w > maxDim) scale = maxDim / w; } 
-        else { if (h > maxDim) scale = maxDim / h; }
-        canvas.width = w * scale;
-        canvas.height = h * scale;
-        
-        var ctx = canvas.getContext("2d");
-        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-        
-        var fullBase64 = canvas.toDataURL("image/jpeg", 0.5);
-        var base64Data = fullBase64.split(',')[1];
-        log(`📦 4. 圖片壓縮完成，資料長度: ${base64Data.length}`);
-
-        // ⚠️ 關鍵：這次我們「不」呼叫 stopAiScanner()
-        // log("🚫 測試中：不關閉相機，避免畫面重置");
-
-        log(`🌐 5. 準備發送請求至 Google Script...`);
-        log(`🔗 URL: ${GOOGLE_SCRIPT_URL.substring(0, 30)}...`);
-
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ action: "identify", image: base64Data })
-        })
-        .then(function(res) {
-            log(`📩 6. 收到 Server 回應！HTTP Code: ${res.status}`);
-            if (!res.ok) throw new Error("HTTP 狀態錯誤: " + res.status);
-            return res.text(); // 先讀成文字，怕 JSON 解析壞掉
-        })
-        .then(function(text) {
-            log(`📄 7. 回應內容長度: ${text.length}`);
-            log(`👀 內容預覽: ${text.substring(0, 100)}...`);
-
-            try {
-                var data = JSON.parse(text);
-                if (data.status === "success") {
-                    log("✅ 8. 狀態 Success! 正在拆解 AI 資料...");
-                    
-                    var rawResult = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
-                    var jsonMatch = rawResult.match(/\{[\s\S]*\}/);
-                    
-                    if (jsonMatch) {
-                        log("🎉 9. 抓到 JSON 了！準備切換畫面...");
-                        // 只有在真的成功時，才關閉相機、顯示結果
-                        setTimeout(function(){
-                            stopAiScanner(); // 這時候才關相機
-                            var aiRes = JSON.parse(jsonMatch[0]);
-                            displayAiResult(aiRes, fullBase64);
-                            // 成功後隱藏除錯框
-                            dbg.style.display = 'none';
-                        }, 2000); // 延遲 2 秒讓你看到 Log
-                    } else {
-                        log("⚠️ JSON 結構擷取失敗，內容：" + rawResult);
-                    }
-                } else {
-                    log(`❌ 後端邏輯錯誤: ${data.message}`);
-                }
-            } catch (e) {
-                log(`❌ 解析失敗: ${e.message}`);
+        function takeAiSnapshot() {
+            // 如果有傳入 event，就阻止它的預設行為 (這是雙重保險)
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
             }
-        })
-        .catch(function(err) {
-            log(`☠️ Fetch 連線失敗: ${err.message}`);
-            log("請檢查網路，或 URL 是否正確");
-        });
+            var videoEl = document.querySelector("#reader-ai video");
+            if (!videoEl) { alert("相機未啟動"); return; }
+            videoEl.pause();
+            
+            // 顯示轉圈圈
+            var mask = document.getElementById('loading-mask');
+            mask.style.display = 'flex';
+            mask.querySelector('p').innerText = "AI 正在分析影像 (V65)...";
 
-    } catch (e) {
-        log(`💥 程式嚴重崩潰: ${e.message}`);
-    }
-}
-        // === 修改後的 AI 結果顯示函式 ===
-        function displayAiResult(data, imgSrc) {
-            // ... 在 displayAiResult 裡面 ...
-    const addBtn = document.getElementById('btn-confirm-add');
-    addBtn.onclick = () => {
-        // 直接把 AI 的原始文字丟進去，addRecord 會自己負責正規化
-        addRecord(data.country || "其它", 1);
-        
-        box.style.display = 'none';
-        switchTab('record');
-    };
+            // 縮圖
+            var canvas = document.createElement("canvas");
+            var maxDim = 800; 
+            var w = videoEl.videoWidth, h = videoEl.videoHeight;
+            var scale = (w > h ? (w > maxDim ? maxDim/w : 1) : (h > maxDim ? maxDim/h : 1));
+            canvas.width = w * scale; canvas.height = h * scale;
+            canvas.getContext("2d").drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            
+            var fullBase64 = canvas.toDataURL("image/jpeg", 0.6);
+            var base64Data = fullBase64.split(',')[1];
+
+            stopAiScanner(); // 關閉相機
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "identify", image: base64Data })
+            })
+            .then(res => res.json())
+            .then(data => {
+                mask.style.display = 'none'; // 關閉轉圈圈
+                if (data.status === "success") {
+                    try {
+                        // 智慧提取 JSON
+                        var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
+                        var match = raw.match(/\{[\s\S]*\}/);
+                        if (match) {
+                            displayAiResult(JSON.parse(match[0]), fullBase64);
+                        } else {
+                            alert("AI 回應格式錯誤: " + raw);
+                        }
+                    } catch(e) { alert("解析失敗: " + e.message); }
+                } else {
+                    alert("後端錯誤: " + data.message);
+                }
+            })
+            .catch(err => {
+                mask.style.display = 'none';
+                alert("連線失敗: " + err.message);
+            });
         }
 
-        // === 功能 5: 檔案上傳與圖片壓縮 ===
+        function displayAiResult(data, imgSrc) {
+            const box = document.getElementById('ai-result-box');
+            box.style.display = 'block'; // 顯示結果框
+            
+            document.getElementById('ai-country-text').innerText = data.country || "未知";
+            document.getElementById('ai-desc-text').innerText = data.keywords || "無";
+            document.getElementById('ai-preview-img').src = imgSrc;
+
+            document.getElementById('btn-confirm-add').onclick = () => {
+                addRecord(data.country || "其它", 1); // addRecord 會自動正規化
+                box.style.display = 'none';
+                switchTab('record');
+            };
+        }
+
+        // === 8. 上傳資料 ===
         function previewAndCompress(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (evt) => {
-                const img = new Image();
-                img.src = evt.target.result;
-                img.onload = () => {
-                    // 顯示預覽
-                    const outImg = document.getElementById('out_img');
-                    outImg.src = img.src;
-                    outImg.style.display = 'block';
-
-                    // 壓縮邏輯 (最大邊長 1024px)
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const maxDim = 1024;
-
-                    if (width > height && width > maxDim) {
-                        height *= maxDim / width;
-                        width = maxDim;
-                    } else if (height > maxDim) {
-                        width *= maxDim / height;
-                        height = maxDim;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                    STATE.uploadFileBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                };
+            // (為了節省篇幅，請保留你原本的預覽函式，或者參考 Turn 1 的代碼)
+            var file = e.target.files[0];
+            if(!file) return;
+            var reader = new FileReader();
+            reader.onload = function(evt) {
+                 var img = document.getElementById('out_img');
+                 img.src = evt.target.result; img.style.display='block';
+                 var temp = new Image(); temp.src = evt.target.result;
+                 temp.onload = function() {
+                     var cvs = document.createElement('canvas');
+                     var s = 1024/temp.width; if(s>1) s=1;
+                     cvs.width = temp.width*s; cvs.height = temp.height*s;
+                     cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height);
+                     STATE.uploadFileBase64 = cvs.toDataURL('image/jpeg', 0.7);
+                 }
             };
             reader.readAsDataURL(file);
         }
 
         function uploadData() {
-            if (STATE.count === 0) { showToast("沒有資料可上傳", "error"); return; }
-            const name = document.getElementById('inp_name').value;
-            if (!name) { showToast("請先輸入填表人姓名", "error"); switchTab('basic'); return; }
+            if(STATE.count===0) { showToast("無資料", "error"); return; }
+            var btn = document.getElementById('btn-upload');
+            btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
 
-            const btn = document.getElementById('btn-upload');
-            btn.disabled = true;
-            btn.innerText = "⏳ 上傳數據中...";
+            // 準備統計字串
+            let otherStr = [];
+            let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0 };
+            for(let k in STATE.stats) {
+                if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k];
+                else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k];
+                else if(k.includes("越南")) statsOut.cnt_vn += STATE.stats[k];
+                else if(k.includes("菲律賓")) statsOut.cnt_ph += STATE.stats[k];
+                else if(k.includes("泰國")) statsOut.cnt_th += STATE.stats[k];
+                else if(k.includes("印尼")) statsOut.cnt_id += STATE.stats[k];
+                else if(k.includes("馬來西亞")) statsOut.cnt_my += STATE.stats[k];
+                else if(k.includes("韓國")) statsOut.cnt_kr += STATE.stats[k];
+                else if(k.includes("日本")) statsOut.cnt_jp += STATE.stats[k];
+                else otherStr.push(k + "*" + STATE.stats[k]);
+            }
 
-            // 準備資料 Payload
-            const payload = {
+            var payload = {
                 action: "save",
-                name: name,
+                name: document.getElementById('inp_name').value,
                 participants: document.getElementById('inp_participants').value,
                 loc: document.getElementById('inp_loc').value,
                 city: STATE.currentCity,
@@ -779,70 +645,24 @@ function takeAiSnapshot(event) {
                 note: document.getElementById('inp_note').value,
                 fileData: STATE.uploadFileBase64 ? STATE.uploadFileBase64.split(',')[1] : "",
                 mimeType: "image/jpeg",
-                // 展開統計數據
-                ...parseStatsForUpload()
+                cnt_other: otherStr.join(", "),
+                ...statsOut
             };
 
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors', // 如果 GAS 沒有回傳正確 CORS Header，使用 no-cors (但無法讀取回應)
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+            .then(res => res.json())
+            .then(data => {
+                alert("✅ 上傳成功！");
+                STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.uploadFileBase64=null;
+                updateUI(); switchTab('basic');
             })
-            .then(res => {
-                // 注意: no-cors 模式下 res.ok 可能是 false，且無法讀取 JSON
-                // 這裡假設送出即成功，實際專案建議後端正確設定 CORS
-                showToast("🚀 資料已傳送 (若無錯誤請視為成功)", "success");
-                resetForm();
-            })
-            .catch(err => {
-                showToast("❌ 上傳失敗: " + err.message, "error");
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerText = "🚀 上傳資料至雲端";
-            });
-        }
-
-        function parseStatsForUpload() {
-            // 將統計物件平面化以便 Google Sheet 讀取
-            const output = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" };
-            const others = [];
-            
-            for (const [key, val] of Object.entries(STATE.stats)) {
-                if (key.includes("台灣")) output.cnt_tw += val;
-                else if (key.includes("中國")) output.cnt_cn += val;
-                else if (key.includes("越南")) output.cnt_vn += val;
-                else if (key.includes("菲律賓")) output.cnt_ph += val;
-                else if (key.includes("泰國")) output.cnt_th += val;
-                else if (key.includes("韓國")) output.cnt_kr += val;
-                else if (key.includes("日本")) output.cnt_jp += val;
-                else others.push(`${key}*${val}`);
-            }
-            output.cnt_other = others.join(", ");
-            return output;
-        }
-
-        function resetForm() {
-            STATE.count = 0;
-            STATE.stats = {};
-            STATE.historyStack = [];
-            STATE.uploadFileBase64 = null;
-            document.getElementById('inp_qty').value = "1";
-            document.getElementById('out_img').style.display = 'none';
-            document.getElementById('inp_note').value = "";
-            updateUI();
-            switchTab('basic');
-        }
-
-        function showLoading(show, text) {
-            const mask = document.getElementById('loading-mask');
-            mask.style.display = show ? 'flex' : 'none';
-            if(text) mask.querySelector('p').innerText = text;
+            .catch(err => alert("上傳失敗: " + err))
+            .finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
     </script>
 </body>
 </html>
+
 
 
 
