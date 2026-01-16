@@ -279,7 +279,7 @@
             <div id="camera-box-ai" class="camera-box">
                 <div id="reader-ai" class="scanner-view"></div>
                 <div id="ai-cam-overlay">
-                    <div onclick="takeAiSnapshot()" class="btn-snap" style="display:flex; justify-content:center; align-items:center; cursor:pointer;">
+                    <div onclick="takeAiSnapshot(event)" class="btn-snap" style="display:flex; justify-content:center; align-items:center; cursor:pointer;">
                         <span style="font-size:30px;">📸</span>
                     </div>
                 </div>
@@ -595,83 +595,117 @@ function addRecord(country, qty) {
             document.getElementById('btn-ai-start').style.display = 'inline-block';
         }
 
-// === 老王最終定案版：takeAiSnapshot (Div 按鈕專用) ===
-function takeAiSnapshot() {
-    var videoEl = document.querySelector("#reader-ai video");
-    if (!videoEl) { alert("相機未啟動"); return; }
-
-    // 1. 暫停畫面
-    videoEl.pause();
-    
-    // 顯示轉圈圈 (確保你的 HTML 有 loading-mask)
-    var mask = document.getElementById('loading-mask');
-    if(mask) {
-        mask.style.display = 'flex';
-        mask.querySelector('p').innerText = "AI 正在分析影像...";
+// === 🕵️‍♂️ 老王抓鬼版：takeAiSnapshot (絕對防禦 + 顯影劑) ===
+function takeAiSnapshot(event) {
+    // 1. 強制阻止瀏覽器預設行為 (防閃退第一道鎖)
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
 
-    // 2. 建立 Canvas 進行縮圖 (800px)
-    var canvas = document.createElement("canvas");
-    var maxDim = 800; 
-    var w = videoEl.videoWidth;
-    var h = videoEl.videoHeight;
-    var scale = 1;
-
-    if (w > h) { if (w > maxDim) scale = maxDim / w; } 
-    else { if (h > maxDim) scale = maxDim / h; }
-
-    canvas.width = w * scale;
-    canvas.height = h * scale;
+    // 2. 建立紅色除錯框 (顯影劑)
+    // 如果網頁有重整，這個框框會瞬間消失；如果沒重整，它會留著。
+    var dbg = document.getElementById('debug-console');
+    if (!dbg) {
+        dbg = document.createElement('div');
+        dbg.id = 'debug-console';
+        // 設定為紅色背景，非常顯眼，擋住畫面也沒關係
+        dbg.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:60%; background:rgba(100,0,0,0.95); color:#fff; z-index:99999; overflow-y:scroll; font-size:14px; padding:15px; line-height:1.5;';
+        document.body.appendChild(dbg);
+    }
     
-    var ctx = canvas.getContext("2d");
-    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    // 記錄函式
+    function log(msg) {
+        var time = new Date().toLocaleTimeString();
+        dbg.innerHTML = `[${time}] ${msg}<br>` + dbg.innerHTML;
+        console.log(msg);
+    }
 
-    var fullBase64 = canvas.toDataURL("image/jpeg", 0.6);
-    var base64Data = fullBase64.split(',')[1];
+    log("🚀 1. 按鈕被按下了！開始執行...");
 
-    // 3. 停止相機
-    stopAiScanner();
+    var videoEl = document.querySelector("#reader-ai video");
+    if (!videoEl) { 
+        log("❌ 錯誤：找不到相機元件 <video>，請確認相機是否開啟");
+        return; 
+    }
 
-    // 4. 發送請求
-    console.log("發送請求至:", GOOGLE_SCRIPT_URL);
-    
-    fetch(GOOGLE_SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: "identify", image: base64Data })
-    })
-    .then(function(res) { 
-        if (!res.ok) throw new Error("網路錯誤: " + res.status);
-        return res.json(); 
-    })
-    .then(function(data) {
-        if(mask) mask.style.display = 'none'; // 關閉轉圈圈
+    try {
+        log("📷 2. 暫停相機畫面");
+        videoEl.pause();
 
-        if (data.status === "success") {
+        log("🎨 3. 建立 Canvas 截圖 (寬度限制 600px)...");
+        var canvas = document.createElement("canvas");
+        var maxDim = 600; 
+        var w = videoEl.videoWidth;
+        var h = videoEl.videoHeight;
+        var scale = 1;
+        if (w > h) { if (w > maxDim) scale = maxDim / w; } 
+        else { if (h > maxDim) scale = maxDim / h; }
+        canvas.width = w * scale;
+        canvas.height = h * scale;
+        
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        
+        var fullBase64 = canvas.toDataURL("image/jpeg", 0.5);
+        var base64Data = fullBase64.split(',')[1];
+        log(`📦 4. 圖片壓縮完成，資料長度: ${base64Data.length}`);
+
+        // ⚠️ 關鍵：這次我們「不」呼叫 stopAiScanner()
+        // log("🚫 測試中：不關閉相機，避免畫面重置");
+
+        log(`🌐 5. 準備發送請求至 Google Script...`);
+        log(`🔗 URL: ${GOOGLE_SCRIPT_URL.substring(0, 30)}...`);
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: "identify", image: base64Data })
+        })
+        .then(function(res) {
+            log(`📩 6. 收到 Server 回應！HTTP Code: ${res.status}`);
+            if (!res.ok) throw new Error("HTTP 狀態錯誤: " + res.status);
+            return res.text(); // 先讀成文字，怕 JSON 解析壞掉
+        })
+        .then(function(text) {
+            log(`📄 7. 回應內容長度: ${text.length}`);
+            log(`👀 內容預覽: ${text.substring(0, 100)}...`);
+
             try {
-                // 智慧提取 JSON (解決 Markdown 包裝問題)
-                var rawResult = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
-                // 抓取 { ... }
-                var jsonMatch = rawResult.match(/\{[\s\S]*\}/);
-                
-                if (jsonMatch) {
-                    var aiRes = JSON.parse(jsonMatch[0]);
-                    // 🎉 成功！顯示結果
-                    displayAiResult(aiRes, fullBase64);
+                var data = JSON.parse(text);
+                if (data.status === "success") {
+                    log("✅ 8. 狀態 Success! 正在拆解 AI 資料...");
+                    
+                    var rawResult = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
+                    var jsonMatch = rawResult.match(/\{[\s\S]*\}/);
+                    
+                    if (jsonMatch) {
+                        log("🎉 9. 抓到 JSON 了！準備切換畫面...");
+                        // 只有在真的成功時，才關閉相機、顯示結果
+                        setTimeout(function(){
+                            stopAiScanner(); // 這時候才關相機
+                            var aiRes = JSON.parse(jsonMatch[0]);
+                            displayAiResult(aiRes, fullBase64);
+                            // 成功後隱藏除錯框
+                            dbg.style.display = 'none';
+                        }, 2000); // 延遲 2 秒讓你看到 Log
+                    } else {
+                        log("⚠️ JSON 結構擷取失敗，內容：" + rawResult);
+                    }
                 } else {
-                    alert("AI 回傳格式無法解析，原始資料：" + rawResult);
+                    log(`❌ 後端邏輯錯誤: ${data.message}`);
                 }
-            } catch(e) { 
-                console.error(e);
-                alert("解析失敗: " + e.message);
+            } catch (e) {
+                log(`❌ 解析失敗: ${e.message}`);
             }
-        } else { 
-            alert("後端錯誤: " + data.message); 
-        }
-    })
-    .catch(function(err) { 
-        if(mask) mask.style.display = 'none';
-        alert("連線失敗: " + err.message);
-    });
+        })
+        .catch(function(err) {
+            log(`☠️ Fetch 連線失敗: ${err.message}`);
+            log("請檢查網路，或 URL 是否正確");
+        });
+
+    } catch (e) {
+        log(`💥 程式嚴重崩潰: ${e.message}`);
+    }
 }
         // === 修改後的 AI 結果顯示函式 ===
         function displayAiResult(data, imgSrc) {
@@ -809,6 +843,7 @@ function takeAiSnapshot() {
     </script>
 </body>
 </html>
+
 
 
 
