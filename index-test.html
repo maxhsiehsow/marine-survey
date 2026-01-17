@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V66 (多圖+手動修正版)</title>
+    <title>海廢調查員 V70 (全球暢通版)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: #333; }
@@ -12,7 +12,10 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        h2 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px; }
+        
+        /* 🔥 V70 特徵：標題改為紅色，讓你確認是否更新成功 */
+        h2 { margin-top: 0; color: #d32f2f; font-size: 18px; border-bottom: 2px solid #ffcdd2; padding-bottom: 8px; }
+        
         label { display: block; margin: 8px 0 4px; font-weight: bold; font-size: 14px; }
         input, select, textarea { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; background: #fff; }
         
@@ -21,31 +24,26 @@
         .btn-orange { background: #f57c00; } .btn-upload { background: #673ab7; }
         .btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); }
         
-        /* 圖片預覽區 */
         .img-preview-box { display: flex; gap: 10px; margin-top: 5px; overflow-x: auto; }
         .preview-item { width: 80px; height: 80px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px dashed #999; flex-shrink: 0; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .preview-label { font-size: 10px; position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.5); color: white; text-align: center; }
 
-        /* 底部導航 */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
         .nav-item { flex: 1; text-align: center; font-size: 12px; color: #999; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         .nav-item span { display: block; font-size: 22px; margin-bottom: 2px; }
 
-        /* 相機與 AI 結果 */
         .camera-box { position: relative; display: none; background: #000; border-radius: 12px; overflow: hidden; margin-top: 10px; }
         .scanner-view { width: 100%; min-height: 300px; }
         .btn-snap-div { width: 70px; height: 70px; background: rgba(255,255,255,0.9); border-radius: 50%; border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 0 auto; position: absolute; bottom: 20px; left: 0; right: 0; z-index: 10; font-size: 30px; }
         
         .ai-result-box { display: none; border: 2px solid var(--primary); background: #e3f2fd; padding: 15px; border-radius: 12px; margin-top: 10px; text-align: center; }
         
-        /* Loading Mask */
         #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* 統計圖表 */
         .pie-chart { width: 120px; height: 120px; border-radius: 50%; background: #eee; margin: 10px auto; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 5px; }
         th, td { border-bottom: 1px solid #eee; padding: 6px; }
@@ -56,7 +54,7 @@
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text">載入中...</p></div>
 
     <div id="view-basic" class="container active-tab">
-        <h2>📝 1. 基本資訊與照片</h2>
+        <h2>📝 1. 基本資訊 (V70)</h2>
         <div class="card">
             <label>填表人 / 參與人數</label>
             <div style="display:flex; gap:10px;">
@@ -91,7 +89,7 @@
     </div>
 
     <div id="view-record" class="container">
-        <h2>📊 2. 記錄與統計</h2>
+        <h2>📊 2. 記錄與統計 (V70)</h2>
         <div class="card">
             <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">
                 目前收集: <span id="disp_count" style="color:var(--primary); font-size:32px;">0</span> / 100
@@ -103,7 +101,7 @@
 
             <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
 
-            <label>🔍 條碼前 3 碼查詢 (如 471)</label>
+            <label>🔍 條碼前 3 碼查詢 (文字模式)</label>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="輸入前3碼 (如 005)" style="margin-bottom:0;">
                 <button onclick="handlePrefixCheck()" class="btn-blue" style="width:80px; margin-top:0;">查詢</button>
@@ -148,7 +146,7 @@
     </div>
 
     <div id="view-ai" class="container">
-        <h2>🤖 3. AI 鑑定室</h2>
+        <h2>🤖 3. AI 鑑定室 (V70)</h2>
         <div class="card" style="text-align:center;">
             <p>拍一張，AI 幫你分類！<br><small>如果不準，您還可以手動修正喔。</small></p>
             <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
@@ -160,14 +158,9 @@
 
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-                
                 <h3 style="color:#0056b3; margin:10px 0 5px;">AI 認為是：</h3>
-                
-                <select id="ai-country-select" style="font-size:18px; font-weight:bold; color:#333; padding:8px; border:2px solid #0056b3;">
-                    </select>
-
+                <select id="ai-country-select" style="font-size:18px; font-weight:bold; color:#333; padding:8px; border:2px solid #0056b3;"></select>
                 <p style="font-size:13px; color:#666; background:white; padding:5px; border-radius:4px; margin-top:5px;">特徵：<span id="ai-desc-text"></span></p>
-                
                 <div style="display:flex; gap:10px; margin-top:15px;">
                     <button id="btn-google-check" class="btn-outline" style="font-size:14px;">🔍 Google 查證</button>
                     <button id="btn-confirm-ai" class="btn-green">✅ 確認加入</button>
@@ -181,81 +174,33 @@
         <div class="nav-item" id="nav-record" onclick="switchTab('record')"><span>📊</span>記錄</div>
         <div class="nav-item" id="nav-ai" onclick="switchTab('ai')"><span>🤖</span>AI 鑑定</div>
     </div>
+
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // === 1. 全局狀態 ===
-        const STATE = {
-            count: 0, target: 100, stats: {}, historyStack: [],
-            currentCity: "未定位",
-            imgs: { env: null, group: null, evidence: null },
-            scanners: { record: null, ai: null }
-        };
+        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, evidence: null }, scanners: { record: null, ai: null } };
 
-        // === 2. 核心邏輯：全球條碼資料庫 (GS1) ===
-        // 資料來源：維基百科
+        // === 全球條碼資料庫 (GS1) ===
         const GS1_RANGES = [
-            // --- 北美 ---
-            { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" },
-            { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" },
-            { s: 750, e: 750, c: "🇲🇽 墨西哥" },
-            // --- 歐洲 ---
-            { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" },
-            { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" },
-            { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" },
-            { s: 540, e: 549, c: "🇧🇪 比利時/盧森堡" }, { s: 570, e: 579, c: "🇩🇰 丹麥" },
-            { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" },
-            { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" },
-            { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" },
-            { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" },
-            { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" },
-            { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" },
-            { s: 858, e: 858, c: "🇸🇰 斯洛伐克" }, { s: 860, e: 860, c: "🇷🇸 塞爾維亞" },
-            { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 474, e: 474, c: "🇪🇪 愛沙尼亞" },
-            { s: 475, e: 475, c: "🇱🇻 拉脫維亞" }, { s: 477, e: 477, c: "🇱🇹 立陶宛" },
-            { s: 481, e: 481, c: "🇧🇾 白俄羅斯" }, { s: 482, e: 482, c: "🇺🇦 烏克蘭" },
-            { s: 484, e: 484, c: "🇲🇩 摩爾多瓦" }, { s: 380, e: 380, c: "🇧🇬 保加利亞" },
-            { s: 383, e: 383, c: "🇸🇮 斯洛維尼亞" }, { s: 385, e: 385, c: "🇭🇷 克羅埃西亞" },
-            { s: 387, e: 387, c: "🇧🇦 波赫" }, { s: 535, e: 535, c: "🇲🇹 馬爾他" },
-            { s: 529, e: 529, c: "🇨🇾 賽普勒斯" }, { s: 569, e: 569, c: "🇮🇸 冰島" },
-            { s: 594, e: 594, c: "🇷🇴 羅馬尼亞" },
-            // --- 亞洲 ---
-            { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" },
-            { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" },
-            { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" },
-            { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 867, e: 867, c: "🇰🇵 北韓" },
-            { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" },
-            { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" },
-            { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" },
-            { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" },
-            { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 865, e: 865, c: "🇲🇳 蒙古" },
-            { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 608, e: 608, c: "🇧🇭 巴林" },
-            { s: 622, e: 622, c: "🇪🇬 埃及" }, { s: 626, e: 626, c: "🇮🇷 伊朗" },
-            { s: 628, e: 628, c: "🇸🇦 沙烏地" }, { s: 629, e: 629, c: "🇦🇪 阿聯酋" },
-            { s: 729, e: 729, c: "🇮🇱 以色列" }, { s: 528, e: 528, c: "🇱🇧 黎巴嫩" },
-            { s: 621, e: 621, c: "🇸🇾 敘利亞" }, { s: 625, e: 625, c: "🇯🇴 約旦" },
-            { s: 627, e: 627, c: "🇰🇼 科威特" }, { s: 630, e: 630, c: "🇶🇦 卡達" },
-            // --- 大洋洲 ---
-            { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" },
-            // --- 非洲 ---
-            { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" },
-            { s: 611, e: 611, c: "🇲🇦 摩洛哥" }, { s: 613, e: 613, c: "🇩🇿 阿爾及利亞" },
-            { s: 616, e: 616, c: "🇰🇪 肯亞" }, { s: 619, e: 619, c: "🇹🇳 突尼西亞" },
-            { s: 624, e: 624, c: "🇱🇾 利比亞" }, { s: 603, e: 603, c: "🇬🇭 迦納" },
-            { s: 604, e: 604, c: "🇸🇳 塞內加爾" }, { s: 617, e: 617, c: "🇨🇲 喀麥隆" },
-            { s: 618, e: 618, c: "🇨🇮 象牙海岸" }, { s: 623, e: 623, c: "🇧🇳 汶萊" },
-            // --- 南美洲 ---
-            { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" },
-            { s: 780, e: 780, c: "🇨🇱 智利" }, { s: 770, e: 771, c: "🇨🇴 哥倫比亞" },
-            { s: 773, e: 773, c: "🇺🇾 烏拉圭" }, { s: 775, e: 775, c: "🇵🇪 秘魯" },
-            { s: 784, e: 784, c: "🇵🇾 巴拉圭" }, { s: 786, e: 786, c: "🇪🇨 厄瓜多" },
-            { s: 759, e: 759, c: "🇻🇪 委內瑞拉" }, { s: 777, e: 777, c: "🇧🇴 玻利維亞" },
-            { s: 740, e: 740, c: "🇬🇹 瓜地馬拉" }, { s: 741, e: 741, c: "🇸🇻 薩爾瓦多" },
-            { s: 742, e: 742, c: "🇭🇳 宏都拉斯" }, { s: 743, e: 743, c: "🇳🇮 尼加拉瓜" },
-            { s: 744, e: 744, c: "🇨🇷 哥斯大黎加" }, { s: 745, e: 745, c: "🇵🇦 巴拿馬" },
-            { s: 746, e: 746, c: "🇩🇴 多明尼加" }, { s: 850, e: 850, c: "🇨🇺 古巴" }
+            { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" },
+            { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" },
+            { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" },
+            { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" },
+            { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" },
+            { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" },
+            { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" },
+            { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" },
+            { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" },
+            { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" },
+            { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" },
+            { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" },
+            { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" },
+            { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" },
+            { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" },
+            { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" },
+            { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" }
         ];
 
-        // 自動生成快速查詢表
+        // 自動生成 Prefix Table
         const PREFIX_DB = {};
         GS1_RANGES.forEach(range => {
             for (let i = range.s; i <= range.e; i++) {
@@ -264,43 +209,33 @@
             }
         });
 
-        // 國家顏色映射
         const COLORS = {
             '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', 
             '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', 
             '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', 
-            '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '其它': '#757575'
+            '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575'
         };
 
-        // ⚠️ 請確認這是 V66 的網址
+        // ⚠️ 請確認你的 GAS 網址是否正確
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
-        // === 3. 初始化 ===
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('loading-mask').style.display = 'none';
-                switchTab('basic');
-            }, 800);
-        };
+        window.onload = () => { setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); };
 
-        // === 4. 核心功能 ===
         function normalizeName(rawName) {
             if (!rawName) return "其它";
             let clean = rawName.toString().trim();
-            if (clean.includes("台灣") || clean.includes("Taiwan") || clean.includes("ROC")) return "🇹🇼 台灣";
+            if (clean.includes("台灣") || clean.includes("Taiwan")) return "🇹🇼 台灣";
             if (clean.includes("中國") || clean.includes("China") || clean.includes("CN") || clean.includes("大陸")) return "🇨🇳 中國";
             if (clean.includes("越南") || clean.includes("Vietnam")) return "🇻🇳 越南";
             if (clean.includes("菲律賓") || clean.includes("Philippines")) return "🇵🇭 菲律賓";
             if (clean.includes("泰國") || clean.includes("Thailand")) return "🇹🇭 泰國";
             if (clean.includes("印尼") || clean.includes("Indonesia")) return "🇮🇩 印尼";
-            if (clean.includes("馬來西亞") || clean.includes("Malaysia")) return "🇲🇾 馬來西亞";
+            if (clean.includes("馬來西亞")) return "🇲🇾 馬來西亞";
             if (clean.includes("韓國") || clean.includes("Korea")) return "🇰🇷 韓國";
             if (clean.includes("日本") || clean.includes("Japan")) return "🇯🇵 日本";
             
-            // 嘗試從資料庫反查標準名稱
-            for (let code in PREFIX_DB) {
-                if (PREFIX_DB[code] === clean) return clean;
-            }
+            // 資料庫反查
+            for (let code in PREFIX_DB) { if (PREFIX_DB[code] === clean) return clean; }
             if (Object.keys(COLORS).includes(clean)) return clean;
             return "其它";
         }
@@ -313,7 +248,6 @@
             stopRecordScanner(); stopAiScanner();
         }
 
-        // 圖片處理
         function handleImgUpload(input, type) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -324,7 +258,6 @@
                 imgEl.src = e.target.result;
                 imgEl.style.display = 'block';
                 if(type !== 'evidence') document.getElementById(`icon-${type}`).style.display = 'none';
-
                 const temp = new Image();
                 temp.src = e.target.result;
                 temp.onload = function() {
@@ -338,22 +271,18 @@
             reader.readAsDataURL(file);
         }
 
-        // AI 鑑定
         function takeAiSnapshot() {
             var videoEl = document.querySelector("#reader-ai video");
             if (!videoEl) { alert("相機未啟動"); return; }
             videoEl.pause();
             document.getElementById('loading-mask').style.display = 'flex';
-
             var cvs = document.createElement("canvas");
             var max = 800; var w = videoEl.videoWidth; var h = videoEl.videoHeight;
             var s = (w>h ? (w>max?max/w:1) : (h>max?max/h:1));
             cvs.width = w*s; cvs.height = h*s;
             cvs.getContext("2d").drawImage(videoEl, 0, 0, cvs.width, cvs.height);
             var b64Full = cvs.toDataURL("image/jpeg", 0.6);
-            
             stopAiScanner();
-
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST', body: JSON.stringify({ action: "identify", image: b64Full.split(',')[1] })
             })
@@ -377,11 +306,9 @@
             box.style.display = 'block';
             document.getElementById('ai-preview-img').src = imgSrc;
             document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵";
-
             const select = document.getElementById('ai-country-select');
             select.innerHTML = "";
             let aiGuess = normalizeName(data.country); 
-            
             if (aiGuess !== "其它") {
                 select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true));
                 select.add(new Option("---", "disabled", false, false));
@@ -390,34 +317,25 @@
                 if (c !== aiGuess) select.add(new Option(c, c));
             }
             if (aiGuess === "其它") select.value = "其它";
-
             const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim();
-            const gBtn = document.getElementById('btn-google-check');
-            gBtn.onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
-
+            document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
             document.getElementById('btn-confirm-ai').onclick = () => {
-                const finalChoice = select.value;
-                if (finalChoice === "disabled") return;
-                addRecord(finalChoice, 1);
+                if (select.value === "disabled") return;
+                addRecord(select.value, 1);
                 box.style.display = 'none';
                 switchTab('record');
             };
         }
 
-        // 手動查詢
         function handlePrefixCheck() {
             const code = document.getElementById('inp_prefix').value;
-            // 修正：容許字串且至少3碼
             if (!code || code.length < 3) { alert("請輸入至少 3 碼"); return; }
-            
-            // 取前三碼
             const prefix = code.substring(0, 3);
             const country = PREFIX_DB[prefix];
-            
             if (country) {
                 if(confirm(`🔎 查詢結果：${country}\n\n要加入記錄嗎？`)) {
                     addRecord(country, 1);
-                    document.getElementById('inp_prefix').value = ""; // 清空
+                    document.getElementById('inp_prefix').value = "";
                 }
             } else {
                 alert(`❌ 查無代碼 [${prefix}] 的歸屬地`);
@@ -441,19 +359,14 @@
             STATE.count -= last.qty;
             updateUI();
         }
-        
-        function handleManualAdd() {
-            addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value));
-        }
+        function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value)); }
 
         function updateUI() {
             document.getElementById('disp_count').innerText = STATE.count;
             const tbody = document.getElementById('stats-body');
             tbody.innerHTML = "";
             let grad = [], deg = 0;
-            if (STATE.count === 0) {
-                document.getElementById('css-pie').style.background = "#eee"; return;
-            }
+            if (STATE.count === 0) { document.getElementById('css-pie').style.background = "#eee"; return; }
             for (const [key, val] of Object.entries(STATE.stats)) {
                 const color = COLORS[key] || '#757575';
                 const pct = ((val / STATE.count) * 100).toFixed(1);
@@ -469,7 +382,6 @@
             if (STATE.count === 0) { alert("無資料"); return; }
             var btn = document.getElementById('btn-upload');
             btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
-
             let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" };
             let others = [];
             for(let k in STATE.stats) {
@@ -485,7 +397,6 @@
                 else others.push(`${k}*${STATE.stats[k]}`);
             }
             statsOut.cnt_other = others.join(", ");
-
             var payload = {
                 action: "save",
                 name: document.getElementById('inp_name').value,
@@ -500,17 +411,13 @@
                 groupData: STATE.imgs.group || "",
                 ...statsOut
             };
-
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json())
             .then(data => {
                 alert("✅ 上傳成功！");
-                STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
-                STATE.imgs = { env: null, group: null, evidence: null };
-                document.getElementById('img-preview-env').style.display='none'; 
-                document.getElementById('icon-env').style.display='block';
-                document.getElementById('img-preview-group').style.display='none'; 
-                document.getElementById('icon-group').style.display='block';
+                STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.imgs = { env: null, group: null, evidence: null };
+                document.getElementById('img-preview-env').style.display='none'; document.getElementById('icon-env').style.display='block';
+                document.getElementById('img-preview-group').style.display='none'; document.getElementById('icon-group').style.display='block';
                 document.getElementById('img-preview-evidence').style.display='none';
                 document.getElementById('inp_note').value = "";
                 updateUI(); switchTab('basic');
@@ -519,7 +426,6 @@
             .finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
 
-        // 相機功能 (保持原樣)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
@@ -529,7 +435,7 @@
             STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
                 (txt) => {
                     STATE.scanners.record.pause();
-                    const c = getCountryFromCode(txt);
+                    const c = getCountryFromCode(txt); // 會用到 PREFIX_DB
                     if(confirm(`掃描：${c}\n加入嗎？`)) { addRecord(c, 1); }
                     setTimeout(()=>STATE.scanners.record.resume(), 500);
                 }, ()=>{}
@@ -562,10 +468,5 @@
             }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
         }
     </script>
-   
 </body>
 </html>
-
-
-
-
