@@ -181,19 +181,18 @@
         <div class="nav-item" id="nav-record" onclick="switchTab('record')"><span>📊</span>記錄</div>
         <div class="nav-item" id="nav-ai" onclick="switchTab('ai')"><span>🤖</span>AI 鑑定</div>
     </div>
-
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // === 全局狀態 ===
+        // === 1. 全局狀態 ===
         const STATE = {
             count: 0, target: 100, stats: {}, historyStack: [],
             currentCity: "未定位",
-            imgs: { env: null, group: null, evidence: null }, // 儲存三張圖的 Base64
+            imgs: { env: null, group: null, evidence: null },
             scanners: { record: null, ai: null }
         };
 
-// === 2. 核心邏輯：條碼資料庫 (全球完整版) ===
-        // 資料來源：維基百科 (GS1)
+        // === 2. 核心邏輯：全球條碼資料庫 (GS1) ===
+        // 資料來源：維基百科
         const GS1_RANGES = [
             // --- 北美 ---
             { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" },
@@ -260,12 +259,12 @@
         const PREFIX_DB = {};
         GS1_RANGES.forEach(range => {
             for (let i = range.s; i <= range.e; i++) {
-                // 轉字串並補零 (ex: 5 -> "005", 615 -> "615")
                 let code = i.toString().padStart(3, '0');
                 PREFIX_DB[code] = range.c;
             }
         });
-        // 國家顏色映射 (保持原本的，讓圓餅圖顏色固定)
+
+        // 國家顏色映射
         const COLORS = {
             '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', 
             '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', 
@@ -276,7 +275,15 @@
         // ⚠️ 請確認這是 V66 的網址
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
-        // === 核心邏輯 ===
+        // === 3. 初始化 ===
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('loading-mask').style.display = 'none';
+                switchTab('basic');
+            }, 800);
+        };
+
+        // === 4. 核心功能 ===
         function normalizeName(rawName) {
             if (!rawName) return "其它";
             let clean = rawName.toString().trim();
@@ -289,10 +296,13 @@
             if (clean.includes("馬來西亞") || clean.includes("Malaysia")) return "🇲🇾 馬來西亞";
             if (clean.includes("韓國") || clean.includes("Korea")) return "🇰🇷 韓國";
             if (clean.includes("日本") || clean.includes("Japan")) return "🇯🇵 日本";
-            // 若為標準格式則直接回傳
-            if (Object.values(PREFIX_DB).includes(clean)) return clean;
+            
+            // 嘗試從資料庫反查標準名稱
+            for (let code in PREFIX_DB) {
+                if (PREFIX_DB[code] === clean) return clean;
+            }
             if (Object.keys(COLORS).includes(clean)) return clean;
-            return "其它"; // 預設歸類為其它
+            return "其它";
         }
 
         function switchTab(tabName) {
@@ -303,20 +313,18 @@
             stopRecordScanner(); stopAiScanner();
         }
 
-        // === 圖片處理 (通用版) ===
+        // 圖片處理
         function handleImgUpload(input, type) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
             const reader = new FileReader();
             reader.onload = function(e) {
-                // 顯示預覽
                 const imgId = type === 'evidence' ? 'img-preview-evidence' : `img-preview-${type}`;
                 const imgEl = document.getElementById(imgId);
                 imgEl.src = e.target.result;
                 imgEl.style.display = 'block';
                 if(type !== 'evidence') document.getElementById(`icon-${type}`).style.display = 'none';
 
-                // 壓縮並儲存 Base64
                 const temp = new Image();
                 temp.src = e.target.result;
                 temp.onload = function() {
@@ -330,7 +338,7 @@
             reader.readAsDataURL(file);
         }
 
-        // === AI 鑑定 (含下拉選單修正) ===
+        // AI 鑑定
         function takeAiSnapshot() {
             var videoEl = document.querySelector("#reader-ai video");
             if (!videoEl) { alert("相機未啟動"); return; }
@@ -370,33 +378,23 @@
             document.getElementById('ai-preview-img').src = imgSrc;
             document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵";
 
-            // 1. 初始化下拉選單
             const select = document.getElementById('ai-country-select');
-            select.innerHTML = ""; // 清空
+            select.innerHTML = "";
+            let aiGuess = normalizeName(data.country); 
             
-            // 2. 判斷 AI 的建議
-            let aiGuess = normalizeName(data.country); // 把 "未定" 轉成 "其它" 或對應國家
-            
-            // 3. 建立選項 (把所有國家都列出來，方便修正)
-            // 先把 AI 猜的放第一個 (如果不是其它)
             if (aiGuess !== "其它") {
                 select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true));
                 select.add(new Option("---", "disabled", false, false));
             }
-            // 列出所有固定選項
             for (let c of Object.keys(COLORS)) {
                 if (c !== aiGuess) select.add(new Option(c, c));
             }
-            // 如果 AI 猜是其它，預設選中其它
             if (aiGuess === "其它") select.value = "其它";
 
-            // 4. Google 查證按鈕 (修復)
-            // 組合關鍵字: 國家 + 關鍵字 + bottle
             const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim();
             const gBtn = document.getElementById('btn-google-check');
             gBtn.onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
 
-            // 5. 確認加入按鈕
             document.getElementById('btn-confirm-ai').onclick = () => {
                 const finalChoice = select.value;
                 if (finalChoice === "disabled") return;
@@ -406,18 +404,23 @@
             };
         }
 
-        // === 條碼與記錄 ===
+        // 手動查詢
         function handlePrefixCheck() {
             const code = document.getElementById('inp_prefix').value;
+            // 修正：容許字串且至少3碼
             if (!code || code.length < 3) { alert("請輸入至少 3 碼"); return; }
-            const country = PREFIX_DB[code.substring(0, 3)];
+            
+            // 取前三碼
+            const prefix = code.substring(0, 3);
+            const country = PREFIX_DB[prefix];
+            
             if (country) {
-                if(confirm(`查詢結果：${country}\n要加入嗎？`)) {
+                if(confirm(`🔎 查詢結果：${country}\n\n要加入記錄嗎？`)) {
                     addRecord(country, 1);
-                    document.getElementById('inp_prefix').value = "";
+                    document.getElementById('inp_prefix').value = ""; // 清空
                 }
             } else {
-                alert("❌ 查無此代碼歸屬");
+                alert(`❌ 查無代碼 [${prefix}] 的歸屬地`);
             }
         }
 
@@ -462,20 +465,14 @@
             document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
         }
 
-      function uploadData() {
+        function uploadData() {
             if (STATE.count === 0) { alert("無資料"); return; }
             var btn = document.getElementById('btn-upload');
             btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
 
-            // 準備統計資料 (確保每個國家都有欄位，即使是 0)
-            let statsOut = { 
-                cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, 
-                cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" 
-            };
+            let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" };
             let others = [];
-
             for(let k in STATE.stats) {
-                // 模糊比對，歸類到正確的欄位
                 if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k];
                 else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k];
                 else if(k.includes("越南")) statsOut.cnt_vn += STATE.stats[k];
@@ -498,11 +495,9 @@
                 gps: document.getElementById('inp_gps').value,
                 total: STATE.count,
                 note: document.getElementById('inp_note').value,
-                // 三張圖片
                 fileData: STATE.imgs.evidence || "",
                 envData: STATE.imgs.env || "",
                 groupData: STATE.imgs.group || "",
-                // 展開統計數據
                 ...statsOut
             };
 
@@ -510,32 +505,21 @@
             .then(res => res.json())
             .then(data => {
                 alert("✅ 上傳成功！");
-                // 重置所有狀態
                 STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
                 STATE.imgs = { env: null, group: null, evidence: null };
-                
-                // 重置介面
-                document.getElementById('img-preview-env').src=""; 
                 document.getElementById('img-preview-env').style.display='none'; 
                 document.getElementById('icon-env').style.display='block';
-
-                document.getElementById('img-preview-group').src=""; 
                 document.getElementById('img-preview-group').style.display='none'; 
                 document.getElementById('icon-group').style.display='block';
-
-                document.getElementById('img-preview-evidence').src="";
                 document.getElementById('img-preview-evidence').style.display='none';
-                
                 document.getElementById('inp_note').value = "";
-                document.getElementById('file-env').value = "";
-                document.getElementById('file-group').value = "";
-
                 updateUI(); switchTab('basic');
             })
             .catch(err => alert("上傳失敗: " + err))
             .finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
-        // 相機啟動器 (保持原樣)
+
+        // 相機功能 (保持原樣)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
@@ -578,8 +562,10 @@
             }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
         }
     </script>
+   
 </body>
 </html>
+
 
 
 
