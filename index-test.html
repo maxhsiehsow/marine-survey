@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V78 (介面細緻優化版)</title>
+    <title>海廢調查員 V79 (究極體驗版)</title>
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -13,24 +13,35 @@
         .arrow-icon { font-size: 40px; animation: bounce 1.5s infinite; margin-bottom: 20px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* 通用彈窗樣式 (鬧鐘 & 成功) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(5px); animation: fadeIn 0.3s; }
-        .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 80%; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: zoomIn 0.3s; }
+        /* === 通用彈窗系統 (V79 大改版) === */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); animation: popUp 0.3s forwards; }
         
-        /* 鬧鐘特定樣式 */
-        .alarm-box { border: 5px solid #ef5350; }
-        .alarm-title { font-size: 24px; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
-        
-        /* 成功視窗特定樣式 (V78 新增) */
-        .success-box { border: 5px solid #43a047; }
-        .success-title { font-size: 24px; font-weight: bold; color: #2e7d32; margin-bottom: 10px; }
-        .modal-icon { font-size: 60px; margin-bottom: 10px; display: block; }
+        @keyframes popUp { to { transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        .modal-icon { font-size: 50px; margin-bottom: 15px; display: block; }
+        .modal-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #333; }
+        .modal-msg { font-size: 16px; color: #666; margin-bottom: 25px; line-height: 1.5; }
+        
+        /* 按鈕群組 */
+        .modal-btns { display: flex; gap: 15px; justify-content: center; }
+        .modal-btns button { flex: 1; padding: 15px; font-size: 18px; margin: 0; border-radius: 12px; }
+
+        /* 風格變化 */
+        .style-warning .modal-title { color: #f57c00; }
+        .style-warning { border-top: 8px solid #f57c00; }
+        
+        .style-success .modal-title { color: #2e7d32; }
+        .style-success { border-top: 8px solid #2e7d32; }
+
+        .style-alarm .modal-title { color: #d32f2f; }
+        .style-alarm { border-top: 8px solid #d32f2f; animation: shake 0.5s infinite; }
+
+        /* 內容容器 */
         .container { padding: 16px; display: none; animation: fadeIn 0.4s ease-out; max-width: 600px; margin: 0 auto; }
         .active-tab { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
+        
         .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         h2 { margin-top: 0; color: var(--primary); font-size: 18px; border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 15px; font-weight: 700; letter-spacing: 0.5px; }
         
@@ -44,6 +55,7 @@
         button:active { transform: scale(0.98); }
         .btn-blue { background: #039be5; } .btn-green { background: #43a047; } .btn-red { background: #e53935; } 
         .btn-orange { background: #fb8c00; } .btn-upload { background: #5e35b1; }
+        .btn-grey { background: #90a4ae; color: white; }
         .btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); box-shadow: none; }
 
         .img-preview-box { display: flex; gap: 10px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
@@ -59,6 +71,7 @@
         .timer-time { font-size: 26px; font-weight: 800; color: #455a64; font-variant-numeric: tabular-nums; }
         .timer-label { font-size: 12px; color: #90a4ae; font-weight: bold; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(5deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0deg); } }
 
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
         .nav-item { flex: 1; text-align: center; font-size: 11px; color: #b0bec5; padding-top: 5px; cursor: pointer; transition: color 0.2s; }
@@ -90,21 +103,16 @@
         <p>LINE 內建瀏覽器不支援相機與定位功能。<br>請切換至 Chrome (Android) 或 Safari (iOS)。</p>
     </div>
 
-    <div id="alarm-modal" class="modal-overlay">
-        <div class="modal-content alarm-box">
-            <span class="modal-icon">⏰</span>
-            <div class="alarm-title">時間到！</div>
-            <p>請結束調查並上傳資料</p>
-            <button class="btn-red" onclick="stopAlarm()">確定 (停止震動)</button>
-        </div>
-    </div>
-
-    <div id="success-modal" class="modal-overlay">
-        <div class="modal-content success-box">
-            <span class="modal-icon">🎉</span>
-            <div class="success-title">上傳成功！</div>
-            <p>感謝您的調查，<br>資料已安全儲存。</p>
-            <button class="btn-green" onclick="handleSuccessConfirm()">好，繼續下一筆</button>
+    <div id="custom-modal" class="modal-overlay">
+        <div id="modal-content-box" class="modal-content">
+            <span id="modal-icon" class="modal-icon">⚠️</span>
+            <div id="modal-title" class="modal-title">提示</div>
+            <p id="modal-msg" class="modal-msg">內容</p>
+            
+            <div id="modal-btns" class="modal-btns">
+                <button id="btn-modal-cancel" class="btn-grey">取消</button>
+                <button id="btn-modal-confirm" class="btn-blue">確定</button>
+            </div>
         </div>
     </div>
 
@@ -249,11 +257,18 @@
             <div id="camera-box-ai" class="camera-box">
                 <div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
             </div>
+            
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:140px; height:140px; object-fit:cover; border-radius:12px; border:3px solid white; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
                 <h3 style="color:#00695c; margin:15px 0 8px;">AI 認為是：</h3>
-                <select id="ai-country-select" style="font-size:18px; font-weight:bold; color:#333; padding:10px; border:2px solid #00695c;"></select>
+                
                 <p style="font-size:14px; color:#546e7a; background:white; padding:8px; border-radius:8px; margin-top:10px;">特徵：<span id="ai-desc-text"></span></p>
+                
+                <div style="margin-top:15px; text-align:left;">
+                    <label style="font-size:13px; color:#e65100;">🛠️ 若不準確請修正：</label>
+                    <select id="ai-country-select" style="font-size:18px; font-weight:bold; color:#333; padding:10px; border:2px solid #e65100;"></select>
+                </div>
+
                 <div style="display:flex; gap:10px; margin-top:20px;">
                     <button id="btn-google-check" class="btn-outline" style="font-size:14px;">🔍 Google 查證</button>
                     <button id="btn-confirm-ai" class="btn-green">✅ 確認加入</button>
@@ -275,21 +290,61 @@
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
         
-        // ⚠️ 請確認 GAS 網址 (V77 版本)
+        // ⚠️ 請確認 GAS 網址
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
         window.onload = () => { 
-            if (navigator.userAgent.match(/Line/i)) {
-                document.getElementById('line-warning').style.display = 'flex';
-                document.getElementById('loading-mask').style.display = 'none';
-                return;
-            }
+            if (navigator.userAgent.match(/Line/i)) { document.getElementById('line-warning').style.display = 'flex'; document.getElementById('loading-mask').style.display = 'none'; return; }
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
 
+        // === 核心：彈窗管理器 (V79) ===
+        function showModal(type, title, msg, onConfirm, onCancel) {
+            const modal = document.getElementById('custom-modal');
+            const box = document.getElementById('modal-content-box');
+            const icon = document.getElementById('modal-icon');
+            const btnConfirm = document.getElementById('btn-modal-confirm');
+            const btnCancel = document.getElementById('btn-modal-cancel');
+
+            // 重置樣式
+            box.className = 'modal-content';
+            btnCancel.style.display = 'block'; // 預設顯示取消
+            btnConfirm.innerText = "確定";
+
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-msg').innerHTML = msg;
+
+            // 樣式切換
+            if (type === 'warning') {
+                box.classList.add('style-warning');
+                icon.innerText = "⚠️";
+                btnCancel.style.display = 'none'; // 警告通常只有一個按鈕
+                btnConfirm.innerText = "我知道了";
+            } else if (type === 'success') {
+                box.classList.add('style-success');
+                icon.innerText = "🎉";
+                btnCancel.style.display = 'none';
+                btnConfirm.innerText = "好，繼續下一筆";
+            } else { // confirm
+                icon.innerText = "🤔";
+            }
+
+            // 綁定事件
+            btnConfirm.onclick = () => {
+                modal.style.display = 'none';
+                if (onConfirm) onConfirm();
+            };
+            btnCancel.onclick = () => {
+                modal.style.display = 'none';
+                if (onCancel) onCancel();
+            };
+
+            modal.style.display = 'flex';
+        }
+
+        // 鬧鐘
         const timers = { 10: { total: 600, left: 600, interval: null, running: false }, 20: { total: 1200, left: 1200, interval: null, running: false } };
         let vibrationInterval;
-
         function toggleTimer(min) {
             let t = timers[min]; let box = document.getElementById(`timer-${min}`);
             if (t.running) { clearInterval(t.interval); t.running = false; box.classList.remove('running'); }
@@ -298,11 +353,7 @@
                 box.classList.remove('done'); box.classList.add('running'); t.running = true;
                 t.interval = setInterval(() => {
                     t.left--; updateTimerDisplay(min);
-                    if (t.left <= 0) { 
-                        clearInterval(t.interval); t.running = false; 
-                        box.classList.remove('running'); box.classList.add('done'); 
-                        triggerAlarm(); 
-                    }
+                    if (t.left <= 0) { clearInterval(t.interval); t.running = false; box.classList.remove('running'); box.classList.add('done'); triggerAlarm(); }
                 }, 1000);
             }
         }
@@ -321,31 +372,7 @@
             if(navigator.vibrate) navigator.vibrate(0);
         }
 
-        // 成功確認後的清理動作 (V78 新增)
-        function handleSuccessConfirm() {
-            document.getElementById('success-modal').style.display = 'none';
-            
-            // 清理 UI
-            document.getElementById('inp_gps').value = ""; 
-            document.getElementById('inp_city').value = ""; 
-            STATE.currentCity = "未定位";
-            document.getElementById('inp_point').value = "";
-            document.getElementById('sel_country').selectedIndex = 0; 
-            document.getElementById('inp_qty').value = 1;
-            document.getElementById('inp_note').value = "";
-            
-            // 圖片清理
-            STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null };
-            ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => {
-                document.getElementById(`img-preview-${k}`).style.display='none';
-                if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block';
-            });
-
-            updateUI(); 
-            switchTab('basic');
-        }
-
-        // 標準功能
+        // 功能函數
         function normalizeName(rawName) {
             if (!rawName) return "其它"; let clean = rawName.toString().trim();
             if (clean.includes("台灣") || clean.includes("Taiwan")) return "🇹🇼 台灣";
@@ -374,10 +401,8 @@
                 const imgId = `img-preview-${type}`;
                 const imgEl = document.getElementById(imgId);
                 imgEl.src = e.target.result; imgEl.style.display = 'block';
-                // 隱藏圖示
                 const icon = document.getElementById(`icon-${type}`);
                 if(icon) icon.style.display = 'none';
-
                 const temp = new Image(); temp.src = e.target.result;
                 temp.onload = function() {
                     const cvs = document.createElement('canvas');
@@ -421,34 +446,46 @@
             document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1); box.style.display = 'none'; switchTab('record'); };
         }
         function handlePrefixCheck() {
-            const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { alert("請輸入至少 3 碼"); return; }
+            const code = document.getElementById('inp_prefix').value; 
+            if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; }
             const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix];
-            if (country) { if(confirm(`🔎 查詢結果：${country}\n\n要加入記錄嗎？`)) { addRecord(country, 1); document.getElementById('inp_prefix').value = ""; } } else { alert(`❌ 查無代碼 [${prefix}] 的歸屬地`); }
+            if (country) { 
+                showModal('confirm', '查詢結果', `代碼：${prefix}<br>歸屬：<b>${country}</b><br>要加入記錄嗎？`, () => {
+                    addRecord(country, 1); document.getElementById('inp_prefix').value = "";
+                });
+            } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); }
         }
         function addRecord(country, qty) { let safeName = normalizeName(country); if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; STATE.stats[safeName] += qty; STATE.count += qty; for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeName, qty: 1}); updateUI(); }
         function undoRecord() { if (STATE.historyStack.length === 0) return; const last = STATE.historyStack.pop(); STATE.stats[last.key] -= last.qty; if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; STATE.count -= last.qty; updateUI(); }
         function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value)); }
         
+        // V79 UI 更新：強制清除圓餅圖背景
         function updateUI() {
             document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0;
-            if (STATE.count === 0) { document.getElementById('css-pie').style.background = "transparent"; document.getElementById('css-pie').style.border = "2px dashed #ddd"; return; }
-            else { document.getElementById('css-pie').style.border = "4px solid #fff"; }
+            // 強制清除
+            const pie = document.getElementById('css-pie');
+            pie.style.background = "transparent"; 
+            pie.style.border = "2px dashed #ddd";
+            
+            if (STATE.count === 0) return;
+            
+            // 有資料才畫圖
+            pie.style.border = "4px solid #fff";
             for (const [key, val] of Object.entries(STATE.stats)) {
                 const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1);
                 tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`;
                 const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d;
             }
-            document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
+            pie.style.background = `conic-gradient(${grad.join(", ")})`;
         }
 
-        // Upload V78
+        // Upload V79 (Validation Modal + Deep Clean)
         function uploadData() {
-            if (STATE.count === 0) { alert("無資料"); return; }
-            if (!document.getElementById('inp_name').value) { alert("請填寫姓名"); switchTab('basic'); return; }
-            if (!document.getElementById('inp_phone').value) { alert("請填寫聯絡手機"); switchTab('basic'); return; }
-            if (!document.getElementById('inp_participants').value) { alert("請填寫參與人數"); switchTab('basic'); return; }
-            // V78: 增加 GPS 必填檢查
-            if (!document.getElementById('inp_gps').value) { alert("⚠️ 請先進行定位 (GPS 欄位為必填)"); switchTab('basic'); return; }
+            if (STATE.count === 0) { showModal('warning', '無資料', '請先收集數據再上傳', null); return; }
+            if (!document.getElementById('inp_name').value) { showModal('warning', '資料未填', '請填寫 [填表人姓名]', () => switchTab('basic')); return; }
+            if (!document.getElementById('inp_phone').value) { showModal('warning', '資料未填', '請填寫 [聯絡人手機]', () => switchTab('basic')); return; }
+            if (!document.getElementById('inp_participants').value) { showModal('warning', '資料未填', '請填寫 [參與人數]', () => switchTab('basic')); return; }
+            if (!document.getElementById('inp_gps').value) { showModal('warning', '尚未定位', '請按 [定位] 按鈕獲取 GPS', () => switchTab('basic')); return; }
 
             var btn = document.getElementById('btn-upload'); btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
             let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" }; let others = [];
@@ -468,9 +505,21 @@
                 ...statsOut
             };
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(data => {
-                // V78: 顯示美化後的成功視窗，而不是 alert
-                document.getElementById('success-modal').style.display = 'flex';
-                // 資料清理在使用者按「好」之後執行 (handleSuccessConfirm)
+                // V79: Show Success Modal
+                showModal('success', '上傳成功', '資料已安全存入雲端', () => {
+                    // Deep Clean
+                    STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
+                    STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null };
+                    ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => {
+                        document.getElementById(`img-preview-${k}`).style.display='none';
+                        if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block';
+                    });
+                    document.getElementById('inp_gps').value = ""; document.getElementById('inp_city').value = ""; STATE.currentCity = "未定位";
+                    document.getElementById('inp_point').value = "";
+                    document.getElementById('sel_country').selectedIndex = 0; document.getElementById('inp_qty').value = 1;
+                    document.getElementById('inp_note').value = ""; 
+                    updateUI(); switchTab('basic');
+                });
             }).catch(err => alert("上傳失敗: " + err)).finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
         function runGPS() {
@@ -483,7 +532,15 @@
                 });
             }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
         }
-        function startRecordScanner() { if (STATE.scanners.record) return; document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block'; STATE.scanners.record = new Html5Qrcode("reader-record"); STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { STATE.scanners.record.pause(); const c = getCountryFromCode(txt); if(confirm(`掃描：${c}\n加入嗎？`)) { addRecord(c, 1); } setTimeout(()=>STATE.scanners.record.resume(), 500); }, ()=>{} ); }
+        // V79: Callback for scanner uses showModal
+        function startRecordScanner() { if (STATE.scanners.record) return; document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block'; STATE.scanners.record = new Html5Qrcode("reader-record"); STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { 
+            STATE.scanners.record.pause(); 
+            const c = getCountryFromCode(txt); 
+            showModal('confirm', '掃描成功', `條碼歸屬：<b>${c}</b><br>是否加入記錄？`, 
+                () => { addRecord(c, 1); setTimeout(()=>STATE.scanners.record.resume(), 500); }, // Confirm
+                () => { setTimeout(()=>STATE.scanners.record.resume(), 500); } // Cancel
+            );
+        }, ()=>{} ); }
         function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
         function startAiCamera() { document.getElementById('ai-result-box').style.display='none'; document.getElementById('camera-box-ai').style.display='block'; document.getElementById('btn-ai-start').style.display='none'; STATE.scanners.ai = new Html5Qrcode("reader-ai"); STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); }
         function stopAiScanner() { if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); document.getElementById('camera-box-ai').style.display='none'; document.getElementById('btn-ai-start').style.display='inline-block'; }
