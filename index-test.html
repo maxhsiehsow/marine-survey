@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V70 (全球暢通版)</title>
+    <title>海廢調查員 V71 (專業調查版)</title>
     <style>
         :root { --primary: #0056b3; --bg: #f4f7f6; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: #333; }
@@ -12,11 +12,10 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         
         .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        /* 🔥 V70 特徵：標題改為紅色，讓你確認是否更新成功 */
-        h2 { margin-top: 0; color: #d32f2f; font-size: 18px; border-bottom: 2px solid #ffcdd2; padding-bottom: 8px; }
-        
+        h2 { margin-top: 0; color: #00796b; font-size: 18px; border-bottom: 2px solid #b2dfdb; padding-bottom: 8px; }
         label { display: block; margin: 8px 0 4px; font-weight: bold; font-size: 14px; }
+        .required::after { content: " *"; color: red; }
+
         input, select, textarea { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; background: #fff; }
         
         button, .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; color: white; border: none; border-radius: 8px; text-align: center; }
@@ -24,6 +23,26 @@
         .btn-orange { background: #f57c00; } .btn-upload { background: #673ab7; }
         .btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); }
         
+        /* 計時器樣式 */
+        .timer-container { display: flex; gap: 15px; justify-content: center; margin-top: 15px; }
+        .timer-box { 
+            width: 100px; height: 100px; border-radius: 50%; 
+            background: white; border: 5px solid #ddd; 
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; position: relative; transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .timer-box.running { border-color: #ff9800; animation: pulse 1s infinite; }
+        .timer-box.done { border-color: #d32f2f; background: #ffebee; }
+        .timer-time { font-size: 24px; font-weight: bold; color: #333; }
+        .timer-label { font-size: 12px; color: #666; margin-top: -5px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* 底部署名 */
+        .footer-credit { text-align: center; font-size: 12px; color: #777; margin-top: 20px; padding-bottom: 10px; line-height: 1.5; }
+        .footer-credit a { color: #0056b3; text-decoration: none; }
+
+        /* 其他原有樣式 */
         .img-preview-box { display: flex; gap: 10px; margin-top: 5px; overflow-x: auto; }
         .preview-item { width: 80px; height: 80px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px dashed #999; flex-shrink: 0; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; }
@@ -39,11 +58,9 @@
         .btn-snap-div { width: 70px; height: 70px; background: rgba(255,255,255,0.9); border-radius: 50%; border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 0 auto; position: absolute; bottom: 20px; left: 0; right: 0; z-index: 10; font-size: 30px; }
         
         .ai-result-box { display: none; border: 2px solid var(--primary); background: #e3f2fd; padding: 15px; border-radius: 12px; margin-top: 10px; text-align: center; }
-        
         #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .pie-chart { width: 120px; height: 120px; border-radius: 50%; background: #eee; margin: 10px auto; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 5px; }
         th, td { border-bottom: 1px solid #eee; padding: 6px; }
@@ -54,74 +71,90 @@
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text">載入中...</p></div>
 
     <div id="view-basic" class="container active-tab">
-        <h2>📝 1. 基本資訊 (V70)</h2>
+        <h2>📝 1. 參與人員資訊</h2>
         <div class="card">
-            <label>填表人 / 參與人數</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_name" placeholder="您的姓名" style="flex:2;">
-                <input type="number" id="inp_participants" value="1" min="1" style="flex:1; text-align:center;">
-            </div>
-
-            <label>地點 / GPS</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="flex:2; font-size:12px; background:#f9f9f9;">
-                <button onclick="runGPS()" class="btn-blue" style="flex:1; margin-top:0; padding:10px;">📍 定位</button>
-            </div>
-            <input type="text" id="inp_loc" placeholder="地點名稱 (如: 貢寮沙灘)" style="margin-top:10px;">
+            <label class="required">填表人姓名</label>
+            <input type="text" id="inp_name" placeholder="請輸入姓名">
             
-            <label>📸 現場照片上傳 (點擊方塊)</label>
+            <label class="required">聯絡人手機</label>
+            <input type="tel" id="inp_phone" placeholder="09xx-xxx-xxx">
+            
+            <label class="required">參與人數</label>
+            <input type="number" id="inp_participants" value="1" min="1" style="text-align:center;">
+        </div>
+
+        <h2>📍 2. 調查地點</h2>
+        <div class="card">
+            <label>GPS / 縣市鄉鎮</label>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="flex:1; font-size:12px; background:#f9f9f9;">
+                <button onclick="runGPS()" class="btn-blue" style="flex:0.5; margin-top:0; padding:10px;">定位</button>
+            </div>
+            <input type="text" id="inp_city" readonly placeholder="定位後顯示縣市鄉鎮" style="margin-top:10px; background:#f9f9f9; color:#00796b; font-weight:bold;">
+            
+            <label>調查樣點 (英文代號)</label>
+            <input type="text" id="inp_point" placeholder="例如: A, B" style="text-transform:uppercase;" oninput="this.value = this.value.toUpperCase()">
+            
+            <label>📸 現場照片上傳</label>
             <div class="img-preview-box">
                 <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
                 <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
-                
                 <div class="preview-item" onclick="document.getElementById('file-env').click()">
                     <img id="img-preview-env" src="" style="display:none">
-                    <div class="preview-label">環境照</div>
-                    <span id="icon-env" style="font-size:24px; color:#ccc;">🏞️</span>
+                    <div class="preview-label">環境照</div><span id="icon-env" style="font-size:24px; color:#ccc;">🏞️</span>
                 </div>
                 <div class="preview-item" onclick="document.getElementById('file-group').click()">
                     <img id="img-preview-group" src="" style="display:none">
-                    <div class="preview-label">合照</div>
-                    <span id="icon-group" style="font-size:24px; color:#ccc;">👥</span>
+                    <div class="preview-label">合照</div><span id="icon-group" style="font-size:24px; color:#ccc;">👥</span>
                 </div>
             </div>
+        </div>
+
+        <h2>⏱️ 調查計時器</h2>
+        <div class="card">
+            <p style="text-align:center; font-size:13px; color:#666; margin:0;">點擊開始 / 暫停 (結束會提示)</p>
+            <div class="timer-container">
+                <div class="timer-box" id="timer-10" onclick="toggleTimer(10)">
+                    <div class="timer-time" id="time-display-10">10:00</div>
+                    <div class="timer-label">10 分鐘</div>
+                </div>
+                <div class="timer-box" id="timer-20" onclick="toggleTimer(20)">
+                    <div class="timer-time" id="time-display-20">20:00</div>
+                    <div class="timer-label">20 分鐘</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-credit">
+            製作者：荒野保護協會 棲地守護部雁子<br>
+            聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a>
         </div>
     </div>
 
     <div id="view-record" class="container">
-        <h2>📊 2. 記錄與統計 (V70)</h2>
+        <h2>📊 3. 記錄與統計</h2>
         <div class="card">
             <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">
                 目前收集: <span id="disp_count" style="color:var(--primary); font-size:32px;">0</span> / 100
             </div>
-            
             <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼加入</button>
             <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
             <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
-
             <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
-
-            <label>🔍 條碼前 3 碼查詢 (文字模式)</label>
+            <label>🔍 條碼前 3 碼查詢</label>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="輸入前3碼 (如 005)" style="margin-bottom:0;">
+                <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="如 005" style="margin-bottom:0;">
                 <button onclick="handlePrefixCheck()" class="btn-blue" style="width:80px; margin-top:0;">查詢</button>
             </div>
-
             <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
-
             <label>手動新增</label>
             <div style="display:flex; gap:10px;">
                 <select id="sel_country" style="flex:2;">
-                    <option value="🇹🇼 台灣">🇹🇼 台灣</option>
-                    <option value="🇨🇳 中國">🇨🇳 中國</option>
-                    <option value="🇻🇳 越南">🇻🇳 越南</option>
-                    <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
-                    <option value="🇹🇭 泰國">🇹🇭 泰國</option>
-                    <option value="🇮🇩 印尼">🇮🇩 印尼</option>
-                    <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option>
-                    <option value="🇰🇷 韓國">🇰🇷 韓國</option>
-                    <option value="🇯🇵 日本">🇯🇵 日本</option>
-                    <option value="其它">❓ 其它</option>
+                    <option value="🇹🇼 台灣">🇹🇼 台灣</option><option value="🇨🇳 中國">🇨🇳 中國</option>
+                    <option value="🇻🇳 越南">🇻🇳 越南</option><option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
+                    <option value="🇹🇭 泰國">🇹🇭 泰國</option><option value="🇮🇩 印尼">🇮🇩 印尼</option>
+                    <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option><option value="🇰🇷 韓國">🇰🇷 韓國</option>
+                    <option value="🇯🇵 日本">🇯🇵 日本</option><option value="其它">❓ 其它</option>
                 </select>
                 <input type="number" id="inp_qty" value="1" style="flex:1; text-align:center; margin-bottom:0;">
             </div>
@@ -130,7 +163,6 @@
                 <button onclick="undoRecord()" class="btn-outline">↩️ 復原</button>
             </div>
         </div>
-
         <div class="card">
             <div style="display:flex;">
                 <div style="flex:1; text-align:center;"><div id="css-pie" class="pie-chart"></div></div>
@@ -146,16 +178,13 @@
     </div>
 
     <div id="view-ai" class="container">
-        <h2>🤖 3. AI 鑑定室 (V70)</h2>
+        <h2>🤖 4. AI 鑑定室</h2>
         <div class="card" style="text-align:center;">
-            <p>拍一張，AI 幫你分類！<br><small>如果不準，您還可以手動修正喔。</small></p>
+            <p>拍一張，AI 幫你分類！</p>
             <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
-            
             <div id="camera-box-ai" class="camera-box">
-                <div id="reader-ai" class="scanner-view"></div>
-                <div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
+                <div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
             </div>
-
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
                 <h3 style="color:#0056b3; margin:10px 0 5px;">AI 認為是：</h3>
@@ -179,7 +208,7 @@
     <script>
         const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, evidence: null }, scanners: { record: null, ai: null } };
 
-        // === 全球條碼資料庫 (GS1) ===
+        // 全球條碼資料庫
         const GS1_RANGES = [
             { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" },
             { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" },
@@ -199,27 +228,55 @@
             { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" },
             { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" }
         ];
-
-        // 自動生成 Prefix Table
         const PREFIX_DB = {};
-        GS1_RANGES.forEach(range => {
-            for (let i = range.s; i <= range.e; i++) {
-                let code = i.toString().padStart(3, '0');
-                PREFIX_DB[code] = range.c;
-            }
-        });
-
-        const COLORS = {
-            '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', 
-            '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', 
-            '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', 
-            '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575'
-        };
-
-        // ⚠️ 請確認你的 GAS 網址是否正確
+        GS1_RANGES.forEach(range => { for (let i = range.s; i <= range.e; i++) { PREFIX_DB[i.toString().padStart(3, '0')] = range.c; } });
+        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
+        
+        // ⚠️ 請確認 GAS 網址
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
         window.onload = () => { setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); };
+
+        // === 計時器邏輯 ===
+        const timers = {
+            10: { total: 600, left: 600, interval: null, running: false },
+            20: { total: 1200, left: 1200, interval: null, running: false }
+        };
+
+        function toggleTimer(min) {
+            let t = timers[min];
+            let box = document.getElementById(`timer-${min}`);
+            if (t.running) {
+                // 暫停
+                clearInterval(t.interval);
+                t.running = false;
+                box.classList.remove('running');
+            } else {
+                // 開始
+                if (t.left <= 0) t.left = t.total; // 重置
+                box.classList.remove('done');
+                box.classList.add('running');
+                t.running = true;
+                t.interval = setInterval(() => {
+                    t.left--;
+                    updateTimerDisplay(min);
+                    if (t.left <= 0) {
+                        clearInterval(t.interval);
+                        t.running = false;
+                        box.classList.remove('running');
+                        box.classList.add('done');
+                        alert(`🔔 ${min} 分鐘時間到！`);
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateTimerDisplay(min) {
+            let sec = timers[min].left;
+            let m = Math.floor(sec / 60).toString().padStart(2, '0');
+            let s = (sec % 60).toString().padStart(2, '0');
+            document.getElementById(`time-display-${min}`).innerText = `${m}:${s}`;
+        }
 
         function normalizeName(rawName) {
             if (!rawName) return "其它";
@@ -233,8 +290,6 @@
             if (clean.includes("馬來西亞")) return "🇲🇾 馬來西亞";
             if (clean.includes("韓國") || clean.includes("Korea")) return "🇰🇷 韓國";
             if (clean.includes("日本") || clean.includes("Japan")) return "🇯🇵 日本";
-            
-            // 資料庫反查
             for (let code in PREFIX_DB) { if (PREFIX_DB[code] === clean) return clean; }
             if (Object.keys(COLORS).includes(clean)) return clean;
             return "其它";
@@ -337,9 +392,7 @@
                     addRecord(country, 1);
                     document.getElementById('inp_prefix').value = "";
                 }
-            } else {
-                alert(`❌ 查無代碼 [${prefix}] 的歸屬地`);
-            }
+            } else { alert(`❌ 查無代碼 [${prefix}] 的歸屬地`); }
         }
 
         function addRecord(country, qty) {
@@ -380,6 +433,11 @@
 
         function uploadData() {
             if (STATE.count === 0) { alert("無資料"); return; }
+            // 必填檢查
+            if (!document.getElementById('inp_name').value) { alert("請填寫姓名"); switchTab('basic'); return; }
+            if (!document.getElementById('inp_phone').value) { alert("請填寫聯絡手機"); switchTab('basic'); return; }
+            if (!document.getElementById('inp_participants').value) { alert("請填寫參與人數"); switchTab('basic'); return; }
+
             var btn = document.getElementById('btn-upload');
             btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
             let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" };
@@ -400,9 +458,10 @@
             var payload = {
                 action: "save",
                 name: document.getElementById('inp_name').value,
+                phone: document.getElementById('inp_phone').value, // V71新增
                 participants: document.getElementById('inp_participants').value,
-                loc: document.getElementById('inp_loc').value,
-                city: STATE.currentCity,
+                city: document.getElementById('inp_city').value, // 這裡傳回縣市鄉鎮
+                surveyPoint: document.getElementById('inp_point').value, // V71新增
                 gps: document.getElementById('inp_gps').value,
                 total: STATE.count,
                 note: document.getElementById('inp_note').value,
@@ -426,6 +485,22 @@
             .finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
 
+        // GPS (更新：抓取鄉鎮)
+        function runGPS() {
+            document.getElementById('inp_gps').value="定位中...";
+            navigator.geolocation.getCurrentPosition(p=>{
+                document.getElementById('inp_gps').value=`${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;
+                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&localityLanguage=zh`).then(r=>r.json()).then(d=>{
+                    // 抓取縣市 + 鄉鎮
+                    let city = (d.principalSubdivision || "").replace("Province", "").trim();
+                    let town = (d.locality || "").trim();
+                    STATE.currentCity = `${city} ${town}`;
+                    document.getElementById('inp_city').value=STATE.currentCity;
+                });
+            }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
+        }
+        
+        // 其他相機功能維持原樣...
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
@@ -435,7 +510,7 @@
             STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
                 (txt) => {
                     STATE.scanners.record.pause();
-                    const c = getCountryFromCode(txt); // 會用到 PREFIX_DB
+                    const c = getCountryFromCode(txt); 
                     if(confirm(`掃描：${c}\n加入嗎？`)) { addRecord(c, 1); }
                     setTimeout(()=>STATE.scanners.record.resume(), 500);
                 }, ()=>{}
@@ -460,13 +535,6 @@
             document.getElementById('btn-ai-start').style.display='inline-block';
         }
         function getCountryFromCode(code) { return (code && code.length>=3) ? (PREFIX_DB[code.substring(0,3)]||"未知") : "未知"; }
-        function runGPS() {
-            document.getElementById('inp_gps').value="定位中...";
-            navigator.geolocation.getCurrentPosition(p=>{
-                document.getElementById('inp_gps').value=`${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;
-                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&localityLanguage=zh`).then(r=>r.json()).then(d=>{STATE.currentCity=(d.principalSubdivision||"").replace("Province","").trim(); document.getElementById('inp_loc').value=STATE.currentCity;});
-            }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
-        }
     </script>
 </body>
 </html>
