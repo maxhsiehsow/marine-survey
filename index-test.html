@@ -3,105 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V72 (介面優化+LINE防呆)</title>
+    <title>海廢調查員 V73 (介面優化版)</title>
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: var(--text); -webkit-font-smoothing: antialiased; }
         
-        /* === LINE 偵測遮罩 === */
-        #line-warning {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 99999; color: white;
-            flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box;
-        }
-        #line-warning h1 { font-size: 24px; color: #ffeb3b; margin-bottom: 20px; }
-        #line-warning p { font-size: 16px; line-height: 1.6; color: #fff; }
+        /* LINE 遮罩 */
+        #line-warning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 99999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
         .arrow-icon { font-size: 40px; animation: bounce 1.5s infinite; margin-bottom: 20px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* === 容器動畫 === */
         .container { padding: 16px; display: none; animation: fadeIn 0.4s ease-out; max-width: 600px; margin: 0 auto; }
         .active-tab { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* === 卡片風格 === */
         .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
-        /* === 標題優化 === */
         h2 { margin-top: 0; color: var(--primary); font-size: 19px; border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 15px; font-weight: 700; letter-spacing: 0.5px; }
         
-        /* === 輸入框統一化 (16px 防止 iOS 縮放) === */
         label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 15px; color: #444; }
         .required::after { content: " *"; color: #e53935; }
         
-        input[type="text"], input[type="number"], input[type="tel"], select, textarea {
-            width: 100%; padding: 12px; font-size: 16px; /* 關鍵 */
-            border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box;
-            background: #fafafa; transition: border 0.2s, background 0.2s; appearance: none;
-        }
+        /* 字體優化：統一為 16px */
+        input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; background: #fafafa; transition: border 0.2s, background 0.2s; appearance: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
         
-        /* === 按鈕風格 === */
-        button, .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 10px; text-align: center; letter-spacing: 1px; transition: opacity 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button, .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 10px; text-align: center; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:active { transform: scale(0.98); }
-        .btn-blue { background: #039be5; } .btn-green { background: #43a047; } 
-        .btn-red { background: #e53935; } .btn-orange { background: #fb8c00; } 
-        .btn-upload { background: #5e35b1; }
+        .btn-blue { background: #039be5; } .btn-green { background: #43a047; } .btn-red { background: #e53935; } 
+        .btn-orange { background: #fb8c00; } .btn-upload { background: #5e35b1; }
         .btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); box-shadow: none; }
 
-        /* === 圖片上傳區塊 (統一風格) === */
         .img-preview-box { display: flex; gap: 12px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
-        .preview-item { 
-            width: 90px; height: 90px; background: #f5f5f5; border-radius: 12px; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            overflow: hidden; position: relative; border: 2px dashed #ccc; flex-shrink: 0; cursor: pointer;
-            transition: border-color 0.2s;
-        }
-        .preview-item:active { background: #e0e0e0; border-color: var(--primary); }
+        .preview-item { width: 90px; height: 90px; background: #f5f5f5; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 2px dashed #ccc; flex-shrink: 0; cursor: pointer; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .preview-label { font-size: 11px; margin-top: 4px; color: #666; font-weight: bold; }
         .preview-icon { font-size: 28px; color: #999; }
 
-        /* === 計時器 === */
+        /* 計時器樣式 */
         .timer-container { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
-        .timer-box { 
-            width: 110px; height: 110px; border-radius: 50%; 
-            background: white; border: 6px solid #eceff1; 
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            cursor: pointer; position: relative; transition: all 0.3s;
-            box-shadow: 0 6px 10px rgba(0,0,0,0.05);
-        }
+        .timer-box { width: 110px; height: 110px; border-radius: 50%; background: white; border: 6px solid #eceff1; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; box-shadow: 0 6px 10px rgba(0,0,0,0.05); transition: all 0.3s; }
         .timer-box.running { border-color: #ffb74d; animation: pulse 1.5s infinite; }
-        .timer-box.done { border-color: #ef5350; background: #ffebee; }
+        .timer-box.done { border-color: #ef5350; background: #ffebee; animation: shake 0.5s; }
         .timer-time { font-size: 26px; font-weight: 800; color: #455a64; font-variant-numeric: tabular-nums; }
-        .timer-label { font-size: 12px; color: #90a4ae; margin-top: -2px; font-weight: bold; }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 183, 77, 0.4); } 70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(255, 183, 77, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 183, 77, 0); } }
+        .timer-label { font-size: 12px; color: #90a4ae; font-weight: bold; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes shake { 0% { transform: rotate(0deg); } 25% { transform: rotate(5deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0deg); } }
 
-        /* === 底部導航 === */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; z-index: 1000; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
         .nav-item { flex: 1; text-align: center; font-size: 11px; color: #b0bec5; padding-top: 5px; cursor: pointer; transition: color 0.2s; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         .nav-item span { display: block; font-size: 24px; margin-bottom: 2px; }
 
-        /* === Footer === */
         .footer-credit { text-align: center; font-size: 13px; color: #90a4ae; margin-top: 30px; padding-bottom: 20px; line-height: 1.6; border-top: 1px dashed #cfd8dc; padding-top: 15px; }
         .footer-credit a { color: var(--primary); text-decoration: none; font-weight: bold; }
 
-        /* === 其他元件 === */
-        .camera-box { position: relative; display: none; background: #000; border-radius: 16px; overflow: hidden; margin-top: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .camera-box { position: relative; display: none; background: #000; border-radius: 16px; overflow: hidden; margin-top: 15px; }
         .scanner-view { width: 100%; min-height: 300px; }
-        .btn-snap-div { width: 72px; height: 72px; background: rgba(255,255,255,0.95); border-radius: 50%; border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 0 auto; position: absolute; bottom: 25px; left: 0; right: 0; z-index: 10; font-size: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: transform 0.1s; }
-        .btn-snap-div:active { transform: scale(0.9); }
+        .btn-snap-div { width: 72px; height: 72px; background: rgba(255,255,255,0.95); border-radius: 50%; border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 0 auto; position: absolute; bottom: 25px; left: 0; right: 0; z-index: 10; font-size: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         
         .ai-result-box { display: none; border: 2px solid var(--primary); background: #e0f2f1; padding: 20px; border-radius: 16px; margin-top: 15px; text-align: center; }
         #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); flex-direction:column; justify-content:center; align-items:center; z-index:9999; backdrop-filter: blur(5px); }
         .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .pie-chart { width: 130px; height: 130px; border-radius: 50%; background: #eee; margin: 10px auto; border: 4px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        /* 圓餅圖優化：預設隱藏背景 */
+        .pie-chart { width: 130px; height: 130px; border-radius: 50%; margin: 10px auto; transition: all 0.3s; border: 2px dashed #ddd; background: transparent; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         th, td { border-bottom: 1px solid #eee; padding: 10px 5px; }
-        tr:last-child td { border-bottom: none; }
     </style>
 </head>
 <body>
@@ -109,7 +77,7 @@
     <div id="line-warning">
         <div class="arrow-icon">↗️</div>
         <h1>請點擊右上角<br>使用其他瀏覽器開啟</h1>
-        <p>LINE 內建瀏覽器不支援相機與定位功能。<br>請切換至 Chrome (Android) 或 Safari (iOS) 以獲得完整體驗。</p>
+        <p>LINE 內建瀏覽器不支援相機與定位功能。<br>請切換至 Chrome (Android) 或 Safari (iOS)。</p>
     </div>
 
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">系統載入中...</p></div>
@@ -119,10 +87,8 @@
         <div class="card">
             <label class="required">填表人姓名</label>
             <input type="text" id="inp_name" placeholder="請輸入真實姓名">
-            
             <label class="required">聯絡人手機</label>
             <input type="tel" id="inp_phone" placeholder="09xx-xxx-xxx">
-            
             <label class="required">參與人數</label>
             <input type="number" id="inp_participants" value="1" min="1" style="text-align:center;">
         </div>
@@ -134,9 +100,7 @@
                 <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="flex:1; font-size:13px; color:#666; background:#f5f5f5;">
                 <button onclick="runGPS()" class="btn-blue" style="flex:0.6; margin-top:0;">📡 定位</button>
             </div>
-            
             <input type="text" id="inp_city" readonly placeholder="定位後自動顯示縣市鄉鎮" style="margin-top:10px; background:#e0f2f1; color:#00695c; font-weight:bold; border-color:#b2dfdb;">
-            
             <label>調查樣點 (英文代號)</label>
             <input type="text" id="inp_point" placeholder="例如: A, B (自動轉大寫)" style="text-transform:uppercase; letter-spacing:1px;" oninput="this.value = this.value.toUpperCase()">
             
@@ -144,23 +108,20 @@
             <div class="img-preview-box">
                 <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
                 <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
-                
                 <div class="preview-item" onclick="document.getElementById('file-env').click()">
                     <img id="img-preview-env" src="" style="display:none">
-                    <span id="icon-env" class="preview-icon">🏞️</span>
-                    <div class="preview-label">環境照</div>
+                    <span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div>
                 </div>
                 <div class="preview-item" onclick="document.getElementById('file-group').click()">
                     <img id="img-preview-group" src="" style="display:none">
-                    <span id="icon-group" class="preview-icon">👥</span>
-                    <div class="preview-label">合照</div>
+                    <span id="icon-group" class="preview-icon">👥</span><div class="preview-label">合照</div>
                 </div>
             </div>
         </div>
 
         <h2>⏱️ 調查計時器</h2>
         <div class="card">
-            <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">點擊圓圈開始 / 暫停</p>
+            <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">點擊圓圈開始 / 暫停 (結束會震動與響鈴)</p>
             <div class="timer-container">
                 <div class="timer-box" id="timer-10" onclick="toggleTimer(10)">
                     <div class="timer-time" id="time-display-10">10:00</div>
@@ -186,21 +147,16 @@
             <div style="text-align:center; font-size:42px; font-weight:800; color:var(--primary); margin-bottom:15px; font-family:sans-serif;">
                 <span id="disp_count">0</span> <span style="font-size:18px; color:#999; font-weight:normal;">/ 100</span>
             </div>
-            
             <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼加入</button>
             <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
             <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
-
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
-
             <label>🔍 條碼前 3 碼查詢</label>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="如 005" style="margin-bottom:0;">
                 <button onclick="handlePrefixCheck()" class="btn-blue" style="width:90px; margin-top:0;">查詢</button>
             </div>
-
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
-
             <label>手動新增記錄</label>
             <div style="display:flex; gap:10px;">
                 <select id="sel_country" style="flex:2;">
@@ -227,17 +183,14 @@
             <label style="margin-top:20px;">特殊／熱點照 (上傳證據)</label>
             <div class="img-preview-box">
                 <input type="file" id="file-evidence" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'evidence')">
-                
                 <div class="preview-item" onclick="document.getElementById('file-evidence').click()" style="width:100px; height:100px;">
                     <img id="img-preview-evidence" src="" style="display:none">
-                    <span id="icon-evidence" class="preview-icon" style="font-size:32px;">📸</span>
-                    <div class="preview-label">點擊上傳</div>
+                    <span id="icon-evidence" class="preview-icon" style="font-size:32px;">📸</span><div class="preview-label">點擊上傳</div>
                 </div>
             </div>
 
             <label style="margin-top:15px;">其他記錄 (備註)</label>
             <textarea id="inp_note" rows="3" placeholder="請填寫任何值得記錄的觀察..."></textarea>
-            
             <button id="btn-upload" onclick="uploadData()" class="btn-upload" style="margin-top:20px;">🚀 上傳資料至雲端</button>
         </div>
     </div>
@@ -247,11 +200,9 @@
         <div class="card" style="text-align:center;">
             <p style="color:#666;">拍一張，AI 幫你分類！</p>
             <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
-            
             <div id="camera-box-ai" class="camera-box">
                 <div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
             </div>
-
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:140px; height:140px; object-fit:cover; border-radius:12px; border:3px solid white; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
                 <h3 style="color:#00695c; margin:15px 0 8px;">AI 認為是：</h3>
@@ -274,197 +225,6 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
         const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, evidence: null }, scanners: { record: null, ai: null } };
-        const GS1_RANGES = [
-            { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" },
-            { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" },
-            { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" },
-            { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" },
-            { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" },
-            { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" },
-            { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" },
-            { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" },
-            { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" },
-            { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" },
-            { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" },
-            { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" },
-            { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" },
-            { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" },
-            { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" },
-            { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" },
-            { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" }
-        ];
-        const PREFIX_DB = {};
-        GS1_RANGES.forEach(range => { for (let i = range.s; i <= range.e; i++) { PREFIX_DB[i.toString().padStart(3, '0')] = range.c; } });
-        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
-        
-        // ⚠️ 請確認 GAS 網址
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
-
-        // === 核心：初始化與 LINE 偵測 ===
-        window.onload = () => { 
-            // 偵測 LINE 瀏覽器
-            if (navigator.userAgent.match(/Line/i)) {
-                document.getElementById('line-warning').style.display = 'flex';
-                // 隱藏背後內容避免干擾
-                document.getElementById('loading-mask').style.display = 'none';
-                return; // 停止執行後續程式
-            }
-
-            setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
-        };
-
-        // ... 以下 JS 邏輯與 V71 完全相同，無需更動，僅處理圖片上傳的 UI 綁定 ...
-
-        const timers = { 10: { total: 600, left: 600, interval: null, running: false }, 20: { total: 1200, left: 1200, interval: null, running: false } };
-        function toggleTimer(min) {
-            let t = timers[min]; let box = document.getElementById(`timer-${min}`);
-            if (t.running) { clearInterval(t.interval); t.running = false; box.classList.remove('running'); }
-            else {
-                if (t.left <= 0) t.left = t.total;
-                box.classList.remove('done'); box.classList.add('running'); t.running = true;
-                t.interval = setInterval(() => {
-                    t.left--; updateTimerDisplay(min);
-                    if (t.left <= 0) { clearInterval(t.interval); t.running = false; box.classList.remove('running'); box.classList.add('done'); alert(`🔔 ${min} 分鐘時間到！`); }
-                }, 1000);
-            }
-        }
-        function updateTimerDisplay(min) {
-            let sec = timers[min].left; let m = Math.floor(sec / 60).toString().padStart(2, '0'); let s = (sec % 60).toString().padStart(2, '0');
-            document.getElementById(`time-display-${min}`).innerText = `${m}:${s}`;
-        }
-        function normalizeName(rawName) {
-            if (!rawName) return "其它"; let clean = rawName.toString().trim();
-            if (clean.includes("台灣") || clean.includes("Taiwan")) return "🇹🇼 台灣";
-            if (clean.includes("中國") || clean.includes("China") || clean.includes("CN") || clean.includes("大陸")) return "🇨🇳 中國";
-            if (clean.includes("越南") || clean.includes("Vietnam")) return "🇻🇳 越南";
-            if (clean.includes("菲律賓") || clean.includes("Philippines")) return "🇵🇭 菲律賓";
-            if (clean.includes("泰國") || clean.includes("Thailand")) return "🇹🇭 泰國";
-            if (clean.includes("印尼") || clean.includes("Indonesia")) return "🇮🇩 印尼";
-            if (clean.includes("馬來西亞")) return "🇲🇾 馬來西亞";
-            if (clean.includes("韓國") || clean.includes("Korea")) return "🇰🇷 韓國";
-            if (clean.includes("日本") || clean.includes("Japan")) return "🇯🇵 日本";
-            for (let code in PREFIX_DB) { if (PREFIX_DB[code] === clean) return clean; }
-            if (Object.keys(COLORS).includes(clean)) return clean; return "其它";
-        }
-        function switchTab(tabName) {
-            document.querySelectorAll('.container').forEach(el => el.classList.remove('active-tab'));
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('view-' + tabName).classList.add('active-tab');
-            document.getElementById('nav-' + tabName).classList.add('active');
-            stopRecordScanner(); stopAiScanner();
-        }
-        function handleImgUpload(input, type) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0]; const reader = new FileReader();
-            reader.onload = function(e) {
-                const imgId = `img-preview-${type}`;
-                const imgEl = document.getElementById(imgId);
-                imgEl.src = e.target.result; imgEl.style.display = 'block';
-                if(type !== 'evidence') document.getElementById(`icon-${type}`).style.display = 'none';
-                else document.getElementById('icon-evidence').style.display = 'none';
-
-                const temp = new Image(); temp.src = e.target.result;
-                temp.onload = function() {
-                    const cvs = document.createElement('canvas');
-                    let s = 1024 / temp.width; if (s > 1) s = 1;
-                    cvs.width = temp.width * s; cvs.height = temp.height * s;
-                    cvs.getContext('2d').drawImage(temp, 0, 0, cvs.width, cvs.height);
-                    STATE.imgs[type] = cvs.toDataURL('image/jpeg', 0.7).split(',')[1];
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-        function takeAiSnapshot() {
-            var videoEl = document.querySelector("#reader-ai video"); if (!videoEl) { alert("相機未啟動"); return; }
-            videoEl.pause(); document.getElementById('loading-mask').style.display = 'flex';
-            var cvs = document.createElement("canvas"); var max = 800; var w = videoEl.videoWidth; var h = videoEl.videoHeight;
-            var s = (w>h ? (w>max?max/w:1) : (h>max?max/h:1)); cvs.width = w*s; cvs.height = h*s;
-            cvs.getContext("2d").drawImage(videoEl, 0, 0, cvs.width, cvs.height);
-            var b64Full = cvs.toDataURL("image/jpeg", 0.6); stopAiScanner();
-            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "identify", image: b64Full.split(',')[1] }) })
-            .then(res => res.json()).then(data => {
-                document.getElementById('loading-mask').style.display = 'none';
-                if (data.status === "success") {
-                    try {
-                        var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
-                        var match = raw.match(/\{[\s\S]*\}/);
-                        if (match) displayAiResult(JSON.parse(match[0]), b64Full); else alert("AI 格式錯誤: " + raw);
-                    } catch(e) { alert("解析失敗: " + e.message); }
-                } else { alert("後端錯誤: " + data.message); }
-            }).catch(err => { document.getElementById('loading-mask').style.display = 'none'; alert("連線失敗: " + err); });
-        }
-        function displayAiResult(data, imgSrc) {
-            const box = document.getElementById('ai-result-box'); box.style.display = 'block';
-            document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵";
-            const select = document.getElementById('ai-country-select'); select.innerHTML = "";
-            let aiGuess = normalizeName(data.country); 
-            if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); }
-            for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); }
-            if (aiGuess === "其它") select.value = "其它";
-            const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim();
-            document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
-            document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1); box.style.display = 'none'; switchTab('record'); };
-        }
-        function handlePrefixCheck() {
-            const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { alert("請輸入至少 3 碼"); return; }
-            const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix];
-            if (country) { if(confirm(`🔎 查詢結果：${country}\n\n要加入記錄嗎？`)) { addRecord(country, 1); document.getElementById('inp_prefix').value = ""; } } else { alert(`❌ 查無代碼 [${prefix}] 的歸屬地`); }
-        }
-        function addRecord(country, qty) { let safeName = normalizeName(country); if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; STATE.stats[safeName] += qty; STATE.count += qty; for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeName, qty: 1}); updateUI(); }
-        function undoRecord() { if (STATE.historyStack.length === 0) return; const last = STATE.historyStack.pop(); STATE.stats[last.key] -= last.qty; if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; STATE.count -= last.qty; updateUI(); }
-        function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value)); }
-        function updateUI() {
-            document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0;
-            if (STATE.count === 0) { document.getElementById('css-pie').style.background = "#eee"; return; }
-            for (const [key, val] of Object.entries(STATE.stats)) {
-                const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1);
-                tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`;
-                const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d;
-            }
-            document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
-        }
-        function uploadData() {
-            if (STATE.count === 0) { alert("無資料"); return; }
-            if (!document.getElementById('inp_name').value) { alert("請填寫姓名"); switchTab('basic'); return; }
-            if (!document.getElementById('inp_phone').value) { alert("請填寫聯絡手機"); switchTab('basic'); return; }
-            if (!document.getElementById('inp_participants').value) { alert("請填寫參與人數"); switchTab('basic'); return; }
-            var btn = document.getElementById('btn-upload'); btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
-            let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" }; let others = [];
-            for(let k in STATE.stats) {
-                if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k]; else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k]; else if(k.includes("越南")) statsOut.cnt_vn += STATE.stats[k];
-                else if(k.includes("菲律賓")) statsOut.cnt_ph += STATE.stats[k]; else if(k.includes("泰國")) statsOut.cnt_th += STATE.stats[k]; else if(k.includes("印尼")) statsOut.cnt_id += STATE.stats[k];
-                else if(k.includes("馬來西亞")) statsOut.cnt_my += STATE.stats[k]; else if(k.includes("韓國")) statsOut.cnt_kr += STATE.stats[k]; else if(k.includes("日本")) statsOut.cnt_jp += STATE.stats[k];
-                else others.push(`${k}*${STATE.stats[k]}`);
-            }
-            statsOut.cnt_other = others.join(", ");
-            var payload = {
-                action: "save", name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value,
-                city: document.getElementById('inp_city').value, surveyPoint: document.getElementById('inp_point').value, gps: document.getElementById('inp_gps').value,
-                total: STATE.count, note: document.getElementById('inp_note').value, fileData: STATE.imgs.evidence || "", envData: STATE.imgs.env || "", groupData: STATE.imgs.group || "", ...statsOut
-            };
-            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(data => {
-                alert("✅ 上傳成功！"); STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.imgs = { env: null, group: null, evidence: null };
-                document.getElementById('img-preview-env').style.display='none'; document.getElementById('icon-env').style.display='block';
-                document.getElementById('img-preview-group').style.display='none'; document.getElementById('icon-group').style.display='block';
-                document.getElementById('img-preview-evidence').style.display='none'; document.getElementById('icon-evidence').style.display='block'; // 重置 evidence icon
-                document.getElementById('inp_note').value = ""; updateUI(); switchTab('basic');
-            }).catch(err => alert("上傳失敗: " + err)).finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
-        }
-        function runGPS() {
-            document.getElementById('inp_gps').value="定位中...";
-            navigator.geolocation.getCurrentPosition(p=>{
-                document.getElementById('inp_gps').value=`${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;
-                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&localityLanguage=zh`).then(r=>r.json()).then(d=>{
-                    let city = (d.principalSubdivision || "").replace("Province", "").trim(); let town = (d.locality || "").trim();
-                    STATE.currentCity = `${city} ${town}`; document.getElementById('inp_city').value=STATE.currentCity;
-                });
-            }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
-        }
-        function startRecordScanner() { if (STATE.scanners.record) return; document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block'; STATE.scanners.record = new Html5Qrcode("reader-record"); STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { STATE.scanners.record.pause(); const c = getCountryFromCode(txt); if(confirm(`掃描：${c}\n加入嗎？`)) { addRecord(c, 1); } setTimeout(()=>STATE.scanners.record.resume(), 500); }, ()=>{} ); }
-        function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
-        function startAiCamera() { document.getElementById('ai-result-box').style.display='none'; document.getElementById('camera-box-ai').style.display='block'; document.getElementById('btn-ai-start').style.display='none'; STATE.scanners.ai = new Html5Qrcode("reader-ai"); STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); }
-        function stopAiScanner() { if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); document.getElementById('camera-box-ai').style.display='none'; document.getElementById('btn-ai-start').style.display='inline-block'; }
-        function getCountryFromCode(code) { return (code && code.length>=3) ? (PREFIX_DB[code.substring(0,3)]||"未知") : "未知"; }
-    </script>
-</body>
-</html>
+        const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
+        const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
+        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸
