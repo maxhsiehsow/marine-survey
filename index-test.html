@@ -394,15 +394,20 @@
             document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
         }
 
-        // === 上傳 ===
-        function uploadData() {
+      function uploadData() {
             if (STATE.count === 0) { alert("無資料"); return; }
             var btn = document.getElementById('btn-upload');
             btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
 
-            let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" };
+            // 準備統計資料 (確保每個國家都有欄位，即使是 0)
+            let statsOut = { 
+                cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, 
+                cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" 
+            };
             let others = [];
+
             for(let k in STATE.stats) {
+                // 模糊比對，歸類到正確的欄位
                 if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k];
                 else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k];
                 else if(k.includes("越南")) statsOut.cnt_vn += STATE.stats[k];
@@ -429,6 +434,7 @@
                 fileData: STATE.imgs.evidence || "",
                 envData: STATE.imgs.env || "",
                 groupData: STATE.imgs.group || "",
+                // 展開統計數據
                 ...statsOut
             };
 
@@ -436,18 +442,31 @@
             .then(res => res.json())
             .then(data => {
                 alert("✅ 上傳成功！");
+                // 重置所有狀態
                 STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
                 STATE.imgs = { env: null, group: null, evidence: null };
-                // 清空預覽
-                document.getElementById('img-preview-env').style.display='none'; document.getElementById('icon-env').style.display='block';
-                document.getElementById('img-preview-group').style.display='none'; document.getElementById('icon-group').style.display='block';
+                
+                // 重置介面
+                document.getElementById('img-preview-env').src=""; 
+                document.getElementById('img-preview-env').style.display='none'; 
+                document.getElementById('icon-env').style.display='block';
+
+                document.getElementById('img-preview-group').src=""; 
+                document.getElementById('img-preview-group').style.display='none'; 
+                document.getElementById('icon-group').style.display='block';
+
+                document.getElementById('img-preview-evidence').src="";
                 document.getElementById('img-preview-evidence').style.display='none';
+                
+                document.getElementById('inp_note').value = "";
+                document.getElementById('file-env').value = "";
+                document.getElementById('file-group').value = "";
+
                 updateUI(); switchTab('basic');
             })
             .catch(err => alert("上傳失敗: " + err))
             .finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
-
         // 相機啟動器 (保持原樣)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
@@ -493,3 +512,4 @@
     </script>
 </body>
 </html>
+
