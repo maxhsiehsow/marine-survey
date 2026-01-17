@@ -3,24 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V77 (自動歸零版)</title>
+    <title>海廢調查員 V78 (介面細緻優化版)</title>
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: var(--text); -webkit-font-smoothing: antialiased; }
         
+        /* LINE 遮罩 */
         #line-warning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 99999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
         .arrow-icon { font-size: 40px; animation: bounce 1.5s infinite; margin-bottom: 20px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        #alarm-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(5px); animation: fadeIn 0.3s; }
-        .alarm-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 80%; max-width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 5px solid #ef5350; animation: shake 0.5s infinite; }
-        .alarm-title { font-size: 24px; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
-        .alarm-icon { font-size: 60px; margin-bottom: 10px; display: block; }
+        /* 通用彈窗樣式 (鬧鐘 & 成功) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(5px); animation: fadeIn 0.3s; }
+        .modal-content { background: white; padding: 30px; border-radius: 20px; text-align: center; width: 80%; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: zoomIn 0.3s; }
         
+        /* 鬧鐘特定樣式 */
+        .alarm-box { border: 5px solid #ef5350; }
+        .alarm-title { font-size: 24px; font-weight: bold; color: #d32f2f; margin-bottom: 10px; }
+        
+        /* 成功視窗特定樣式 (V78 新增) */
+        .success-box { border: 5px solid #43a047; }
+        .success-title { font-size: 24px; font-weight: bold; color: #2e7d32; margin-bottom: 10px; }
+        .modal-icon { font-size: 60px; margin-bottom: 10px; display: block; }
+
         .container { padding: 16px; display: none; animation: fadeIn 0.4s ease-out; max-width: 600px; margin: 0 auto; }
         .active-tab { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
         .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         h2 { margin-top: 0; color: var(--primary); font-size: 18px; border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 15px; font-weight: 700; letter-spacing: 0.5px; }
@@ -81,12 +90,21 @@
         <p>LINE 內建瀏覽器不支援相機與定位功能。<br>請切換至 Chrome (Android) 或 Safari (iOS)。</p>
     </div>
 
-    <div id="alarm-modal">
-        <div class="alarm-content">
-            <span class="alarm-icon">⏰</span>
+    <div id="alarm-modal" class="modal-overlay">
+        <div class="modal-content alarm-box">
+            <span class="modal-icon">⏰</span>
             <div class="alarm-title">時間到！</div>
             <p>請結束調查並上傳資料</p>
             <button class="btn-red" onclick="stopAlarm()">確定 (停止震動)</button>
+        </div>
+    </div>
+
+    <div id="success-modal" class="modal-overlay">
+        <div class="modal-content success-box">
+            <span class="modal-icon">🎉</span>
+            <div class="success-title">上傳成功！</div>
+            <p>感謝您的調查，<br>資料已安全儲存。</p>
+            <button class="btn-green" onclick="handleSuccessConfirm()">好，繼續下一筆</button>
         </div>
     </div>
 
@@ -105,7 +123,7 @@
 
         <h2>📍 2. 調查地點</h2>
         <div class="card">
-            <label>GPS / 縣市鄉鎮</label>
+            <label class="required">GPS / 縣市鄉鎮</label>
             <div style="display:flex; gap:10px;">
                 <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="flex:1; font-size:13px; color:#666; background:#f5f5f5;">
                 <button onclick="runGPS()" class="btn-blue" style="flex:0.6; margin-top:0;">📡 定位</button>
@@ -166,7 +184,7 @@
             
             <label>🔍 條碼前 3 碼查詢記錄</label>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="如 005" style="margin-bottom:0;">
+                <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="如 471" style="margin-bottom:0;">
                 <button onclick="handlePrefixCheck()" class="btn-blue" style="width:90px; margin-top:0;">查詢</button>
             </div>
             
@@ -257,7 +275,7 @@
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
         
-        // ⚠️ 請確認 GAS 網址
+        // ⚠️ 請確認 GAS 網址 (V77 版本)
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
         window.onload = () => { 
@@ -301,6 +319,30 @@
             document.getElementById('alarm-modal').style.display = 'none';
             if(vibrationInterval) clearInterval(vibrationInterval);
             if(navigator.vibrate) navigator.vibrate(0);
+        }
+
+        // 成功確認後的清理動作 (V78 新增)
+        function handleSuccessConfirm() {
+            document.getElementById('success-modal').style.display = 'none';
+            
+            // 清理 UI
+            document.getElementById('inp_gps').value = ""; 
+            document.getElementById('inp_city').value = ""; 
+            STATE.currentCity = "未定位";
+            document.getElementById('inp_point').value = "";
+            document.getElementById('sel_country').selectedIndex = 0; 
+            document.getElementById('inp_qty').value = 1;
+            document.getElementById('inp_note').value = "";
+            
+            // 圖片清理
+            STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null };
+            ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => {
+                document.getElementById(`img-preview-${k}`).style.display='none';
+                if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block';
+            });
+
+            updateUI(); 
+            switchTab('basic');
         }
 
         // 標準功能
@@ -399,12 +441,15 @@
             document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
         }
 
-        // Upload V77 (Auto Clean)
+        // Upload V78
         function uploadData() {
             if (STATE.count === 0) { alert("無資料"); return; }
             if (!document.getElementById('inp_name').value) { alert("請填寫姓名"); switchTab('basic'); return; }
             if (!document.getElementById('inp_phone').value) { alert("請填寫聯絡手機"); switchTab('basic'); return; }
             if (!document.getElementById('inp_participants').value) { alert("請填寫參與人數"); switchTab('basic'); return; }
+            // V78: 增加 GPS 必填檢查
+            if (!document.getElementById('inp_gps').value) { alert("⚠️ 請先進行定位 (GPS 欄位為必填)"); switchTab('basic'); return; }
+
             var btn = document.getElementById('btn-upload'); btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
             let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" }; let others = [];
             for(let k in STATE.stats) {
@@ -418,27 +463,14 @@
                 action: "save", name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value,
                 city: document.getElementById('inp_city').value, surveyPoint: document.getElementById('inp_point').value, gps: document.getElementById('inp_gps').value,
                 total: STATE.count, note: document.getElementById('inp_note').value, 
-                // V76: 5張圖
                 hotspotData1: STATE.imgs.hotspot1 || "", hotspotData2: STATE.imgs.hotspot2 || "", hotspotData3: STATE.imgs.hotspot3 || "",
                 envData: STATE.imgs.env || "", groupData: STATE.imgs.group || "", 
                 ...statsOut
             };
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(data => {
-                alert("✅ 上傳成功！"); STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
-                STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null };
-                // Reset UI
-                ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => {
-                    document.getElementById(`img-preview-${k}`).style.display='none';
-                    if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block';
-                });
-                
-                // V77 強力歸零
-                document.getElementById('inp_gps').value = ""; document.getElementById('inp_city').value = ""; STATE.currentCity = "未定位";
-                document.getElementById('inp_point').value = "";
-                document.getElementById('sel_country').selectedIndex = 0; document.getElementById('inp_qty').value = 1;
-                document.getElementById('inp_note').value = ""; 
-                
-                updateUI(); switchTab('basic');
+                // V78: 顯示美化後的成功視窗，而不是 alert
+                document.getElementById('success-modal').style.display = 'flex';
+                // 資料清理在使用者按「好」之後執行 (handleSuccessConfirm)
             }).catch(err => alert("上傳失敗: " + err)).finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
         function runGPS() {
