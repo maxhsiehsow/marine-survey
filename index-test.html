@@ -3,241 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V51 (老王優化版)</title>
-    <meta name="theme-color" content="#0056b3">
-
+    <title>海廢調查員 V66 (多圖+手動修正版)</title>
     <style>
-        /* === 1. 基礎設定 (CSS Variables) === */
-        :root {
-            --primary-color: #0056b3;
-            --bg-color: #f0f2f5;
-            --card-bg: #ffffff;
-            --text-color: #333;
-            --border-radius: 12px;
-            --nav-height: 60px;
-        }
+        :root { --primary: #0056b3; --bg: #f4f7f6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; color: #333; }
+        .container { padding: 15px; display: none; animation: fadeIn 0.3s; }
+        .active-tab { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        h2 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 2px solid #e3f2fd; padding-bottom: 8px; }
+        label { display: block; margin: 8px 0 4px; font-weight: bold; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; background: #fff; }
+        
+        button, .btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; color: white; border: none; border-radius: 8px; text-align: center; }
+        .btn-blue { background: #0288d1; } .btn-green { background: #2e7d32; } .btn-red { background: #d32f2f; }
+        .btn-orange { background: #f57c00; } .btn-upload { background: #673ab7; }
+        .btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); }
+        
+        /* 圖片預覽區 */
+        .img-preview-box { display: flex; gap: 10px; margin-top: 5px; overflow-x: auto; }
+        .preview-item { width: 80px; height: 80px; background: #eee; border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 1px dashed #999; flex-shrink: 0; }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-label { font-size: 10px; position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.5); color: white; text-align: center; }
 
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            background: var(--bg-color); 
-            margin: 0; 
-            padding: 0; 
-            padding-bottom: 80px; /* 避開導航列 */
-            color: var(--text-color); 
-            -webkit-tap-highlight-color: transparent;
-        }
+        /* 底部導航 */
+        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: white; border-top: 1px solid #ddd; display: flex; justify-content: space-around; align-items: center; z-index: 1000; }
+        .nav-item { flex: 1; text-align: center; font-size: 12px; color: #999; }
+        .nav-item.active { color: var(--primary); font-weight: bold; }
+        .nav-item span { display: block; font-size: 22px; margin-bottom: 2px; }
 
-        /* === 2. 佈局與容器 === */
-        .container { 
-            padding: 15px; 
-            display: none; 
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        } 
-        .active-tab { 
-            display: block; 
-            opacity: 1; 
-        }
-
-        .card { 
-            background: var(--card-bg); 
-            padding: 20px; 
-            border-radius: var(--border-radius); 
-            margin-bottom: 15px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
-        }
-
-        h2 { 
-            margin-top: 0; 
-            color: var(--primary-color); 
-            font-size: 1.2rem; 
-            border-bottom: 2px solid #e3f2fd; 
-            padding-bottom: 10px; 
-        }
-
-        /* === 3. 表單元件 === */
-        label { display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem; }
-        input, select, textarea { 
-            width: 100%; 
-            padding: 12px; 
-            font-size: 16px; /* 防止 iOS 縮放 */
-            margin-bottom: 15px; 
-            border: 1px solid #cfd8dc; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            background: #fff;
-        }
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-
-        /* === 4. 按鈕設計 === */
-        button { 
-            width: 100%; 
-            padding: 14px; 
-            font-size: 16px; 
-            font-weight: 600; 
-            margin-top: 8px; 
-            cursor: pointer; 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            transition: filter 0.2s;
-        }
-        button:active { filter: brightness(0.9); transform: scale(0.98); }
-        button:disabled { background: #ccc !important; cursor: not-allowed; }
-
-        .btn-blue { background: #0288d1; }
-        .btn-green { background: #2e7d32; }
-        .btn-red { background: #d32f2f; }
-        .btn-orange { background: #f57c00; }
-        .btn-purple { background: #673ab7; }
-        .btn-outline { background: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); }
-
-        /* === 5. 底部導航列 === */
-        .nav-bar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
-            background: rgba(255, 255, 255, 0.95); 
-            backdrop-filter: blur(10px);
-            border-top: 1px solid #eee; 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom); /* 適配 iPhone X+ */
-        }
-        .nav-item { flex: 1; text-align: center; font-size: 10px; color: #999; cursor: pointer; transition: color 0.3s; }
-        .nav-item span { display: block; font-size: 24px; margin-bottom: 2px; }
-        .nav-item.active { color: var(--primary-color); font-weight: bold; }
-
-        /* === 6. 相機區域 === */
-        .camera-box { 
-            position: relative; 
-            display: none; 
-            margin-bottom: 15px; 
-            background: #000; 
-            border-radius: 12px; 
-            overflow: hidden; 
-        }
-        .scanner-view { width: 100%; min-height: 300px; background: #000; }
-        #ai-cam-overlay { 
-            position: absolute; bottom: 30px; left: 0; width: 100%; 
-            display: flex; justify-content: center; z-index: 10; 
-        }
-        .btn-snap { 
-            width: 70px; height: 70px; 
-            border-radius: 50%; 
-            background: rgba(255,255,255,0.9); 
-            border: 4px solid var(--primary-color); 
-            padding: 0; margin: 0;
-            box-shadow: 0 0 15px rgba(0,0,0,0.3);
-        }
-
-        /* === 7. 統計與圖表 === */
-        .pie-chart { 
-            width: 140px; height: 140px; 
-            border-radius: 50%; 
-            background: conic-gradient(#eee 0% 100%); 
-            margin: 10px auto; 
-            border: 5px solid #fff;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
-        td:last-child { text-align: right; font-weight: bold; }
-
-        /* === 8. UX 提示元件 (取代 alert) === */
-        #loading-mask { 
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            position: fixed; top:0; left:0; width:100%; height:100%; 
-            background: #fff; z-index: 9999; 
-        }
-        .spinner {
-            width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-color);
-            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
-        }
+        /* 相機與 AI 結果 */
+        .camera-box { position: relative; display: none; background: #000; border-radius: 12px; overflow: hidden; margin-top: 10px; }
+        .scanner-view { width: 100%; min-height: 300px; }
+        .btn-snap-div { width: 70px; height: 70px; background: rgba(255,255,255,0.9); border-radius: 50%; border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 0 auto; position: absolute; bottom: 20px; left: 0; right: 0; z-index: 10; font-size: 30px; }
+        
+        .ai-result-box { display: none; border: 2px solid var(--primary); background: #e3f2fd; padding: 15px; border-radius: 12px; margin-top: 10px; text-align: center; }
+        
+        /* Loading Mask */
+        #loading-mask { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); flex-direction:column; justify-content:center; align-items:center; z-index:9999; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Toast Notification */
-        #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; width: 90%; max-width: 400px; }
-        .toast { 
-            background: rgba(0,0,0,0.8); color: white; padding: 12px 20px; border-radius: 50px; 
-            text-align: center; margin-bottom: 10px; animation: slideDown 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-        .ai-result-box { 
-            border: 2px solid var(--primary-color); background: #e3f2fd; 
-            padding: 15px; border-radius: 12px; margin-top: 10px; display: none; 
-        }
-        .evidence-img { width: 100%; height: 200px; object-fit: cover; display: none; margin-top: 10px; border-radius: 8px; }
+        
+        /* 統計圖表 */
+        .pie-chart { width: 120px; height: 120px; border-radius: 50%; background: #eee; margin: 10px auto; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 5px; }
+        th, td { border-bottom: 1px solid #eee; padding: 6px; }
     </style>
 </head>
 <body>
 
-    <div id="loading-mask">
-        <div class="spinner"></div>
-        <h3>系統啟動中...</h3>
-        <p style="color:#666;">正在載入 AI 模組與資源</p>
-    </div>
+    <div id="loading-mask"><div class="spinner"></div><p id="loading-text">載入中...</p></div>
 
-    <div id="toast-container"></div>
-
-    <div id="view-basic" class="container">
-        <h2>📝 1. 基本資訊</h2>
+    <div id="view-basic" class="container active-tab">
+        <h2>📝 1. 基本資訊與照片</h2>
         <div class="card">
-            <label>填表人姓名</label>
-            <input type="text" id="inp_name" placeholder="請輸入您的姓名">
-            
-            <label>參與人數</label>
-            <input type="number" id="inp_participants" value="1" min="1">
-            
-            <label>地點定位 (GPS)</label>
+            <label>填表人 / 參與人數</label>
             <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="background:#f9f9f9; text-align:center; font-size: 12px;">
-                <button onclick="runGPS()" class="btn-blue" style="width: 80px; margin-top:0;">📍 定位</button>
+                <input type="text" id="inp_name" placeholder="您的姓名" style="flex:2;">
+                <input type="number" id="inp_participants" value="1" min="1" style="flex:1; text-align:center;">
             </div>
-            <input type="text" id="inp_loc" placeholder="請輸入地點描述 (例: 貢寮沙灘)" style="margin-top: 10px;">
-        </div>
-        <div class="card" style="background: #e8f5e9;">
-            <p style="margin:0; font-size:14px; color:#2e7d32;">💡 提示：請先完成定位再開始掃描，這將有助於數據分析。</p>
+
+            <label>地點 / GPS</label>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="flex:2; font-size:12px; background:#f9f9f9;">
+                <button onclick="runGPS()" class="btn-blue" style="flex:1; margin-top:0; padding:10px;">📍 定位</button>
+            </div>
+            <input type="text" id="inp_loc" placeholder="地點名稱 (如: 貢寮沙灘)" style="margin-top:10px;">
+            
+            <label>📸 現場照片上傳 (點擊方塊)</label>
+            <div class="img-preview-box">
+                <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
+                <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
+                
+                <div class="preview-item" onclick="document.getElementById('file-env').click()">
+                    <img id="img-preview-env" src="" style="display:none">
+                    <div class="preview-label">環境照</div>
+                    <span id="icon-env" style="font-size:24px; color:#ccc;">🏞️</span>
+                </div>
+                <div class="preview-item" onclick="document.getElementById('file-group').click()">
+                    <img id="img-preview-group" src="" style="display:none">
+                    <div class="preview-label">合照</div>
+                    <span id="icon-group" style="font-size:24px; color:#ccc;">👥</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="view-record" class="container">
-        <h2>📊 2. 記錄廢棄物</h2>
+        <h2>📊 2. 記錄與統計</h2>
         <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <div style="font-size:14px; color:#666;">目標: <span id="target_count">100</span></div>
-                <div style="font-size:28px; font-weight:bold; color:var(--primary-color);">
-                    <span id="disp_count">0</span> <span style="font-size:14px; color:#999;">個</span>
-                </div>
+            <div style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:10px;">
+                目前收集: <span id="disp_count" style="color:var(--primary); font-size:32px;">0</span> / 100
             </div>
-
-            <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 開啟相機掃條碼</button>
-            <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 關閉相機</button>
             
-            <div id="camera-box-record" class="camera-box">
-                <div id="reader-record" class="scanner-view"></div>
-                <p style="color:white; text-align:center; padding:10px;">請對準瓶身條碼</p>
+            <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼加入</button>
+            <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
+            <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
+
+            <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
+
+            <label>🔍 條碼前 3 碼查詢 (如 471)</label>
+            <div style="display:flex; gap:10px;">
+                <input type="number" id="inp_prefix" placeholder="輸入代碼" style="margin-bottom:0;">
+                <button onclick="handlePrefixCheck()" class="btn-blue" style="width:80px; margin-top:0;">查詢</button>
             </div>
 
-            <hr style="border:0; border-top:1px dashed #ccc; margin: 20px 0;">
+            <hr style="border:0; border-top:1px dashed #ccc; margin:15px 0;">
 
-            <label>手動新增記錄</label>
-            <div class="input-group" style="display:flex; gap:10px;">
+            <label>手動新增</label>
+            <div style="display:flex; gap:10px;">
                 <select id="sel_country" style="flex:2;">
                     <option value="🇹🇼 台灣">🇹🇼 台灣</option>
                     <option value="🇨🇳 中國">🇨🇳 中國</option>
                     <option value="🇻🇳 越南">🇻🇳 越南</option>
                     <option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
                     <option value="🇹🇭 泰國">🇹🇭 泰國</option>
+                    <option value="🇮🇩 印尼">🇮🇩 印尼</option>
+                    <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option>
                     <option value="🇰🇷 韓國">🇰🇷 韓國</option>
                     <option value="🇯🇵 日本">🇯🇵 日本</option>
                     <option value="其它">❓ 其它</option>
                 </select>
-                <input type="number" id="inp_qty" value="1" min="1" style="flex:1; text-align:center; margin-bottom:0;">
+                <input type="number" id="inp_qty" value="1" style="flex:1; text-align:center; margin-bottom:0;">
             </div>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button onclick="handleManualAdd()" class="btn-green">➕ 新增</button>
@@ -246,53 +134,43 @@
         </div>
 
         <div class="card">
-            <h3>📈 統計概覽</h3>
-            <div style="display:flex; align-items:flex-start;">
-                <div style="flex:1; text-align:center;">
-                    <div id="css-pie" class="pie-chart"></div>
-                </div>
-                <div style="flex:1; padding-left:10px;">
-                    <table id="stats-table">
-                        <tbody id="stats-body"><tr><td style="color:#999;">尚無資料</td></tr></tbody>
-                    </table>
-                </div>
+            <div style="display:flex;">
+                <div style="flex:1; text-align:center;"><div id="css-pie" class="pie-chart"></div></div>
+                <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
             </div>
-            
-            <label style="margin-top:20px;">現場備註</label>
-            <textarea id="inp_note" rows="2" placeholder="例如：大部分是寶特瓶，風浪很大..."></textarea>
-            
-            <label>現場照片 (上傳證據)</label>
-            <input type="file" accept="image/*" onchange="previewAndCompress(event)">
-            <img id="out_img" class="evidence-img">
-            
-            <button id="btn-upload" onclick="uploadData()" class="btn-purple" style="margin-top:20px;">🚀 上傳資料至雲端</button>
+            <label style="margin-top:15px;">瓶罐特寫照 (上傳證據)</label>
+            <input type="file" accept="image/*" onchange="handleImgUpload(this, 'evidence')">
+            <img id="img-preview-evidence" style="width:100%; height:150px; object-fit:cover; margin-top:5px; display:none; border-radius:8px;">
+            <label style="margin-top:10px;">備註</label>
+            <textarea id="inp_note" rows="2"></textarea>
+            <button id="btn-upload" onclick="uploadData()" class="btn-upload" style="margin-top:15px;">🚀 上傳資料至雲端</button>
         </div>
     </div>
 
     <div id="view-ai" class="container">
         <h2>🤖 3. AI 鑑定室</h2>
         <div class="card" style="text-align:center;">
-            <p>遇到無法辨識的瓶罐？<br>拍張照，讓 AI 幫你判斷來源。</p>
-            
+            <p>拍一張，AI 幫你分類！<br><small>如果不準，您還可以手動修正喔。</small></p>
             <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
             
             <div id="camera-box-ai" class="camera-box">
                 <div id="reader-ai" class="scanner-view"></div>
-                <div id="ai-cam-overlay">
-                    <div onclick="takeAiSnapshot(event)" class="btn-snap" style="display:flex; justify-content:center; align-items:center; cursor:pointer;">
-                        <span style="font-size:30px;">📸</span>
-                    </div>
-                </div>
+                <div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
             </div>
 
             <div id="ai-result-box" class="ai-result-box">
-                <img id="ai-preview-img" style="width:100px; height:100px; object-fit:cover; border-radius:8px; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-                <h3 style="color:var(--primary-color); margin:10px 0;">AI 認為是：<br><span id="ai-country-text" style="font-size:1.5em;"></span></h3>
-                <p style="font-size:13px; color:#555; background:#fff; padding:8px; border-radius:4px;">特徵：<span id="ai-desc-text"></span></p>
+                <img id="ai-preview-img" style="width:120px; height:120px; object-fit:cover; border-radius:8px; border:2px solid white; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                
+                <h3 style="color:#0056b3; margin:10px 0 5px;">AI 認為是：</h3>
+                
+                <select id="ai-country-select" style="font-size:18px; font-weight:bold; color:#333; padding:8px; border:2px solid #0056b3;">
+                    </select>
+
+                <p style="font-size:13px; color:#666; background:white; padding:5px; border-radius:4px; margin-top:5px;">特徵：<span id="ai-desc-text"></span></p>
                 
                 <div style="display:flex; gap:10px; margin-top:15px;">
-                    <button id="btn-google-check" class="btn-outline" style="font-size:13px;">🔍 Google 查證</button>
-                    <button id="btn-confirm-add" class="btn-green">✅ 加入記錄</button>
+                    <button id="btn-google-check" class="btn-outline" style="font-size:14px;">🔍 Google 查證</button>
+                    <button id="btn-confirm-ai" class="btn-green">✅ 確認加入</button>
                 </div>
             </div>
         </div>
@@ -305,43 +183,35 @@
     </div>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
-  <script>
-        // === 1. 全局變數與設定 ===
+    <script>
+        // === 全局狀態 ===
         const STATE = {
-            count: 0,
-            target: 100,
-            stats: {},
-            historyStack: [],
+            count: 0, target: 100, stats: {}, historyStack: [],
             currentCity: "未定位",
-            uploadFileBase64: null,
+            imgs: { env: null, group: null, evidence: null }, // 儲存三張圖的 Base64
             scanners: { record: null, ai: null }
         };
 
-        // 條碼前綴資料庫
         const PREFIX_DB = {
             "471": "🇹🇼 台灣", "690": "🇨🇳 中國", "691": "🇨🇳 中國", "692": "🇨🇳 中國", "693": "🇨🇳 中國", 
             "694": "🇨🇳 中國", "695": "🇨🇳 中國", "696": "🇨🇳 中國", "697": "🇨🇳 中國",
             "893": "🇻🇳 越南", "480": "🇵🇭 菲律賓", "955": "🇲🇾 馬來西亞", "899": "🇮🇩 印尼", 
             "885": "🇹🇭 泰國", "880": "🇰🇷 韓國", "450": "🇯🇵 日本", "490": "🇯🇵 日本"
         };
-
-        // 國家顏色映射
+        
         const COLORS = {
-            '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', 
-            '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', 
-            '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '其它': '#757575'
+            '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', 
+            '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', 
+            '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '其它': '#757575'
         };
 
-        // ⚠️ 請確認這是你部署 V65 後的網址
+        // ⚠️ 請確認這是 V66 的網址
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
-        // === 2. 核心邏輯：名稱正規化 ===
+        // === 核心邏輯 ===
         function normalizeName(rawName) {
-            if (!rawName) return "未知";
+            if (!rawName) return "其它";
             let clean = rawName.toString().trim();
-            
-            // 關鍵字對應 (解決 AI 回傳 "中國大陸" 或 "Taiwan" 的問題)
             if (clean.includes("台灣") || clean.includes("Taiwan") || clean.includes("ROC")) return "🇹🇼 台灣";
             if (clean.includes("中國") || clean.includes("China") || clean.includes("CN") || clean.includes("大陸")) return "🇨🇳 中國";
             if (clean.includes("越南") || clean.includes("Vietnam")) return "🇻🇳 越南";
@@ -351,117 +221,145 @@
             if (clean.includes("馬來西亞") || clean.includes("Malaysia")) return "🇲🇾 馬來西亞";
             if (clean.includes("韓國") || clean.includes("Korea")) return "🇰🇷 韓國";
             if (clean.includes("日本") || clean.includes("Japan")) return "🇯🇵 日本";
-
-            if (clean.includes("🇹🇼") || clean.includes("🇨🇳")) return clean;
-            return clean; // 沒對應到就回傳原名
+            // 若為標準格式則直接回傳
+            if (Object.values(PREFIX_DB).includes(clean)) return clean;
+            if (Object.keys(COLORS).includes(clean)) return clean;
+            return "其它"; // 預設歸類為其它
         }
-
-        // === 3. 初始化 ===
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('loading-mask').style.display = 'none';
-                switchTab('basic');
-            }, 800);
-        };
 
         function switchTab(tabName) {
             document.querySelectorAll('.container').forEach(el => el.classList.remove('active-tab'));
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             document.getElementById('view-' + tabName).classList.add('active-tab');
             document.getElementById('nav-' + tabName).classList.add('active');
-            stopRecordScanner();
+            stopRecordScanner(); stopAiScanner();
+        }
+
+        // === 圖片處理 (通用版) ===
+        function handleImgUpload(input, type) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // 顯示預覽
+                const imgId = type === 'evidence' ? 'img-preview-evidence' : `img-preview-${type}`;
+                const imgEl = document.getElementById(imgId);
+                imgEl.src = e.target.result;
+                imgEl.style.display = 'block';
+                if(type !== 'evidence') document.getElementById(`icon-${type}`).style.display = 'none';
+
+                // 壓縮並儲存 Base64
+                const temp = new Image();
+                temp.src = e.target.result;
+                temp.onload = function() {
+                    const cvs = document.createElement('canvas');
+                    let s = 1024 / temp.width; if (s > 1) s = 1;
+                    cvs.width = temp.width * s; cvs.height = temp.height * s;
+                    cvs.getContext('2d').drawImage(temp, 0, 0, cvs.width, cvs.height);
+                    STATE.imgs[type] = cvs.toDataURL('image/jpeg', 0.7).split(',')[1];
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // === AI 鑑定 (含下拉選單修正) ===
+        function takeAiSnapshot() {
+            var videoEl = document.querySelector("#reader-ai video");
+            if (!videoEl) { alert("相機未啟動"); return; }
+            videoEl.pause();
+            document.getElementById('loading-mask').style.display = 'flex';
+
+            var cvs = document.createElement("canvas");
+            var max = 800; var w = videoEl.videoWidth; var h = videoEl.videoHeight;
+            var s = (w>h ? (w>max?max/w:1) : (h>max?max/h:1));
+            cvs.width = w*s; cvs.height = h*s;
+            cvs.getContext("2d").drawImage(videoEl, 0, 0, cvs.width, cvs.height);
+            var b64Full = cvs.toDataURL("image/jpeg", 0.6);
+            
             stopAiScanner();
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST', body: JSON.stringify({ action: "identify", image: b64Full.split(',')[1] })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('loading-mask').style.display = 'none';
+                if (data.status === "success") {
+                    try {
+                        var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
+                        var match = raw.match(/\{[\s\S]*\}/);
+                        if (match) displayAiResult(JSON.parse(match[0]), b64Full);
+                        else alert("AI 格式錯誤: " + raw);
+                    } catch(e) { alert("解析失敗: " + e.message); }
+                } else { alert("後端錯誤: " + data.message); }
+            })
+            .catch(err => { document.getElementById('loading-mask').style.display = 'none'; alert("連線失敗: " + err); });
         }
 
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const el = document.createElement('div');
-            el.className = 'toast';
-            el.innerText = msg;
-            if (type === 'error') el.style.background = '#d32f2f';
-            if (type === 'success') el.style.background = '#2e7d32';
-            container.appendChild(el);
-            setTimeout(() => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(-20px)';
-                setTimeout(() => el.remove(), 300);
-            }, 3000);
-        }
+        function displayAiResult(data, imgSrc) {
+            const box = document.getElementById('ai-result-box');
+            box.style.display = 'block';
+            document.getElementById('ai-preview-img').src = imgSrc;
+            document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵";
 
-        // === 4. GPS 定位 ===
-        function runGPS() {
-            const gpsInput = document.getElementById('inp_gps');
-            gpsInput.value = "定位中...";
-            if (!navigator.geolocation) { showToast("不支援 GPS", "error"); return; }
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const { latitude, longitude } = pos.coords;
-                    gpsInput.value = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-                    fetchCityName(latitude, longitude);
-                },
-                () => { showToast("定位失敗", "error"); gpsInput.value = ""; }
-            );
-        }
-
-        function fetchCityName(lat, lng) {
-            fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=zh`)
-                .then(res => res.json())
-                .then(data => {
-                    STATE.currentCity = (data.principalSubdivision || data.locality || "未知").replace("Province", "").trim();
-                    document.getElementById('inp_loc').value = STATE.currentCity;
-                    showToast(`📍 定位成功：${STATE.currentCity}`, "success");
-                });
-        }
-
-        // === 5. 掃描條碼 ===
-        function startRecordScanner() {
-            if (STATE.scanners.record) return;
-            document.getElementById('camera-box-record').style.display = 'block';
-            document.getElementById('btn-scan-start').style.display = 'none';
-            document.getElementById('btn-scan-stop').style.display = 'inline-block';
+            // 1. 初始化下拉選單
+            const select = document.getElementById('ai-country-select');
+            select.innerHTML = ""; // 清空
             
-            STATE.scanners.record = new Html5Qrcode("reader-record");
-            STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
-                (decodedText) => {
-                    STATE.scanners.record.pause();
-                    const country = getCountryFromCode(decodedText);
-                    if (confirm(`📦 掃到：${country}\n要加入嗎？`)) { addRecord(country, 1); }
-                    setTimeout(() => STATE.scanners.record.resume(), 500);
-                }, () => {}
-            );
-        }
-
-        function stopRecordScanner() {
-            if (STATE.scanners.record) {
-                STATE.scanners.record.stop().then(() => {
-                    STATE.scanners.record.clear();
-                    STATE.scanners.record = null;
-                }).catch(() => {});
+            // 2. 判斷 AI 的建議
+            let aiGuess = normalizeName(data.country); // 把 "未定" 轉成 "其它" 或對應國家
+            
+            // 3. 建立選項 (把所有國家都列出來，方便修正)
+            // 先把 AI 猜的放第一個 (如果不是其它)
+            if (aiGuess !== "其它") {
+                select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true));
+                select.add(new Option("---", "disabled", false, false));
             }
-            document.getElementById('camera-box-record').style.display = 'none';
-            document.getElementById('btn-scan-start').style.display = 'inline-block';
-            document.getElementById('btn-scan-stop').style.display = 'none';
+            // 列出所有固定選項
+            for (let c of Object.keys(COLORS)) {
+                if (c !== aiGuess) select.add(new Option(c, c));
+            }
+            // 如果 AI 猜是其它，預設選中其它
+            if (aiGuess === "其它") select.value = "其它";
+
+            // 4. Google 查證按鈕 (修復)
+            // 組合關鍵字: 國家 + 關鍵字 + bottle
+            const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim();
+            const gBtn = document.getElementById('btn-google-check');
+            gBtn.onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank');
+
+            // 5. 確認加入按鈕
+            document.getElementById('btn-confirm-ai').onclick = () => {
+                const finalChoice = select.value;
+                if (finalChoice === "disabled") return;
+                addRecord(finalChoice, 1);
+                box.style.display = 'none';
+                switchTab('record');
+            };
         }
 
-        function getCountryFromCode(code) {
-            if (!code || code.length < 3) return "未知";
-            return PREFIX_DB[code.substring(0, 3)] || "未知來源";
+        // === 條碼與記錄 ===
+        function handlePrefixCheck() {
+            const code = document.getElementById('inp_prefix').value;
+            if (!code || code.length < 3) { alert("請輸入至少 3 碼"); return; }
+            const country = PREFIX_DB[code.substring(0, 3)];
+            if (country) {
+                if(confirm(`查詢結果：${country}\n要加入嗎？`)) {
+                    addRecord(country, 1);
+                    document.getElementById('inp_prefix').value = "";
+                }
+            } else {
+                alert("❌ 查無此代碼歸屬");
+            }
         }
 
-        // === 6. 資料管理 (核心) ===
         function addRecord(country, qty) {
-            // 🔥 強制正規化：不管是 AI 還是掃描，進來都先洗一遍
-            let safeCountry = normalizeName(country);
-
-            if (STATE.count + qty > STATE.target) { showToast("已達目標上限", "error"); return; }
-            if (!STATE.stats[safeCountry]) STATE.stats[safeCountry] = 0;
-            
-            STATE.stats[safeCountry] += qty;
+            let safeName = normalizeName(country);
+            if (!STATE.stats[safeName]) STATE.stats[safeName] = 0;
+            STATE.stats[safeName] += qty;
             STATE.count += qty;
-            for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeCountry, qty: 1});
-            
+            for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeName, qty: 1});
             updateUI();
-            showToast(`已加入: ${safeCountry}`, "success");
         }
 
         function undoRecord() {
@@ -472,7 +370,7 @@
             STATE.count -= last.qty;
             updateUI();
         }
-
+        
         function handleManualAdd() {
             addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value));
         }
@@ -482,18 +380,13 @@
             const tbody = document.getElementById('stats-body');
             tbody.innerHTML = "";
             let grad = [], deg = 0;
-
             if (STATE.count === 0) {
-                tbody.innerHTML = "<tr><td colspan='2' style='text-align:center'>無資料</td></tr>";
-                document.getElementById('css-pie').style.background = "#eee";
-                return;
+                document.getElementById('css-pie').style.background = "#eee"; return;
             }
-
             for (const [key, val] of Object.entries(STATE.stats)) {
-                const color = COLORS[key] || '#999';
-                const percent = ((val / STATE.count) * 100).toFixed(1);
-                tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${percent}%)</small></td><td>${val}</td></tr>`;
-                
+                const color = COLORS[key] || '#757575';
+                const pct = ((val / STATE.count) * 100).toFixed(1);
+                tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`;
                 const d = (val / STATE.count) * 360;
                 grad.push(`${color} ${deg}deg ${deg + d}deg`);
                 deg += d;
@@ -501,126 +394,14 @@
             document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
         }
 
-        // === 7. AI 鑑定 (最終乾淨版) ===
-        function startAiCamera() {
-            document.getElementById('ai-result-box').style.display = 'none';
-            document.getElementById('camera-box-ai').style.display = 'block';
-            document.getElementById('btn-ai-start').style.display = 'none';
-            STATE.scanners.ai = new Html5Qrcode("reader-ai");
-            STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, () => {}, () => {});
-        }
-
-        function stopAiScanner() {
-            if (STATE.scanners.ai) {
-                STATE.scanners.ai.stop().then(() => {
-                    STATE.scanners.ai.clear();
-                    STATE.scanners.ai = null;
-                }).catch(() => {});
-            }
-            document.getElementById('camera-box-ai').style.display = 'none';
-            document.getElementById('btn-ai-start').style.display = 'inline-block';
-        }
-
-        function takeAiSnapshot() {
-            // 如果有傳入 event，就阻止它的預設行為 (這是雙重保險)
-            if (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            var videoEl = document.querySelector("#reader-ai video");
-            if (!videoEl) { alert("相機未啟動"); return; }
-            videoEl.pause();
-            
-            // 顯示轉圈圈
-            var mask = document.getElementById('loading-mask');
-            mask.style.display = 'flex';
-            mask.querySelector('p').innerText = "AI 正在分析影像 (V65)...";
-
-            // 縮圖
-            var canvas = document.createElement("canvas");
-            var maxDim = 800; 
-            var w = videoEl.videoWidth, h = videoEl.videoHeight;
-            var scale = (w > h ? (w > maxDim ? maxDim/w : 1) : (h > maxDim ? maxDim/h : 1));
-            canvas.width = w * scale; canvas.height = h * scale;
-            canvas.getContext("2d").drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-            
-            var fullBase64 = canvas.toDataURL("image/jpeg", 0.6);
-            var base64Data = fullBase64.split(',')[1];
-
-            stopAiScanner(); // 關閉相機
-
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "identify", image: base64Data })
-            })
-            .then(res => res.json())
-            .then(data => {
-                mask.style.display = 'none'; // 關閉轉圈圈
-                if (data.status === "success") {
-                    try {
-                        // 智慧提取 JSON
-                        var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result);
-                        var match = raw.match(/\{[\s\S]*\}/);
-                        if (match) {
-                            displayAiResult(JSON.parse(match[0]), fullBase64);
-                        } else {
-                            alert("AI 回應格式錯誤: " + raw);
-                        }
-                    } catch(e) { alert("解析失敗: " + e.message); }
-                } else {
-                    alert("後端錯誤: " + data.message);
-                }
-            })
-            .catch(err => {
-                mask.style.display = 'none';
-                alert("連線失敗: " + err.message);
-            });
-        }
-
-        function displayAiResult(data, imgSrc) {
-            const box = document.getElementById('ai-result-box');
-            box.style.display = 'block'; // 顯示結果框
-            
-            document.getElementById('ai-country-text').innerText = data.country || "未知";
-            document.getElementById('ai-desc-text').innerText = data.keywords || "無";
-            document.getElementById('ai-preview-img').src = imgSrc;
-
-            document.getElementById('btn-confirm-add').onclick = () => {
-                addRecord(data.country || "其它", 1); // addRecord 會自動正規化
-                box.style.display = 'none';
-                switchTab('record');
-            };
-        }
-
-        // === 8. 上傳資料 ===
-        function previewAndCompress(e) {
-            // (為了節省篇幅，請保留你原本的預覽函式，或者參考 Turn 1 的代碼)
-            var file = e.target.files[0];
-            if(!file) return;
-            var reader = new FileReader();
-            reader.onload = function(evt) {
-                 var img = document.getElementById('out_img');
-                 img.src = evt.target.result; img.style.display='block';
-                 var temp = new Image(); temp.src = evt.target.result;
-                 temp.onload = function() {
-                     var cvs = document.createElement('canvas');
-                     var s = 1024/temp.width; if(s>1) s=1;
-                     cvs.width = temp.width*s; cvs.height = temp.height*s;
-                     cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height);
-                     STATE.uploadFileBase64 = cvs.toDataURL('image/jpeg', 0.7);
-                 }
-            };
-            reader.readAsDataURL(file);
-        }
-
+        // === 上傳 ===
         function uploadData() {
-            if(STATE.count===0) { showToast("無資料", "error"); return; }
+            if (STATE.count === 0) { alert("無資料"); return; }
             var btn = document.getElementById('btn-upload');
             btn.innerText = "⏳ 上傳中..."; btn.disabled = true;
 
-            // 準備統計字串
-            let otherStr = [];
-            let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0 };
+            let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" };
+            let others = [];
             for(let k in STATE.stats) {
                 if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k];
                 else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k];
@@ -631,8 +412,9 @@
                 else if(k.includes("馬來西亞")) statsOut.cnt_my += STATE.stats[k];
                 else if(k.includes("韓國")) statsOut.cnt_kr += STATE.stats[k];
                 else if(k.includes("日本")) statsOut.cnt_jp += STATE.stats[k];
-                else otherStr.push(k + "*" + STATE.stats[k]);
+                else others.push(`${k}*${STATE.stats[k]}`);
             }
+            statsOut.cnt_other = others.join(", ");
 
             var payload = {
                 action: "save",
@@ -643,9 +425,10 @@
                 gps: document.getElementById('inp_gps').value,
                 total: STATE.count,
                 note: document.getElementById('inp_note').value,
-                fileData: STATE.uploadFileBase64 ? STATE.uploadFileBase64.split(',')[1] : "",
-                mimeType: "image/jpeg",
-                cnt_other: otherStr.join(", "),
+                // 三張圖片
+                fileData: STATE.imgs.evidence || "",
+                envData: STATE.imgs.env || "",
+                groupData: STATE.imgs.group || "",
                 ...statsOut
             };
 
@@ -653,21 +436,60 @@
             .then(res => res.json())
             .then(data => {
                 alert("✅ 上傳成功！");
-                STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.uploadFileBase64=null;
+                STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
+                STATE.imgs = { env: null, group: null, evidence: null };
+                // 清空預覽
+                document.getElementById('img-preview-env').style.display='none'; document.getElementById('icon-env').style.display='block';
+                document.getElementById('img-preview-group').style.display='none'; document.getElementById('icon-group').style.display='block';
+                document.getElementById('img-preview-evidence').style.display='none';
                 updateUI(); switchTab('basic');
             })
             .catch(err => alert("上傳失敗: " + err))
             .finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; });
         }
+
+        // 相機啟動器 (保持原樣)
+        function startRecordScanner() {
+            if (STATE.scanners.record) return;
+            document.getElementById('camera-box-record').style.display = 'block';
+            document.getElementById('btn-scan-start').style.display = 'none';
+            document.getElementById('btn-scan-stop').style.display = 'inline-block';
+            STATE.scanners.record = new Html5Qrcode("reader-record");
+            STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 },
+                (txt) => {
+                    STATE.scanners.record.pause();
+                    const c = getCountryFromCode(txt);
+                    if(confirm(`掃描：${c}\n加入嗎？`)) { addRecord(c, 1); }
+                    setTimeout(()=>STATE.scanners.record.resume(), 500);
+                }, ()=>{}
+            );
+        }
+        function stopRecordScanner() {
+            if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{});
+            document.getElementById('camera-box-record').style.display='none';
+            document.getElementById('btn-scan-start').style.display='inline-block';
+            document.getElementById('btn-scan-stop').style.display='none';
+        }
+        function startAiCamera() {
+            document.getElementById('ai-result-box').style.display='none';
+            document.getElementById('camera-box-ai').style.display='block';
+            document.getElementById('btn-ai-start').style.display='none';
+            STATE.scanners.ai = new Html5Qrcode("reader-ai");
+            STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{});
+        }
+        function stopAiScanner() {
+            if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{});
+            document.getElementById('camera-box-ai').style.display='none';
+            document.getElementById('btn-ai-start').style.display='inline-block';
+        }
+        function getCountryFromCode(code) { return (code && code.length>=3) ? (PREFIX_DB[code.substring(0,3)]||"未知") : "未知"; }
+        function runGPS() {
+            document.getElementById('inp_gps').value="定位中...";
+            navigator.geolocation.getCurrentPosition(p=>{
+                document.getElementById('inp_gps').value=`${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;
+                fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&localityLanguage=zh`).then(r=>r.json()).then(d=>{STATE.currentCity=(d.principalSubdivision||"").replace("Province","").trim(); document.getElementById('inp_loc').value=STATE.currentCity;});
+            }, ()=>{alert("定位失敗"); document.getElementById('inp_gps').value="";});
+        }
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
