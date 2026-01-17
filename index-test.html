@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V73 (介面優化版)</title>
+    <title>海廢調查員 V72-Fix (穩定響鈴版)</title>
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -23,7 +23,7 @@
         label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 15px; color: #444; }
         .required::after { content: " *"; color: #e53935; }
         
-        /* 字體優化：統一為 16px */
+        /* 輸入框統一 */
         input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; background: #fafafa; transition: border 0.2s, background 0.2s; appearance: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
         
@@ -66,7 +66,7 @@
         .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* 圓餅圖優化：預設隱藏背景 */
+        /* 圓餅圖修正：預設背景透明 */
         .pie-chart { width: 130px; height: 130px; border-radius: 50%; margin: 10px auto; transition: all 0.3s; border: 2px dashed #ddd; background: transparent; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         th, td { border-bottom: 1px solid #eee; padding: 10px 5px; }
@@ -124,107 +124,4 @@
             <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">點擊圓圈開始 / 暫停 (結束會震動與響鈴)</p>
             <div class="timer-container">
                 <div class="timer-box" id="timer-10" onclick="toggleTimer(10)">
-                    <div class="timer-time" id="time-display-10">10:00</div>
-                    <div class="timer-label">10 分鐘</div>
-                </div>
-                <div class="timer-box" id="timer-20" onclick="toggleTimer(20)">
-                    <div class="timer-time" id="time-display-20">20:00</div>
-                    <div class="timer-label">20 分鐘</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="footer-credit">
-            網頁設計規劃：荒野保護協會 棲地守護部雁子<br>
-            聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a>
-        </div>
-    </div>
-
-    <div id="view-record" class="container">
-        <h2>📊 3. 記錄與統計</h2>
-        <div class="card">
-            <div style="text-align:center; font-size:16px; color:#666; margin-bottom:5px;">目前收集總數</div>
-            <div style="text-align:center; font-size:42px; font-weight:800; color:var(--primary); margin-bottom:15px; font-family:sans-serif;">
-                <span id="disp_count">0</span> <span style="font-size:18px; color:#999; font-weight:normal;">/ 100</span>
-            </div>
-            <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼加入</button>
-            <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
-            <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
-            <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
-            <label>🔍 條碼前 3 碼查詢</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_prefix" inputmode="numeric" maxlength="3" placeholder="如 005" style="margin-bottom:0;">
-                <button onclick="handlePrefixCheck()" class="btn-blue" style="width:90px; margin-top:0;">查詢</button>
-            </div>
-            <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
-            <label>手動新增記錄</label>
-            <div style="display:flex; gap:10px;">
-                <select id="sel_country" style="flex:2;">
-                    <option value="🇹🇼 台灣">🇹🇼 台灣</option><option value="🇨🇳 中國">🇨🇳 中國</option>
-                    <option value="🇻🇳 越南">🇻🇳 越南</option><option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
-                    <option value="🇹🇭 泰國">🇹🇭 泰國</option><option value="🇮🇩 印尼">🇮🇩 印尼</option>
-                    <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option><option value="🇰🇷 韓國">🇰🇷 韓國</option>
-                    <option value="🇯🇵 日本">🇯🇵 日本</option><option value="其它">❓ 其它</option>
-                </select>
-                <input type="number" id="inp_qty" value="1" style="flex:1; text-align:center; margin-bottom:0;">
-            </div>
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button onclick="handleManualAdd()" class="btn-green">➕ 新增</button>
-                <button onclick="undoRecord()" class="btn-outline">↩️ 復原</button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div style="display:flex;">
-                <div style="flex:1; text-align:center;"><div id="css-pie" class="pie-chart"></div></div>
-                <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
-            </div>
-            
-            <label style="margin-top:20px;">特殊／熱點照 (上傳證據)</label>
-            <div class="img-preview-box">
-                <input type="file" id="file-evidence" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'evidence')">
-                <div class="preview-item" onclick="document.getElementById('file-evidence').click()" style="width:100px; height:100px;">
-                    <img id="img-preview-evidence" src="" style="display:none">
-                    <span id="icon-evidence" class="preview-icon" style="font-size:32px;">📸</span><div class="preview-label">點擊上傳</div>
-                </div>
-            </div>
-
-            <label style="margin-top:15px;">其他記錄 (備註)</label>
-            <textarea id="inp_note" rows="3" placeholder="請填寫任何值得記錄的觀察..."></textarea>
-            <button id="btn-upload" onclick="uploadData()" class="btn-upload" style="margin-top:20px;">🚀 上傳資料至雲端</button>
-        </div>
-    </div>
-
-    <div id="view-ai" class="container">
-        <h2>🤖 4. AI 鑑定室</h2>
-        <div class="card" style="text-align:center;">
-            <p style="color:#666;">拍一張，AI 幫你分類！</p>
-            <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
-            <div id="camera-box-ai" class="camera-box">
-                <div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
-            </div>
-            <div id="ai-result-box" class="ai-result-box">
-                <img id="ai-preview-img" style="width:140px; height:140px; object-fit:cover; border-radius:12px; border:3px solid white; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
-                <h3 style="color:#00695c; margin:15px 0 8px;">AI 認為是：</h3>
-                <select id="ai-country-select" style="font-size:18px; font-weight:bold; color:#333; padding:10px; border:2px solid #00695c;"></select>
-                <p style="font-size:14px; color:#546e7a; background:white; padding:8px; border-radius:8px; margin-top:10px;">特徵：<span id="ai-desc-text"></span></p>
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button id="btn-google-check" class="btn-outline" style="font-size:14px;">🔍 Google 查證</button>
-                    <button id="btn-confirm-ai" class="btn-green">✅ 確認加入</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="nav-bar">
-        <div class="nav-item active" id="nav-basic" onclick="switchTab('basic')"><span>📝</span>基本</div>
-        <div class="nav-item" id="nav-record" onclick="switchTab('record')"><span>📊</span>記錄</div>
-        <div class="nav-item" id="nav-ai" onclick="switchTab('ai')"><span>🤖</span>AI 鑑定</div>
-    </div>
-
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <script>
-        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, evidence: null }, scanners: { record: null, ai: null } };
-        const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
-        const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
-        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸
+                    <div class="timer-time"
