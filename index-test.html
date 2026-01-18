@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>海廢調查員 V81 (貼心記憶版)</title>
+    <title>荒野瓶罐調查回報網</title>
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -146,9 +146,9 @@
             </div>
 
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
-                <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量髒亂？</label>
-                <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量過大無法自行處理，請協助通報環境部。</p>
-                <button class="btn-red" onclick="window.open('https://ecolife2.moenv.gov.tw/BeachCleanup/Dirty/Add', '_blank')">📢 前往環境部髒亂回報系統</button>
+                <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
+                <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報環境部。</p>
+                <button class="btn-red" onclick="window.open('https://ecolife2.moenv.gov.tw/BeachCleanup/Dirty/Add', '_blank')">📢 前往環境部海岸髒亂通報</button>
             </div>
         </div>
 
@@ -291,10 +291,8 @@
 
         window.onload = () => { 
             if (navigator.userAgent.match(/Line/i)) { document.getElementById('line-warning').style.display = 'flex'; document.getElementById('loading-mask').style.display = 'none'; return; }
-            // V81: 自動帶入記憶的姓名電話
             if(localStorage.getItem('surveyor_name')) document.getElementById('inp_name').value = localStorage.getItem('surveyor_name');
             if(localStorage.getItem('surveyor_phone')) document.getElementById('inp_phone').value = localStorage.getItem('surveyor_phone');
-            
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
 
@@ -528,3 +526,4 @@
     </script>
 </body>
 </html>
+
