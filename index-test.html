@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報網</title>
+    <title>荒野瓶罐調查回報站 V83</title>
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -12,7 +12,6 @@
         .arrow-icon { font-size: 40px; animation: bounce 1.5s infinite; margin-bottom: 20px; }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* 通用彈窗系統 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); animation: popUp 0.3s forwards; }
         @keyframes popUp { to { transform: scale(1); } }
@@ -34,6 +33,9 @@
         .container { padding: 16px; display: none; animation: fadeIn 0.4s ease-out; max-width: 600px; margin: 0 auto; }
         .active-tab { display: block; }
         
+        /* App Title Style (V83 Added) */
+        .app-title { text-align: center; color: var(--primary); font-size: 26px; margin: 15px 0 25px; font-weight: 900; letter-spacing: 1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+
         .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         h2 { margin-top: 0; color: var(--primary); font-size: 18px; border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 15px; font-weight: 700; letter-spacing: 0.5px; }
         
@@ -110,6 +112,8 @@
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">系統載入中...</p></div>
 
     <div id="view-basic" class="container active-tab">
+        <h1 class="app-title">荒野瓶罐調查回報站</h1>
+
         <h2>📝 1. 參與人員資訊</h2>
         <div class="card">
             <label class="required">填表人姓名</label>
@@ -147,7 +151,7 @@
 
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
                 <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
-                <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報環境部。</p>
+                <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報。</p>
                 <button class="btn-red" onclick="window.open('https://ecolife2.moenv.gov.tw/BeachCleanup/Dirty/Add', '_blank')">📢 前往環境部海岸髒亂通報</button>
             </div>
         </div>
@@ -526,4 +530,3 @@
     </script>
 </body>
 </html>
-
