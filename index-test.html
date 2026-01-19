@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V88</title>
+    <title>荒野瓶罐調查回報站 V89</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
@@ -57,8 +57,8 @@
         input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; background: #fafafa; transition: border 0.2s, background 0.2s; appearance: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
         
-        /* 唯讀欄位樣式 (V88) */
         input[readonly].locked-field { background: #e0e0e0; color: #555; border-color: #bdbdbd; cursor: not-allowed; }
+        input[readonly] { color: #00695c; font-weight: bold; background: #e0f2f1; }
 
         button, .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 10px; text-align: center; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:active { transform: scale(0.98); }
@@ -158,19 +158,20 @@
 
         <h2>📍 2. 調查地點</h2>
         <div class="card">
-            <label class="required">GPS / 縣市鄉鎮</label>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="inp_gps" readonly placeholder="尚未定位" style="flex:1; font-size:13px; color:#666; background:#f5f5f5;">
-                <button onclick="runGPS()" class="btn-blue" style="flex:0.6; margin-top:0;">📡 定位</button>
+            <label class="required">位置設定</label>
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <button onclick="runGPS()" class="btn-blue" style="margin:0; flex:1;">📡 自動定位</button>
+                <button onclick="openMap()" class="btn-outline" style="margin:0; flex:1;">🧭 尋找樣點</button>
             </div>
-            
-            <input type="text" id="inp_city" readonly placeholder="定位後自動顯示縣市鄉鎮" style="margin-top:10px; background:#e0f2f1; color:#00695c; font-weight:bold; border-color:#b2dfdb;">
-            
-            <button onclick="openMap()" class="btn-outline" style="width:100%; margin-top:8px; border-style:dashed;">🧭 尋找附近樣點 / 導航</button>
 
-            <label>調查樣點</label>
-            <input type="text" id="inp_point" readonly class="locked-field" placeholder="請使用上方按鈕選擇樣點">
+            <label>GPS 座標</label>
+            <input type="text" id="inp_gps" readonly placeholder="定位後自動顯示" style="background:#f5f5f5;">
             
+            <label>調查地點</label>
+            <input type="text" id="inp_city" readonly placeholder="縣市鄉鎮或樣點名稱">
+            
+            <label>調查樣點</label>
+            <input type="text" id="inp_point" readonly class="locked-field" placeholder="僅限從地圖選擇代號">
             <label>📸 現場照片上傳</label>
             <div class="img-preview-box">
                 <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
@@ -314,7 +315,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // V88: 修正計時器變數宣告位置，確保全域存取
         const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }, scanners: { record: null, ai: null }, surveyPoints: [], map: null, userMarker: null, selectedPoint: null };
         const timers = { 10: { total: 600, left: 600, interval: null, running: false }, 20: { total: 1200, left: 1200, interval: null, running: false } };
         let vibrationInterval;
@@ -348,40 +348,30 @@
             .catch(e => console.error(e));
         }
 
-        // V88: 地圖選擇邏輯修正
         function selectPoint(p) {
             STATE.selectedPoint = p;
             document.querySelectorAll('.point-item').forEach(el => el.classList.remove('selected'));
-            // 這裡可以做列表項目的 highlight
             const btn = document.getElementById('btn-nav-go');
             btn.innerText = `✅ 確認選擇：${p.name}`;
             btn.disabled = false;
         }
 
-        // V88: 確認選擇後帶入欄位 (修正要求3)
         function navigateToSelected() {
             if(!STATE.selectedPoint) return;
             const p = STATE.selectedPoint;
-            
-            // 強制覆蓋欄位
             document.getElementById('inp_gps').value = `${p.lat}, ${p.lng}`;
-            document.getElementById('inp_city').value = p.name; // 這裡放 "新北-老梅"
-            document.getElementById('inp_point').value = p.id;  // 這裡放 "N14"
-            
+            document.getElementById('inp_city').value = p.name;
+            document.getElementById('inp_point').value = p.id;
             STATE.currentCity = p.name;
             closeMap();
-            
-            // 問使用者要不要順便導航
             if(confirm(`已填入樣點：${p.name}\n\n是否開啟 Google Maps 導航前往？`)) {
                 window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`, '_blank');
             }
         }
 
-        // V88: GPS 按鈕 (修正要求5)
         function runGPS() {
             document.getElementById('inp_gps').value="定位中...";
-            // 清除樣點欄位
-            document.getElementById('inp_point').value = "";
+            document.getElementById('inp_point').value = ""; // V88: 清除樣點
             
             if (!navigator.geolocation) { alert("您的裝置不支援 GPS"); return; }
             navigator.geolocation.getCurrentPosition(p=>{
@@ -399,7 +389,6 @@
             }, ()=>{ alert("定位失敗"); document.getElementById('inp_gps').value=""; });
         }
 
-        // 地圖功能
         function openMap() {
             document.getElementById('map-modal').style.display = 'flex';
             if(!STATE.map) {
@@ -454,7 +443,6 @@
         function createRedIcon() { return new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }); }
         function getDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
 
-        // V88: 計時器功能修復 (拉到全域)
         function toggleTimer(min) {
             let t = timers[min]; let box = document.getElementById(`timer-${min}`);
             if (t.running) { clearInterval(t.interval); t.running = false; box.classList.remove('running'); }
@@ -471,29 +459,6 @@
                 }, 1000);
             }
         }
-        
-        // ... (標準功能: 同 V86) ...
-        function updateNetworkStatus() {
-            const bar = document.getElementById('network-status');
-            const syncBox = document.getElementById('offline-sync-box');
-            const btnAi = document.getElementById('btn-ai-start');
-            const warnAi = document.getElementById('ai-offline-warning');
-            if(navigator.onLine) {
-                bar.className = 'status-online'; bar.innerText = "🟢 系統連線中";
-                checkOfflineQueue();
-                if(btnAi) { btnAi.className = 'btn-blue'; btnAi.disabled = false; btnAi.innerText = '📷 啟動 AI 相機'; }
-                if(warnAi) warnAi.style.display = 'none';
-            } else {
-                bar.className = 'status-offline'; bar.innerText = "🔴 離線模式 (資料將暫存於手機)";
-                syncBox.style.display = 'none';
-                if(btnAi) { btnAi.className = 'btn-disabled'; btnAi.disabled = true; btnAi.innerText = '⚠️ 離線無法使用'; }
-                if(warnAi) warnAi.style.display = 'block';
-            }
-        }
-        function saveOffline(payload) { try { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); queue.push(payload); localStorage.setItem('offline_queue', JSON.stringify(queue)); showModal('offline', '已暫存', '網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。', () => handleSuccessConfirm(true)); } catch (e) { showModal('warning', '儲存失敗', '手機儲存空間不足。', null); } }
-        function checkOfflineQueue() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); const syncBox = document.getElementById('offline-sync-box'); if (queue.length > 0 && navigator.onLine) { syncBox.style.display = 'block'; document.getElementById('offline-count').innerText = queue.length; } else { syncBox.style.display = 'none'; } }
-        async function syncOfflineData() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); if (queue.length === 0) return; const btn = document.getElementById('btn-sync'); btn.disabled = true; btn.innerText = "⏳ 同步中 (補全地址)..."; let successCount = 0; let failCount = 0; let newQueue = []; for (let item of queue) { if (item.gps && (item.city.includes("離線") || item.city === "")) { try { let [lat, long] = item.gps.split(', '); let res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`); let data = await res.json(); item.city = `${(data.principalSubdivision || "").replace("Province", "").trim()} ${(data.locality || "").trim()}`; } catch(e) {} } try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) }); successCount++; } catch (e) { failCount++; newQueue.push(item); } } localStorage.setItem('offline_queue', JSON.stringify(newQueue)); checkOfflineQueue(); btn.disabled = false; btn.innerText = "☁️ 立即上傳暫存資料"; if (failCount === 0) showModal('success', '同步完成', `成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`, null); else showModal('warning', '部分失敗', `成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`, null); }
-        function showModal(type, title, msg, onConfirm, onCancel) { const modal = document.getElementById('custom-modal'); const box = document.getElementById('modal-content-box'); const icon = document.getElementById('modal-icon'); const btnConfirm = document.getElementById('btn-modal-confirm'); const btnCancel = document.getElementById('btn-modal-cancel'); box.className = 'modal-content'; btnCancel.style.display = 'block'; btnConfirm.innerText = "確定"; document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerHTML = msg; if (type === 'warning') { box.classList.add('style-warning'); icon.innerText = "⚠️"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else if (type === 'success') { box.classList.add('style-success'); icon.innerText = "🎉"; btnCancel.style.display = 'none'; btnConfirm.innerText = "好，繼續下一筆"; } else if (type === 'alarm') { box.classList.add('style-alarm'); icon.innerText = "⏰"; btnCancel.style.display = 'none'; btnConfirm.innerText = "確定 (停止震動)"; } else if (type === 'offline') { box.classList.add('style-offline'); icon.innerText = "💾"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else { icon.innerText = "🤔"; } btnConfirm.onclick = () => { modal.style.display = 'none'; if (onConfirm) onConfirm(); }; btnCancel.onclick = () => { modal.style.display = 'none'; if (onCancel) onCancel(); }; modal.style.display = 'flex'; }
         function updateTimerDisplay(min) { let sec = timers[min].left; let m = Math.floor(sec / 60).toString().padStart(2, '0'); let s = (sec % 60).toString().padStart(2, '0'); document.getElementById(`time-display-${min}`).innerText = `${m}:${s}`; }
         function triggerAlarm() { let utterance = new SpeechSynthesisUtterance("時間到，請結束調查"); window.speechSynthesis.speak(utterance); showModal('alarm', '時間到！', '請結束調查並上傳資料', () => { if(vibrationInterval) clearInterval(vibrationInterval); if(navigator.vibrate) navigator.vibrate(0); }); if(navigator.vibrate) { navigator.vibrate([500, 200, 500]); vibrationInterval = setInterval(() => { navigator.vibrate([500, 200, 500]); }, 1500); } }
         function stopAlarm() { document.getElementById('alarm-modal').style.display = 'none'; if(vibrationInterval) clearInterval(vibrationInterval); if(navigator.vibrate) navigator.vibrate(0); }
