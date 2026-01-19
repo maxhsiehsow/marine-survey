@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V90</title>
+    <title>荒野瓶罐調查回報站 V91</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        :root { --primary: #00695c; --bg: #f0f2f5; --text: #333; }
+        /* V91: 主題色更新為 #587a30，背景色微調 */
+        :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
+        
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; padding-top: 40px; color: var(--text); -webkit-font-smoothing: antialiased; }
         
         #network-status { position: fixed; top: 0; left: 0; width: 100%; height: 35px; line-height: 35px; text-align: center; color: white; font-size: 13px; font-weight: bold; z-index: 9000; transition: background 0.3s; }
-        .status-online { background: #43a047; }
+        .status-online { background: #689f38; } /* 稍微亮一點的綠 */
         .status-offline { background: #d32f2f; }
 
         #offline-sync-box { display: none; margin-bottom: 15px; background: #fff3e0; padding: 15px; border-radius: 12px; border: 2px solid #ff9800; text-align: center; animation: fadeIn 0.5s; }
@@ -31,14 +33,13 @@
         .modal-title { font-size: 22px; font-weight: 800; margin-bottom: 10px; color: #333; }
         .modal-msg { font-size: 16px; color: #666; margin-bottom: 25px; line-height: 1.5; }
         
-        /* V90: 新增彈窗內的大字樣式 */
-        .big-result-text { font-size: 32px; font-weight: 900; color: #00695c; margin: 15px 0; display: block; background: #e0f2f1; padding: 10px; border-radius: 12px; }
+        .big-result-text { font-size: 32px; font-weight: 900; color: var(--primary); margin: 15px 0; display: block; background: #e8f5e9; padding: 10px; border-radius: 12px; border: 2px solid var(--primary); }
 
         .modal-btns { display: flex; gap: 15px; justify-content: center; }
         .modal-btns button { flex: 1; padding: 15px; font-size: 18px; margin: 0; border-radius: 12px; }
 
         .style-warning .modal-title { color: #f57c00; } .style-warning { border-top: 8px solid #f57c00; }
-        .style-success .modal-title { color: #2e7d32; } .style-success { border-top: 8px solid #2e7d32; }
+        .style-success .modal-title { color: var(--primary); } .style-success { border-top: 8px solid var(--primary); }
         .style-alarm .modal-title { color: #d32f2f; } .style-alarm { border-top: 8px solid #d32f2f; animation: shake 0.5s infinite; }
         .style-offline .modal-title { color: #607d8b; } .style-offline { border-top: 8px solid #607d8b; }
 
@@ -47,9 +48,9 @@
         #map-header { height: 50px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 11001; }
         #map-container { flex: 1; width: 100%; z-index: 10000; }
         #map-footer { height: auto; min-height: 120px; background: white; border-top: 1px solid #ddd; padding: 15px; display: flex; flex-direction: column; gap: 10px; z-index: 11001; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
-        .point-item { padding: 10px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .point-item.selected { border: 2px solid var(--primary); background: #e0f2f1; }
-        .point-dist { font-size: 12px; color: #666; background: #eee; padding: 2px 6px; border-radius: 10px; }
+        .point-item { padding: 12px; border: 1px solid #eee; border-radius: 8px; margin-bottom: 5px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        .point-item.selected { border: 2px solid var(--primary); background: #f1f8e9; }
+        .point-dist { font-size: 12px; color: var(--primary); background: #e8f5e9; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
 
         .container { padding: 16px; display: none; animation: fadeIn 0.4s ease-out; max-width: 600px; margin: 0 auto; }
         .active-tab { display: block; }
@@ -62,14 +63,20 @@
         input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
         
         input[readonly].locked-field { background: #e0e0e0; color: #555; border-color: #bdbdbd; cursor: not-allowed; }
-        input[readonly] { color: #00695c; font-weight: bold; background: #e0f2f1; }
+        input[readonly] { color: var(--primary); font-weight: bold; background: #f1f8e9; }
 
-        /* V90: AI 選單樣式優化 */
-        #ai-country-select { font-size: 24px; font-weight: 800; color: #333; padding: 15px; border: 3px solid #ff9800; border-radius: 12px; height: auto; background: #fff3e0; }
+        #ai-country-select { font-size: 24px; font-weight: 800; color: #333; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; height: auto; background: #fff; }
 
         button, .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 10px; text-align: center; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:active { transform: scale(0.98); }
-        .btn-blue { background: #039be5; } .btn-green { background: #43a047; } .btn-red { background: #e53935; } .btn-orange { background: #fb8c00; } .btn-upload { background: #5e35b1; } .btn-grey { background: #90a4ae; color: white; } .btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); box-shadow: none; }
+        /* V91: 按鈕顏色全面優化 */
+        .btn-blue { background: #0288d1; } /* 定位/導航用藍色保持區別 */
+        .btn-green { background: var(--primary); } 
+        .btn-red { background: #d32f2f; } 
+        .btn-orange { background: #f57c00; } 
+        .btn-upload { background: var(--primary-dark); } /* 上傳按鈕用深綠色 */
+        .btn-grey { background: #90a4ae; color: white; } 
+        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
         .btn-disabled { background: #cfd8dc !important; color: #90a4ae !important; cursor: not-allowed !important; pointer-events: none; }
 
         .img-preview-box { display: flex; gap: 10px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
@@ -94,7 +101,7 @@
         .camera-box { position: relative; display: none; background: #000; border-radius: 16px; overflow: hidden; margin-top: 15px; }
         .scanner-view { width: 100%; min-height: 300px; }
         .btn-snap-div { width: 72px; height: 72px; background: rgba(255,255,255,0.95); border-radius: 50%; border: 4px solid var(--primary); display: flex; justify-content: center; align-items: center; cursor: pointer; margin: 0 auto; position: absolute; bottom: 25px; left: 0; right: 0; z-index: 10; font-size: 32px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .ai-result-box { display: none; border: 2px solid var(--primary); background: #e0f2f1; padding: 20px; border-radius: 16px; margin-top: 15px; text-align: center; }
+        .ai-result-box { display: none; border: 2px solid var(--primary); background: #e8f5e9; padding: 20px; border-radius: 16px; margin-top: 15px; text-align: center; }
         #loading-mask { display: flex; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); flex-direction:column; justify-content:center; align-items:center; z-index:9999; backdrop-filter: blur(5px); }
         .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -113,7 +120,7 @@
         <div id="map-container"></div>
         <div id="map-footer">
             <div style="display:flex; gap:10px;">
-                <button id="btn-toggle-map" class="btn-outline" onclick="toggleMapMode()" style="margin:0; font-size:14px;">🗺️ 顯示全台</button>
+                <button id="btn-toggle-map" class="btn-outline" onclick="toggleMapMode()" style="flex:1; margin:0; font-size:14px;">🗺️ 顯示全台</button>
                 <button id="btn-nav-go" class="btn-blue" disabled onclick="navigateToSelected()" style="flex:1; margin:0;">🚗 選擇此樣點</button>
             </div>
             <div id="map-list" style="overflow-y:auto; max-height:150px; margin-top:10px;">
@@ -137,7 +144,7 @@
             <p id="modal-msg" class="modal-msg">內容</p>
             <div id="modal-btns" class="modal-btns">
                 <button id="btn-modal-cancel" class="btn-grey">取消</button>
-                <button id="btn-modal-confirm" class="btn-blue">確定</button>
+                <button id="btn-modal-confirm" class="btn-green">確定</button>
             </div>
         </div>
     </div>
@@ -300,10 +307,10 @@
             </div>
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:140px; height:140px; object-fit:cover; border-radius:12px; border:3px solid white; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
-                <h3 style="color:#00695c; margin:15px 0 8px;">AI 認為是：</h3>
+                <h3 style="color:var(--primary); margin:15px 0 8px;">AI 認為是：</h3>
                 <p style="font-size:14px; color:#546e7a; background:white; padding:8px; border-radius:8px; margin-top:10px;">特徵：<span id="ai-desc-text"></span></p>
                 <div style="margin-top:15px; text-align:left;">
-                    <label style="font-size:13px; color:#e65100;">🛠️ 若不準確請修正：</label>
+                    <label style="font-size:13px; color:var(--primary);">🛠️ 若不準確請修正：</label>
                     <select id="ai-country-select"></select>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:20px;">
@@ -331,7 +338,7 @@
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
         
-        // ⚠️ 請確認 GAS 網址
+        // ⚠️ 請確認 GAS 網址 (如果後端網址有變，請更換這裡)
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
         window.onload = () => { 
@@ -443,7 +450,7 @@
             if(btn.innerText.includes("全台")) {
                 STATE.map.setView([23.9, 121], 7);
                 STATE.surveyPoints.forEach(p => {
-                    L.circleMarker([p.lat, p.lng], { radius: 5, color: 'blue' }).addTo(STATE.map).bindPopup(p.name).on('click', () => selectPoint(p));
+                    L.circleMarker([p.lat, p.lng], { radius: 5, color: '#587a30' }).addTo(STATE.map).bindPopup(p.name).on('click', () => selectPoint(p)); // V91: 全台點位改為主題色
                 });
                 btn.innerText = "📍 顯示最近";
             } else { openMap(); btn.innerText = "🗺️ 顯示全台"; }
@@ -475,35 +482,18 @@
         function handleImgUpload(input, type) { if (!input.files || !input.files[0]) return; const file = input.files[0]; const reader = new FileReader(); reader.onload = function(e) { const imgId = `img-preview-${type}`; const imgEl = document.getElementById(imgId); imgEl.src = e.target.result; imgEl.style.display = 'block'; const icon = document.getElementById(`icon-${type}`); if(icon) icon.style.display = 'none'; const temp = new Image(); temp.src = e.target.result; temp.onload = function() { const cvs = document.createElement('canvas'); let s = 1024 / temp.width; if (s > 1) s = 1; cvs.width = temp.width * s; cvs.height = temp.height * s; cvs.getContext('2d').drawImage(temp, 0, 0, cvs.width, cvs.height); STATE.imgs[type] = cvs.toDataURL('image/jpeg', 0.7).split(',')[1]; } }; reader.readAsDataURL(file); }
         function takeAiSnapshot() { var videoEl = document.querySelector("#reader-ai video"); if (!videoEl) { alert("相機未啟動"); return; } videoEl.pause(); document.getElementById('loading-mask').style.display = 'flex'; var cvs = document.createElement("canvas"); var max = 800; var w = videoEl.videoWidth; var h = videoEl.videoHeight; var s = (w>h ? (w>max?max/w:1) : (h>max?max/h:1)); cvs.width = w*s; cvs.height = h*s; cvs.getContext("2d").drawImage(videoEl, 0, 0, cvs.width, cvs.height); var b64Full = cvs.toDataURL("image/jpeg", 0.6); stopAiScanner(); fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "identify", image: b64Full.split(',')[1] }) }).then(res => res.json()).then(data => { document.getElementById('loading-mask').style.display = 'none'; if (data.status === "success") { try { var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result); var match = raw.match(/\{[\s\S]*\}/); if (match) displayAiResult(JSON.parse(match[0]), b64Full); else alert("AI 格式錯誤: " + raw); } catch(e) { alert("解析失敗: " + e.message); } } else { alert("後端錯誤: " + data.message); } }).catch(err => { document.getElementById('loading-mask').style.display = 'none'; alert("連線失敗: " + err); }); }
         function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1); box.style.display = 'none'; switchTab('record'); }; }
-        
-        // V90: 更新手動查詢視窗 (顯示大字)
-        function handlePrefixCheck() { 
-            const code = document.getElementById('inp_prefix').value; 
-            if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } 
-            const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; 
-            if (country) { 
-                showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1); document.getElementById('inp_prefix').value = ""; }); 
-            } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } 
-        }
-        
+        function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
         function addRecord(country, qty) { let safeName = normalizeName(country); if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; STATE.stats[safeName] += qty; STATE.count += qty; for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeName, qty: 1}); updateUI(); }
         function undoRecord() { if (STATE.historyStack.length === 0) return; const last = STATE.historyStack.pop(); STATE.stats[last.key] -= last.qty; if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; STATE.count -= last.qty; updateUI(); }
         function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value)); }
         function updateUI() { document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0; if (STATE.count === 0) { document.getElementById('css-pie').style.background = "transparent"; document.getElementById('css-pie').style.border = "2px dashed #ddd"; return; } else { document.getElementById('css-pie').style.border = "4px solid #fff"; } for (const [key, val] of Object.entries(STATE.stats)) { const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1); tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`; const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d; } document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`; }
         function uploadData() { if (STATE.count === 0) { showModal('warning', '無資料', '請先收集數據再上傳', null); return; } if (!document.getElementById('inp_name').value) { showModal('warning', '資料未填', '請填寫 [填表人姓名]', () => switchTab('basic')); return; } if (!document.getElementById('inp_phone').value) { showModal('warning', '資料未填', '請填寫 [聯絡人手機]', () => switchTab('basic')); return; } if (!document.getElementById('inp_participants').value) { showModal('warning', '資料未填', '請填寫 [參與人數]', () => switchTab('basic')); return; } if (!document.getElementById('inp_gps').value) { showModal('warning', '尚未定位', '請按 [定位] 按鈕獲取 GPS', () => switchTab('basic')); return; } localStorage.setItem('surveyor_name', document.getElementById('inp_name').value); localStorage.setItem('surveyor_phone', document.getElementById('inp_phone').value); let statsOut = { cnt_tw:0, cnt_cn:0, cnt_vn:0, cnt_ph:0, cnt_my:0, cnt_id:0, cnt_th:0, cnt_kr:0, cnt_jp:0, cnt_other:"" }; let others = []; for(let k in STATE.stats) { if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k]; else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k]; else if(k.includes("越南")) statsOut.cnt_vn += STATE.stats[k]; else if(k.includes("菲律賓")) statsOut.cnt_ph += STATE.stats[k]; else if(k.includes("泰國")) statsOut.cnt_th += STATE.stats[k]; else if(k.includes("印尼")) statsOut.cnt_id += STATE.stats[k]; else if(k.includes("馬來西亞")) statsOut.cnt_my += STATE.stats[k]; else if(k.includes("韓國")) statsOut.cnt_kr += STATE.stats[k]; else if(k.includes("日本")) statsOut.cnt_jp += STATE.stats[k]; else others.push(`${k}*${STATE.stats[k]}`); } statsOut.cnt_other = others.join(", "); var payload = { action: "save", name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value, city: document.getElementById('inp_city').value, surveyPoint: document.getElementById('inp_point').value, gps: document.getElementById('inp_gps').value, total: STATE.count, note: document.getElementById('inp_note').value, hotspotData1: STATE.imgs.hotspot1 || "", hotspotData2: STATE.imgs.hotspot2 || "", hotspotData3: STATE.imgs.hotspot3 || "", envData: STATE.imgs.env || "", groupData: STATE.imgs.group || "", ...statsOut }; if (!navigator.onLine) { saveOffline(payload); return; } var btn = document.getElementById('btn-upload'); btn.innerText = "⏳ 上傳中..."; btn.disabled = true; fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) }).then(res => res.json()).then(data => { showModal('success', '上傳成功', '資料已安全存入雲端', () => handleSuccessConfirm(false)); }).catch(err => { saveOffline(payload); }).finally(() => { btn.innerText = "🚀 上傳資料至雲端"; btn.disabled = false; }); }
         function handleSuccessConfirm(isOffline) { if(document.getElementById('success-modal')) document.getElementById('success-modal').style.display = 'none'; if(document.getElementById('custom-modal')) document.getElementById('custom-modal').style.display = 'none'; STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }; ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => { document.getElementById(`img-preview-${k}`).style.display='none'; if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block'; }); document.getElementById('inp_gps').value = ""; document.getElementById('inp_city').value = ""; STATE.currentCity = "未定位"; document.getElementById('inp_point').value = ""; document.getElementById('sel_country').selectedIndex = 0; document.getElementById('inp_qty').value = 1; document.getElementById('inp_note').value = ""; updateUI(); checkOfflineQueue(); switchTab('basic'); }
-        
-        // V90: 更新掃碼視窗 (顯示大字)
-        function startRecordScanner() { if (STATE.scanners.record) return; document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block'; STATE.scanners.record = new Html5Qrcode("reader-record"); STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { STATE.scanners.record.pause(); const c = getCountryFromCode(txt); 
-            // 這裡插入大字 class
-            showModal('confirm', '掃描成功', `條碼歸屬<br><span class="big-result-text">${c}</span>是否加入記錄？`, () => { addRecord(c, 1); setTimeout(()=>STATE.scanners.record.resume(), 500); }, () => { setTimeout(()=>STATE.scanners.record.resume(), 500); } ); 
-        }, ()=>{} ); }
-        
+        function startRecordScanner() { if (STATE.scanners.record) return; document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block'; STATE.scanners.record = new Html5Qrcode("reader-record"); STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { STATE.scanners.record.pause(); const c = getCountryFromCode(txt); showModal('confirm', '掃描成功', `條碼歸屬<br><span class="big-result-text">${c}</span>是否加入記錄？`, () => { addRecord(c, 1); setTimeout(()=>STATE.scanners.record.resume(), 500); }, () => { setTimeout(()=>STATE.scanners.record.resume(), 500); } ); }, ()=>{} ); }
         function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
         function startAiCamera() { document.getElementById('ai-result-box').style.display='none'; document.getElementById('camera-box-ai').style.display='block'; document.getElementById('btn-ai-start').style.display='none'; STATE.scanners.ai = new Html5Qrcode("reader-ai"); STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); }
         function stopAiScanner() { if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); document.getElementById('camera-box-ai').style.display='none'; document.getElementById('btn-ai-start').style.display='inline-block'; }
         function getCountryFromCode(code) { return (code && code.length>=3) ? (PREFIX_DB[code.substring(0,3)]||"未知") : "未知"; }
-        
         function updateNetworkStatus() { const bar = document.getElementById('network-status'); const syncBox = document.getElementById('offline-sync-box'); const btnAi = document.getElementById('btn-ai-start'); const warnAi = document.getElementById('ai-offline-warning'); if(navigator.onLine) { bar.className = 'status-online'; bar.innerText = "🟢 系統連線中"; checkOfflineQueue(); if(btnAi) { btnAi.className = 'btn-blue'; btnAi.disabled = false; btnAi.innerText = '📷 啟動 AI 相機'; } if(warnAi) warnAi.style.display = 'none'; } else { bar.className = 'status-offline'; bar.innerText = "🔴 離線模式 (資料將暫存於手機)"; syncBox.style.display = 'none'; if(btnAi) { btnAi.className = 'btn-disabled'; btnAi.disabled = true; btnAi.innerText = '⚠️ 離線無法使用'; } if(warnAi) warnAi.style.display = 'block'; } }
         function saveOffline(payload) { try { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); queue.push(payload); localStorage.setItem('offline_queue', JSON.stringify(queue)); showModal('offline', '已暫存', '網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。', () => handleSuccessConfirm(true)); } catch (e) { showModal('warning', '儲存失敗', '手機儲存空間不足。', null); } }
         function checkOfflineQueue() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); const syncBox = document.getElementById('offline-sync-box'); if (queue.length > 0 && navigator.onLine) { syncBox.style.display = 'block'; document.getElementById('offline-count').innerText = queue.length; } else { syncBox.style.display = 'none'; } }
