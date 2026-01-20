@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>荒野數位歸檔助手 V1.1 (Debug版)</title>
+  <title>荒野數位歸檔助手 V1.2 (Deep Search)</title>
   <style>
-    /* --- CSS 樣式繼承自 UI 原型 (保持不變) --- */
     :root { --primary: #587a30; --primary-dark: #3e5c20; --accent: #f57c00; --bg-light: #f4f7f4; --panel-bg: #ffffff; --border: #e0e0e0; --scan-line: #ff0000; }
     body { margin: 0; padding: 0; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-light); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
     
@@ -54,13 +53,12 @@
     .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
     @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
   </style>
-  <!-- 引入 html5-qrcode 用於前端掃碼 -->
   <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
 </head>
 <body>
 
 <header>
-  <div class="brand"><span>🌿</span> 荒野瓶罐數位歸檔助手 <span style="font-size:0.8em; background:#ffffff33; padding:2px 6px; border-radius:4px;">V1.1</span></div>
+  <div class="brand"><span>🌿</span> 荒野瓶罐數位歸檔助手 <span style="font-size:0.8em; background:#ffffff33; padding:2px 6px; border-radius:4px;">V1.2</span></div>
   <div class="user-info">已處理：<span id="counter">0</span> 筆</div>
 </header>
 
@@ -119,37 +117,29 @@
 </div>
 
 <script>
-  // --- 全域變數 ---
-  let CURRENT_FILE = null; // 儲存當前檔案資訊
-  let CURRENT_BASE64 = null; // 儲存當前圖片 Base64
-  let AI_METHOD = "None"; // 記錄是 Barcode 還是 AI
+  let CURRENT_FILE = null;
+  let CURRENT_BASE64 = null;
+  let AI_METHOD = "None";
 
-  // 頁面載入時
   window.onload = () => {
     if(localStorage.getItem('folder_id')) document.getElementById('folder-id').value = localStorage.getItem('folder_id');
     if(localStorage.getItem('operator')) document.getElementById('inp-operator').value = localStorage.getItem('operator');
   };
 
-  // --- 1. 啟動：載入下一張 ---
   function startProcess() {
     let folderId = document.getElementById('folder-id').value.trim();
-    
-    // 🛠️ 老王防呆：自動過濾 URL 變 ID
     if (folderId.includes("drive.google.com") || folderId.includes("http")) {
         const match = folderId.match(/[-\w]{25,}/);
         if (match) {
             folderId = match[0];
             document.getElementById('folder-id').value = folderId;
-            updateStatus('success', '網址自動修正', '已幫您從網址提取出 ID：' + folderId);
         }
     }
-
     if (!folderId) return alert("請輸入資料夾 ID");
-    
     localStorage.setItem('folder_id', folderId);
     
     resetUI();
-    showLoader("從雲端讀取照片中...");
+    showLoader("深度搜尋照片中...\n(若資料夾很大請稍候)");
     
     google.script.run
       .withSuccessHandler(onImageLoaded)
@@ -162,14 +152,11 @@
       hideLoader();
       updateStatus('error', '讀取失敗', res.message);
       
-      // 針對常見錯誤給提示
-      if (res.message.includes("Access Denied")) {
-        alert("權限錯誤：\n請檢查後端 Script 是否已執行過「審查權限」。\n或者部署時是否設定為「執行身分：我」。");
-      } else if (res.message.includes("Invalid argument")) {
-        alert("ID 錯誤：\n找不到此資料夾，請確認 ID 是否正確。");
-      } else if(res.status === 'empty') {
-        alert("🎉 資料夾處理完畢！(或裡面沒有圖片)");
+      let msg = res.message;
+      if (res.debugLog) {
+         msg += "\n\n📋 系統掃描紀錄：\n" + res.debugLog;
       }
+      alert(msg);
       return;
     }
 
@@ -187,17 +174,13 @@
     };
   }
 
-  // --- 2. 分析邏輯 ---
   function runAnalysis() {
     document.getElementById('scan-overlay').style.display = 'block';
     updateStatus('warning', '🤖 分析中...', '正在掃描條碼與特徵...');
-    
     const html5QrCode = new Html5Qrcode("scan-overlay");
     const imageFile = base64ToFile(CURRENT_BASE64, CURRENT_FILE.fileName);
-    
     html5QrCode.scanFile(imageFile, true)
       .then(decodedText => {
-        console.log("前端掃碼成功:", decodedText);
         document.getElementById('scan-overlay').style.display = 'none';
         document.getElementById('inp-barcode').value = decodedText;
         AI_METHOD = "Barcode_Client";
@@ -206,7 +189,6 @@
         addTag("條碼識別");
       })
       .catch(err => {
-        console.log("無條碼，呼叫 AI...");
         AI_METHOD = "AI_Gemini";
         callBackendAI();
       });
@@ -214,7 +196,6 @@
 
   function callBackendAI() {
     updateStatus('warning', '🤖 AI 視覺辨識中...', '條碼不清，正在請求 Gemini 協助...');
-    
     google.script.run
       .withSuccessHandler(onAiResult)
       .withFailureHandler(onFailure)
@@ -223,7 +204,6 @@
 
   function onAiResult(res) {
     document.getElementById('scan-overlay').style.display = 'none';
-    
     if (res.status === 'success') {
       const data = res.data;
       document.getElementById('inp-country').value = data.country || "";
@@ -237,12 +217,10 @@
     }
   }
 
-  // --- 3. 提交 ---
   function submitData() {
     const operator = document.getElementById('inp-operator').value;
     if (!operator) return alert("請輸入歸檔人員姓名");
     localStorage.setItem('operator', operator);
-
     const country = document.getElementById('inp-country').value;
     if (!country) return alert("請填寫來源國");
 
@@ -279,7 +257,7 @@
   }
 
   function skipImage() {
-    if(confirm("確定跳過這張嗎？(不會歸檔，直接看下一張)")) startProcess();
+    if(confirm("確定跳過這張嗎？")) startProcess();
   }
 
   function resetUI() {
@@ -297,26 +275,22 @@
     document.getElementById('loader-text').innerText = msg;
   }
   function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-
   function updateStatus(type, title, desc) {
     const box = document.getElementById('status-box');
     box.className = `status-box ${type}`;
     box.querySelector('.status-title').innerText = title;
     box.querySelector('.status-desc').innerText = desc;
   }
-
   function addTag(text) {
     const tag = document.createElement('div');
     tag.className = 'tag'; tag.innerText = text;
     document.getElementById('ai-tags').appendChild(tag);
   }
-
   function onFailure(err) {
     hideLoader();
     alert("系統錯誤: " + err);
     updateStatus('error', '系統錯誤', err.message);
   }
-
   function base64ToFile(base64, filename) {
     const byteString = atob(base64);
     const ab = new ArrayBuffer(byteString.length);
@@ -326,13 +300,11 @@
     }
     return new File([ab], filename, {type: "image/jpeg"});
   }
-  
   function autoFillCountry(code) {
     const p = code.substring(0, 3);
     const db = {'471':'🇹🇼 台灣','690':'🇨🇳 中國','691':'🇨🇳 中國','692':'🇨🇳 中國','490':'🇯🇵 日本','450':'🇯🇵 日本','880':'🇰🇷 韓國','893':'🇻🇳 越南','885':'🇹🇭 泰國','899':'🇮🇩 印尼','955':'🇲🇾 馬來西亞'};
     if(db[p]) document.getElementById('inp-country').value = db[p];
   }
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submitData();
   });
