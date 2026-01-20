@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>荒野數位歸檔助手 V1.0</title>
+  <title>荒野數位歸檔助手 V1.1 (Debug版)</title>
   <style>
     /* --- CSS 樣式繼承自 UI 原型 (保持不變) --- */
     :root { --primary: #587a30; --primary-dark: #3e5c20; --accent: #f57c00; --bg-light: #f4f7f4; --panel-bg: #ffffff; --border: #e0e0e0; --scan-line: #ff0000; }
@@ -60,7 +60,7 @@
 <body>
 
 <header>
-  <div class="brand"><span>🌿</span> 荒野瓶罐數位歸檔助手 <span style="font-size:0.8em; background:#ffffff33; padding:2px 6px; border-radius:4px;">V1.0</span></div>
+  <div class="brand"><span>🌿</span> 荒野瓶罐數位歸檔助手 <span style="font-size:0.8em; background:#ffffff33; padding:2px 6px; border-radius:4px;">V1.1</span></div>
   <div class="user-info">已處理：<span id="counter">0</span> 筆</div>
 </header>
 
@@ -126,24 +126,31 @@
 
   // 頁面載入時
   window.onload = () => {
-    // 記憶功能：自動填入上次的資料夾 ID 與 姓名
     if(localStorage.getItem('folder_id')) document.getElementById('folder-id').value = localStorage.getItem('folder_id');
     if(localStorage.getItem('operator')) document.getElementById('inp-operator').value = localStorage.getItem('operator');
   };
 
   // --- 1. 啟動：載入下一張 ---
   function startProcess() {
-    const folderId = document.getElementById('folder-id').value.trim();
+    let folderId = document.getElementById('folder-id').value.trim();
+    
+    // 🛠️ 老王防呆：自動過濾 URL 變 ID
+    if (folderId.includes("drive.google.com") || folderId.includes("http")) {
+        const match = folderId.match(/[-\w]{25,}/);
+        if (match) {
+            folderId = match[0];
+            document.getElementById('folder-id').value = folderId;
+            updateStatus('success', '網址自動修正', '已幫您從網址提取出 ID：' + folderId);
+        }
+    }
+
     if (!folderId) return alert("請輸入資料夾 ID");
     
-    // 儲存設定
     localStorage.setItem('folder_id', folderId);
     
-    // UI 重置
     resetUI();
     showLoader("從雲端讀取照片中...");
     
-    // 呼叫後端：getNextImage
     google.script.run
       .withSuccessHandler(onImageLoaded)
       .withFailureHandler(onFailure)
@@ -153,50 +160,52 @@
   function onImageLoaded(res) {
     if (res.status !== 'success') {
       hideLoader();
-      updateStatus('error', '停止', res.message);
-      if(res.status === 'empty') alert("🎉 資料夾處理完畢！");
+      updateStatus('error', '讀取失敗', res.message);
+      
+      // 針對常見錯誤給提示
+      if (res.message.includes("Access Denied")) {
+        alert("權限錯誤：\n請檢查後端 Script 是否已執行過「審查權限」。\n或者部署時是否設定為「執行身分：我」。");
+      } else if (res.message.includes("Invalid argument")) {
+        alert("ID 錯誤：\n找不到此資料夾，請確認 ID 是否正確。");
+      } else if(res.status === 'empty') {
+        alert("🎉 資料夾處理完畢！(或裡面沒有圖片)");
+      }
       return;
     }
 
     CURRENT_FILE = res;
     CURRENT_BASE64 = res.base64;
     
-    // 顯示圖片
     const img = document.getElementById('main-image');
     img.src = `data:${res.mimeType};base64,${res.base64}`;
     img.style.display = 'block';
     document.getElementById('file-meta').innerText = res.fileName;
     hideLoader();
 
-    // 圖片載入完成後，開始分析
     img.onload = () => {
       runAnalysis();
     };
   }
 
-  // --- 2. 分析：先試前端條碼 -> 失敗則呼叫後端 AI ---
+  // --- 2. 分析邏輯 ---
   function runAnalysis() {
     document.getElementById('scan-overlay').style.display = 'block';
     updateStatus('warning', '🤖 分析中...', '正在掃描條碼與特徵...');
     
-    // 嘗試前端掃碼 (使用 html5-qrcode)
-    const html5QrCode = new Html5Qrcode("scan-overlay"); // 借用一個 div ID，其實不需要顯示相機介面
+    const html5QrCode = new Html5Qrcode("scan-overlay");
     const imageFile = base64ToFile(CURRENT_BASE64, CURRENT_FILE.fileName);
     
     html5QrCode.scanFile(imageFile, true)
       .then(decodedText => {
-        // 成功掃到條碼
         console.log("前端掃碼成功:", decodedText);
         document.getElementById('scan-overlay').style.display = 'none';
-        
         document.getElementById('inp-barcode').value = decodedText;
         AI_METHOD = "Barcode_Client";
-        autoFillCountry(decodedText); // 根據條碼前綴填寫國家
+        autoFillCountry(decodedText);
         updateStatus('success', '✅ 掃碼成功', `讀取到條碼：${decodedText}`);
         addTag("條碼識別");
       })
       .catch(err => {
-        // 前端掃不到 -> 呼叫後端 Gemini AI
         console.log("無條碼，呼叫 AI...");
         AI_METHOD = "AI_Gemini";
         callBackendAI();
@@ -220,22 +229,15 @@
       document.getElementById('inp-country').value = data.country || "";
       document.getElementById('inp-barcode').value = data.barcode || "";
       document.getElementById('inp-note').value = data.brand || "";
-      
-      // 顯示關鍵字標籤
-      if (data.keywords) {
-        data.keywords.forEach(k => addTag(k));
-      }
+      if (data.keywords) data.keywords.forEach(k => addTag(k));
       addTag("Gemini Vision");
-      
-      let msg = "AI 已完成辨識，請人工確認。";
-      if(!data.barcode) msg += " (未發現條碼)";
-      updateStatus('success', '✅ AI 分析完成', msg);
+      updateStatus('success', '✅ AI 分析完成', "AI 已完成辨識，請人工確認。");
     } else {
       updateStatus('error', '⚠️ AI 辨識失敗', res.message);
     }
   }
 
-  // --- 3. 提交：存檔並下一張 ---
+  // --- 3. 提交 ---
   function submitData() {
     const operator = document.getElementById('inp-operator').value;
     if (!operator) return alert("請輸入歸檔人員姓名");
@@ -244,7 +246,6 @@
     const country = document.getElementById('inp-country').value;
     if (!country) return alert("請填寫來源國");
 
-    // UI 鎖定
     const btn = document.getElementById('btn-submit');
     btn.disabled = true;
     btn.innerText = "💾 歸檔中...";
@@ -263,13 +264,11 @@
 
     google.script.run
       .withSuccessHandler(() => {
-        // 成功後：更新計數器，並載入下一張
         let count = parseInt(document.getElementById('counter').innerText);
         document.getElementById('counter').innerText = count + 1;
-        
         btn.disabled = false;
         btn.innerText = "✅ 確認並歸檔 (Enter)";
-        startProcess(); // 自動下一張
+        startProcess();
       })
       .withFailureHandler((err) => {
         btn.disabled = false;
@@ -280,12 +279,9 @@
   }
 
   function skipImage() {
-    if(confirm("確定跳過這張嗎？(不會歸檔，直接看下一張)")) {
-      startProcess();
-    }
+    if(confirm("確定跳過這張嗎？(不會歸檔，直接看下一張)")) startProcess();
   }
 
-  // --- 輔助工具 ---
   function resetUI() {
     document.getElementById('main-image').style.display = 'none';
     document.getElementById('scan-overlay').style.display = 'none';
@@ -321,11 +317,7 @@
     updateStatus('error', '系統錯誤', err.message);
   }
 
-  // Base64 轉 File 物件 (給 html5-qrcode 用)
   function base64ToFile(base64, filename) {
-    const arr = base64.split(','); // 如果有 data URI 頭要去掉，但 GAS 回傳的是純 B64
-    // 這裡 GAS Utilities.base64Encode 回傳的是純內容，沒有 data:image... 前綴
-    // 所以直接用
     const byteString = atob(base64);
     const ab = new ArrayBuffer(byteString.length);
     const ia = new Uint8Array(ab);
@@ -341,7 +333,6 @@
     if(db[p]) document.getElementById('inp-country').value = db[p];
   }
 
-  // 鍵盤監聽
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') submitData();
   });
