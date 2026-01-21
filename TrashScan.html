@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>商品快搜偵探 V4</title>
+    <title>商品快搜偵探 V6 (穩定版)</title>
     <style>
         :root { --primary: #587a30; --bg: #f4f7f4; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
@@ -18,17 +18,15 @@
         .btn-reset { background: #607d8b; margin-top: 20px; }
         
         #camera-box, #result-box { display: none; margin-top: 15px; border-radius: 12px; overflow: hidden; }
-        #camera-box { background: #000; position: relative; }
-        .scanner-view { width: 100%; min-height: 300px; }
+        #camera-box { background: #000; position: relative; min-height: 300px; } /* 設定最小高度避免閃爍 */
+        .scanner-view { width: 100%; height: 100%; }
         
         .btn-snap { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 4px solid var(--primary); z-index: 10; font-size: 30px; display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }
 
         .result-card { background: #e8f5e9; border: 2px solid var(--primary); padding: 20px; border-radius: 12px; }
         .result-id { font-size: 12px; color: #999; text-align: right; margin-bottom: 5px; }
         
-        /* 品名樣式 */
         .result-title { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 5px; line-height: 1.3; }
-        
         .result-label { font-size: 12px; color: #666; margin-top: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .result-val { font-size: 16px; color: #333; font-weight: 500; }
         
@@ -38,15 +36,12 @@
         #loading { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:999; justify-content:center; align-items:center; flex-direction: column; }
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    </script>
-    <style>
-        /* 避免 Leaflet 樣式干擾 (雖然此檔沒用 Leaflet 但保持習慣) */
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>🔍 商品快搜偵探 V4</h1>
+        <h1>🔍 商品快搜偵探 V6</h1>
         
         <div class="btn-group">
             <button class="btn-scan" onclick="startScanner()">📷 掃條碼</button>
@@ -95,35 +90,105 @@
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // ⚠️ 請換上您新的 GAS 部署網址
-        const API_URL = "https://script.google.com/macros/s/AKfycbzzYXViD218juScwnleoOz8mxuELMaqYIL4o4pRJCDb_I-p4L1olp3hDqbO1djdAwfY/exec";
+        // ⚠️ 請再次確認這裡已換成您最新部署的 GAS 網址
+        const API_URL = "https://script.google.com/macros/s/您的新GAS網址/exec";
         
-        let html5QrCode;
-        let isAiMode = false;
+        let html5QrCode = null;
 
+        // 啟動掃碼模式
         function startScanner() {
-            resetView();
-            document.getElementById('camera-box').style.display = 'block';
-            document.getElementById('ai-snap-btn').style.display = 'none';
-            isAiMode = false;
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess);
+            initScanner(false); // false = 掃碼模式
         }
 
+        // 啟動 AI 模式
         function startAiCam() {
-            resetView();
-            document.getElementById('camera-box').style.display = 'block';
-            document.getElementById('ai-snap-btn').style.display = 'flex';
-            isAiMode = true;
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, ()=>{}, ()=>{});
+            initScanner(true); // true = AI 模式
         }
 
-        function onScanSuccess(decodedText, decodedResult) {
-            html5QrCode.stop().then(() => {
-                document.getElementById('camera-box').style.display = 'none';
-                queryBarcode(decodedText);
-            });
+        // 統一的相機初始化函式 (包含防呆清除舊相機)
+        async function initScanner(isAi) {
+            try {
+                // 1. 先強制清理舊的相機與介面
+                await resetView(); 
+                
+                document.getElementById('camera-box').style.display = 'block';
+                document.getElementById('ai-snap-btn').style.display = isAi ? 'flex' : 'none';
+
+                // 2. 建立新實例
+                html5QrCode = new Html5Qrcode("reader");
+                
+                const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+                
+                // 3. 根據模式啟動
+                if (isAi) {
+                    // AI 模式：不給 callback，只跑畫面
+                    await html5QrCode.start({ facingMode: "environment" }, config, ()=>{}, ()=>{});
+                } else {
+                    // 掃碼模式：掃到就觸發 onScanSuccess
+                    await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("相機啟動失敗，請重新整理網頁。\n錯誤: " + err);
+                resetView();
+            }
+        }
+
+        // 掃碼成功時的回呼
+        async function onScanSuccess(decodedText, decodedResult) {
+            // 1. 停止並清除相機 (徹底釋放資源)
+            await stopAndClearScanner();
+            document.getElementById('camera-box').style.display = 'none';
+            
+            // 2. 進行查詢
+            queryBarcode(decodedText);
+        }
+
+        // 拍照 (AI 模式)
+        async function takeSnapshot() {
+            const video = document.querySelector("#reader video");
+            if(!video) return;
+
+            // 截圖邏輯
+            const canvas = document.createElement("canvas");
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            const scale = Math.min(800/w, 1); 
+            canvas.width = w * scale;
+            canvas.height = h * scale;
+            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+            const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
+            
+            // 1. 停止並清除相機
+            await stopAndClearScanner();
+            document.getElementById('camera-box').style.display = 'none';
+            
+            // 2. 進行分析
+            analyzeImage(base64);
+        }
+
+        // 停止並清除相機的核心函式
+        async function stopAndClearScanner() {
+            if (html5QrCode) {
+                try {
+                    // 嘗試停止 (如果正在跑)
+                    if (html5QrCode.isScanning) {
+                        await html5QrCode.stop();
+                    }
+                    // 務必清除 (把 video 標籤從 div 移除)
+                    await html5QrCode.clear();
+                } catch (e) {
+                    console.log("清理相機時忽略錯誤:", e);
+                }
+                html5QrCode = null; // 歸零
+            }
+        }
+
+        // 重置介面 (重新開始)
+        async function resetView() {
+            await stopAndClearScanner(); // 確保相機已死
+            document.getElementById('camera-box').style.display = 'none';
+            document.getElementById('result-box').style.display = 'none';
         }
 
         function queryBarcode(code) {
@@ -141,27 +206,16 @@
                     if(confirm("資料庫找不到此條碼：" + code + "\n\n要嘗試用 AI 辨識外觀嗎？")) {
                         startAiCam();
                     } else {
+                        // 雖然在 confirm 裡，但最好還是確保 reset 狀態
                         resetView();
                     }
                 }
             })
-            .catch(err => { alert("查詢失敗"); showLoading(false); });
-        }
-
-        function takeSnapshot() {
-            const video = document.querySelector("#reader video");
-            if(!video) return;
-            const canvas = document.createElement("canvas");
-            const w = video.videoWidth;
-            const h = video.videoHeight;
-            const scale = Math.min(800/w, 1); 
-            canvas.width = w * scale;
-            canvas.height = h * scale;
-            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-            const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
-            html5QrCode.stop();
-            document.getElementById('camera-box').style.display = 'none';
-            analyzeImage(base64);
+            .catch(err => { 
+                alert("查詢失敗，請檢查網路或 API 設定"); 
+                showLoading(false); 
+                resetView(); // 失敗後回到初始狀態
+            });
         }
 
         function analyzeImage(base64) {
@@ -176,7 +230,6 @@
                 if(data.status === "success") {
                     try {
                         const info = JSON.parse(data.result);
-                        // 整理 AI 回傳的結構
                         showResult("AI 辨識", {
                             id: "自動分析",
                             name: info.name,
@@ -187,12 +240,18 @@
                         });
                     } catch(e) {
                         alert("解析失敗");
+                        resetView();
                     }
                 } else {
                     alert("AI 發生錯誤: " + data.message);
+                    resetView();
                 }
             })
-            .catch(err => { alert("連線失敗"); showLoading(false); });
+            .catch(err => { 
+                alert("AI 連線失敗"); 
+                showLoading(false); 
+                resetView(); 
+            });
         }
 
         function showResult(source, data) {
@@ -200,18 +259,11 @@
             document.getElementById('res-source').innerText = "來源: " + source;
             document.getElementById('res-id').innerText = data.id ? "#" + data.id : "";
             
-            // 填入所有對應欄位
             document.getElementById('res-name').innerText = data.name || "未知品名";
             document.getElementById('res-brand').innerText = data.brand || "未知";
             document.getElementById('res-country').innerText = data.country || "未知";
             document.getElementById('res-manufacturer').innerText = data.manufacturer || "未知";
             document.getElementById('res-desc').innerText = data.description || "無";
-        }
-
-        function resetView() {
-            if(html5QrCode) html5QrCode.stop().catch(e=>{});
-            document.getElementById('camera-box').style.display = 'none';
-            document.getElementById('result-box').style.display = 'none';
         }
 
         function showLoading(show) {
