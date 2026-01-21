@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>商品快搜偵探 V4</title>
+    <style>
+        :root { --primary: #587a30; --bg: #f4f7f4; --text: #333; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
+        
+        .container { max-width: 480px; margin: 0 auto; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 30px; }
+        
+        .btn-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-scan { background: #f57c00; }
+        .btn-ai { background: #0288d1; }
+        .btn-reset { background: #607d8b; margin-top: 20px; }
+        
+        #camera-box, #result-box { display: none; margin-top: 15px; border-radius: 12px; overflow: hidden; }
+        #camera-box { background: #000; position: relative; }
+        .scanner-view { width: 100%; min-height: 300px; }
+        
+        .btn-snap { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 4px solid var(--primary); z-index: 10; font-size: 30px; display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }
+
+        .result-card { background: #e8f5e9; border: 2px solid var(--primary); padding: 20px; border-radius: 12px; }
+        .result-id { font-size: 12px; color: #999; text-align: right; margin-bottom: 5px; }
+        
+        /* 品名樣式 */
+        .result-title { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 5px; line-height: 1.3; }
+        
+        .result-label { font-size: 12px; color: #666; margin-top: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        .result-val { font-size: 16px; color: #333; font-weight: 500; }
+        
+        .info-row { display: flex; gap: 15px; margin-top: 5px; }
+        .info-col { flex: 1; }
+
+        #loading { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.9); z-index:999; justify-content:center; align-items:center; flex-direction: column; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </script>
+    <style>
+        /* 避免 Leaflet 樣式干擾 (雖然此檔沒用 Leaflet 但保持習慣) */
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🔍 商品快搜偵探 V4</h1>
+        
+        <div class="btn-group">
+            <button class="btn-scan" onclick="startScanner()">📷 掃條碼</button>
+            <button class="btn-ai" onclick="startAiCam()">🤖 AI 辨識</button>
+        </div>
+
+        <div id="camera-box">
+            <div id="reader" class="scanner-view"></div>
+            <div id="ai-snap-btn" class="btn-snap" onclick="takeSnapshot()" style="display:none;">📸</div>
+        </div>
+
+        <div id="result-box">
+            <div class="result-card">
+                <div class="result-id">
+                    <span id="res-source">來源: -</span> 
+                    <span id="res-id" style="margin-left:10px;"></span>
+                </div>
+                
+                <div class="result-title" id="res-name">商品名稱</div>
+                
+                <div class="info-row">
+                    <div class="info-col">
+                        <div class="result-label">🏷️ 品牌</div>
+                        <div class="result-val" id="res-brand">-</div>
+                    </div>
+                    <div class="info-col">
+                        <div class="result-label">🌎 生產國家</div>
+                        <div class="result-val" id="res-country">-</div>
+                    </div>
+                </div>
+
+                <div class="result-label">🏭 製作廠商</div>
+                <div class="result-val" id="res-manufacturer">-</div>
+
+                <div class="result-label">📝 詳細描述</div>
+                <div class="result-val" id="res-desc" style="font-size:14px; color:#555; line-height:1.5;">-</div>
+            </div>
+            <button class="btn-reset" onclick="resetView()">🔄 重新開始</button>
+        </div>
+    </div>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top:10px; color:#555;">正在分析中...</p>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        // ⚠️ 請換上您新的 GAS 部署網址
+        const API_URL = "https://script.google.com/macros/s/AKfycbzzYXViD218juScwnleoOz8mxuELMaqYIL4o4pRJCDb_I-p4L1olp3hDqbO1djdAwfY/exec";
+        
+        let html5QrCode;
+        let isAiMode = false;
+
+        function startScanner() {
+            resetView();
+            document.getElementById('camera-box').style.display = 'block';
+            document.getElementById('ai-snap-btn').style.display = 'none';
+            isAiMode = false;
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess);
+        }
+
+        function startAiCam() {
+            resetView();
+            document.getElementById('camera-box').style.display = 'block';
+            document.getElementById('ai-snap-btn').style.display = 'flex';
+            isAiMode = true;
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, ()=>{}, ()=>{});
+        }
+
+        function onScanSuccess(decodedText, decodedResult) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('camera-box').style.display = 'none';
+                queryBarcode(decodedText);
+            });
+        }
+
+        function queryBarcode(code) {
+            showLoading(true);
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "queryBarcode", code: code })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showLoading(false);
+                if(data.found) {
+                    showResult("資料庫", data.data);
+                } else {
+                    if(confirm("資料庫找不到此條碼：" + code + "\n\n要嘗試用 AI 辨識外觀嗎？")) {
+                        startAiCam();
+                    } else {
+                        resetView();
+                    }
+                }
+            })
+            .catch(err => { alert("查詢失敗"); showLoading(false); });
+        }
+
+        function takeSnapshot() {
+            const video = document.querySelector("#reader video");
+            if(!video) return;
+            const canvas = document.createElement("canvas");
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            const scale = Math.min(800/w, 1); 
+            canvas.width = w * scale;
+            canvas.height = h * scale;
+            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+            const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
+            html5QrCode.stop();
+            document.getElementById('camera-box').style.display = 'none';
+            analyzeImage(base64);
+        }
+
+        function analyzeImage(base64) {
+            showLoading(true);
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "identifyProduct", image: base64 })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showLoading(false);
+                if(data.status === "success") {
+                    try {
+                        const info = JSON.parse(data.result);
+                        // 整理 AI 回傳的結構
+                        showResult("AI 辨識", {
+                            id: "自動分析",
+                            name: info.name,
+                            country: info.country,
+                            manufacturer: info.manufacturer,
+                            brand: info.brand,
+                            description: info.description
+                        });
+                    } catch(e) {
+                        alert("解析失敗");
+                    }
+                } else {
+                    alert("AI 發生錯誤: " + data.message);
+                }
+            })
+            .catch(err => { alert("連線失敗"); showLoading(false); });
+        }
+
+        function showResult(source, data) {
+            document.getElementById('result-box').style.display = 'block';
+            document.getElementById('res-source').innerText = "來源: " + source;
+            document.getElementById('res-id').innerText = data.id ? "#" + data.id : "";
+            
+            // 填入所有對應欄位
+            document.getElementById('res-name').innerText = data.name || "未知品名";
+            document.getElementById('res-brand').innerText = data.brand || "未知";
+            document.getElementById('res-country').innerText = data.country || "未知";
+            document.getElementById('res-manufacturer').innerText = data.manufacturer || "未知";
+            document.getElementById('res-desc').innerText = data.description || "無";
+        }
+
+        function resetView() {
+            if(html5QrCode) html5QrCode.stop().catch(e=>{});
+            document.getElementById('camera-box').style.display = 'none';
+            document.getElementById('result-box').style.display = 'none';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'flex' : 'none';
+        }
+    </script>
+</body>
+</html>
