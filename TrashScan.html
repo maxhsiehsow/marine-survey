@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>商品快搜偵探 V6 (穩定版)</title>
+    <title>商品快搜偵探 V7 (API連線版)</title>
     <style>
+        /* 樣式維持 V6 穩定版設定 */
         :root { --primary: #587a30; --bg: #f4f7f4; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
         
@@ -18,7 +19,7 @@
         .btn-reset { background: #607d8b; margin-top: 20px; }
         
         #camera-box, #result-box { display: none; margin-top: 15px; border-radius: 12px; overflow: hidden; }
-        #camera-box { background: #000; position: relative; min-height: 300px; } /* 設定最小高度避免閃爍 */
+        #camera-box { background: #000; position: relative; min-height: 300px; }
         .scanner-view { width: 100%; height: 100%; }
         
         .btn-snap { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.9); border: 4px solid var(--primary); z-index: 10; font-size: 30px; display: flex; align-items: center; justify-content: center; color: #333; cursor: pointer; }
@@ -26,6 +27,9 @@
         .result-card { background: #e8f5e9; border: 2px solid var(--primary); padding: 20px; border-radius: 12px; }
         .result-id { font-size: 12px; color: #999; text-align: right; margin-bottom: 5px; }
         
+        /* 圖片預覽區 (API 會有圖片) */
+        .result-img { width: 100%; height: 200px; object-fit: contain; background: white; border-radius: 8px; margin-bottom: 10px; display:none; }
+
         .result-title { font-size: 22px; font-weight: 800; color: var(--primary); margin-bottom: 5px; line-height: 1.3; }
         .result-label { font-size: 12px; color: #666; margin-top: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         .result-val { font-size: 16px; color: #333; font-weight: 500; }
@@ -41,10 +45,10 @@
 <body>
 
     <div class="container">
-        <h1>🔍 商品快搜偵探 V6</h1>
+        <h1>🔍 商品快搜偵探 V7</h1>
         
         <div class="btn-group">
-            <button class="btn-scan" onclick="startScanner()">📷 掃條碼</button>
+            <button class="btn-scan" onclick="startScanner()">📷 掃條碼 (API)</button>
             <button class="btn-ai" onclick="startAiCam()">🤖 AI 辨識</button>
         </div>
 
@@ -59,6 +63,8 @@
                     <span id="res-source">來源: -</span> 
                     <span id="res-id" style="margin-left:10px;"></span>
                 </div>
+
+                <img id="res-img" class="result-img" src="" alt="商品圖片">
                 
                 <div class="result-title" id="res-name">商品名稱</div>
                 
@@ -68,15 +74,15 @@
                         <div class="result-val" id="res-brand">-</div>
                     </div>
                     <div class="info-col">
-                        <div class="result-label">🌎 生產國家</div>
+                        <div class="result-label">🌎 生產國家/產地</div>
                         <div class="result-val" id="res-country">-</div>
                     </div>
                 </div>
 
-                <div class="result-label">🏭 製作廠商</div>
+                <div class="result-label">🏭 分類/廠商</div>
                 <div class="result-val" id="res-manufacturer">-</div>
 
-                <div class="result-label">📝 詳細描述</div>
+                <div class="result-label">📝 成分或描述</div>
                 <div class="result-val" id="res-desc" style="font-size:14px; color:#555; line-height:1.5;">-</div>
             </div>
             <button class="btn-reset" onclick="resetView()">🔄 重新開始</button>
@@ -85,71 +91,48 @@
 
     <div id="loading">
         <div class="spinner"></div>
-        <p style="margin-top:10px; color:#555;">正在分析中...</p>
+        <p style="margin-top:10px; color:#555;">正在連線查詢中...</p>
     </div>
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // ⚠️ 請再次確認這裡已換成您最新部署的 GAS 網址
-        const API_URL = "https://script.google.com/macros/s/您的新GAS網址/exec";
+        // ⚠️ 請填入您的 GAS 網址 (僅用於 AI 辨識)
+        const GAS_AI_URL = "https://script.google.com/macros/s/您的新GAS網址/exec";
         
         let html5QrCode = null;
 
-        // 啟動掃碼模式
-        function startScanner() {
-            initScanner(false); // false = 掃碼模式
-        }
+        // === 相機管理 (維持 V6 的穩定邏輯) ===
+        function startScanner() { initScanner(false); }
+        function startAiCam() { initScanner(true); }
 
-        // 啟動 AI 模式
-        function startAiCam() {
-            initScanner(true); // true = AI 模式
-        }
-
-        // 統一的相機初始化函式 (包含防呆清除舊相機)
         async function initScanner(isAi) {
             try {
-                // 1. 先強制清理舊的相機與介面
-                await resetView(); 
-                
+                await resetView();
                 document.getElementById('camera-box').style.display = 'block';
                 document.getElementById('ai-snap-btn').style.display = isAi ? 'flex' : 'none';
-
-                // 2. 建立新實例
                 html5QrCode = new Html5Qrcode("reader");
-                
                 const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-                
-                // 3. 根據模式啟動
                 if (isAi) {
-                    // AI 模式：不給 callback，只跑畫面
                     await html5QrCode.start({ facingMode: "environment" }, config, ()=>{}, ()=>{});
                 } else {
-                    // 掃碼模式：掃到就觸發 onScanSuccess
                     await html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess);
                 }
             } catch (err) {
-                console.error(err);
-                alert("相機啟動失敗，請重新整理網頁。\n錯誤: " + err);
+                alert("相機啟動失敗: " + err);
                 resetView();
             }
         }
 
-        // 掃碼成功時的回呼
         async function onScanSuccess(decodedText, decodedResult) {
-            // 1. 停止並清除相機 (徹底釋放資源)
             await stopAndClearScanner();
             document.getElementById('camera-box').style.display = 'none';
-            
-            // 2. 進行查詢
-            queryBarcode(decodedText);
+            // 掃碼成功 -> 呼叫線上 API 查詢
+            lookupOnline(decodedText);
         }
 
-        // 拍照 (AI 模式)
         async function takeSnapshot() {
             const video = document.querySelector("#reader video");
             if(!video) return;
-
-            // 截圖邏輯
             const canvas = document.createElement("canvas");
             const w = video.videoWidth;
             const h = video.videoHeight;
@@ -158,69 +141,94 @@
             canvas.height = h * scale;
             canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
             const base64 = canvas.toDataURL("image/jpeg", 0.7).split(",")[1];
-            
-            // 1. 停止並清除相機
             await stopAndClearScanner();
             document.getElementById('camera-box').style.display = 'none';
-            
-            // 2. 進行分析
             analyzeImage(base64);
         }
 
-        // 停止並清除相機的核心函式
         async function stopAndClearScanner() {
             if (html5QrCode) {
                 try {
-                    // 嘗試停止 (如果正在跑)
-                    if (html5QrCode.isScanning) {
-                        await html5QrCode.stop();
-                    }
-                    // 務必清除 (把 video 標籤從 div 移除)
+                    if (html5QrCode.isScanning) await html5QrCode.stop();
                     await html5QrCode.clear();
-                } catch (e) {
-                    console.log("清理相機時忽略錯誤:", e);
-                }
-                html5QrCode = null; // 歸零
+                } catch (e) {}
+                html5QrCode = null;
             }
         }
 
-        // 重置介面 (重新開始)
         async function resetView() {
-            await stopAndClearScanner(); // 確保相機已死
+            await stopAndClearScanner();
             document.getElementById('camera-box').style.display = 'none';
             document.getElementById('result-box').style.display = 'none';
         }
 
-        function queryBarcode(code) {
+        // === 核心修改：改為查詢 Open Food Facts API ===
+        async function lookupOnline(barcode) {
             showLoading(true);
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({ action: "queryBarcode", code: code })
-            })
-            .then(res => res.json())
-            .then(data => {
-                showLoading(false);
-                if(data.found) {
-                    showResult("資料庫", data.data);
+            
+            // 1. 設定 API 網址
+            const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+            
+            // 2. 設定 Timeout 控制器 (3秒逾時)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+            try {
+                console.log(`正在查詢條碼: ${barcode}...`);
+                
+                const response = await fetch(url, {
+                    signal: controller.signal,
+                    // 禮貌性 Header，避免被擋
+                    headers: { "User-Agent": "MarineDebrisApp - WebVersion - V7.0" }
+                });
+                
+                clearTimeout(timeoutId); // 清除計時器
+
+                const data = await response.json();
+
+                // 3. 判斷結果 (status 1 = 找到)
+                if (data.status === 1) {
+                    const p = data.product;
+                    // 呈現內容
+                    showResult("OpenFoodFacts", {
+                        id: barcode,
+                        name: p.product_name || p.product_name_zh || "未知商品",
+                        brand: p.brands || "未知品牌",
+                        country: p.countries || p.origin || "未知",
+                        manufacturer: p.manufacturing_places || p.categories || "-",
+                        description: p.ingredients_text || "無成分資料",
+                        imageUrl: p.image_url // API 通常會給圖片
+                    });
                 } else {
-                    if(confirm("資料庫找不到此條碼：" + code + "\n\n要嘗試用 AI 辨識外觀嗎？")) {
-                        startAiCam();
-                    } else {
-                        // 雖然在 confirm 裡，但最好還是確保 reset 狀態
-                        resetView();
-                    }
+                    // status 0 = 沒找到 -> 轉 AI
+                    handleNotFound(barcode);
                 }
-            })
-            .catch(err => { 
-                alert("查詢失敗，請檢查網路或 API 設定"); 
-                showLoading(false); 
-                resetView(); // 失敗後回到初始狀態
-            });
+
+            } catch (error) {
+                // 網路錯誤或逾時 -> 轉 AI
+                console.error("API Error:", error);
+                handleNotFound(barcode);
+            } finally {
+                showLoading(false);
+            }
         }
 
+        // 處理「沒掃描到 / 查無資料」的流程
+        function handleNotFound(code) {
+            // 使用 confirm 詢問使用者是否要記錄 (轉 AI)
+            if(confirm(`線上資料庫查無此條碼 (${code})。\n\n是否啟動 AI 辨識來記錄商品資訊？`)) {
+                // 使用者選擇「是」 -> 啟動 AI 相機
+                startAiCam();
+            } else {
+                // 使用者選擇「否」 -> 回到首頁
+                resetView();
+            }
+        }
+
+        // AI 辨識 (維持原本呼叫 GAS 的邏輯)
         function analyzeImage(base64) {
             showLoading(true);
-            fetch(API_URL, {
+            fetch(GAS_AI_URL, {
                 method: 'POST',
                 body: JSON.stringify({ action: "identifyProduct", image: base64 })
             })
@@ -230,7 +238,7 @@
                 if(data.status === "success") {
                     try {
                         const info = JSON.parse(data.result);
-                        showResult("AI 辨識", {
+                        showResult("AI 智慧辨識", {
                             id: "自動分析",
                             name: info.name,
                             country: info.country,
@@ -238,20 +246,10 @@
                             brand: info.brand,
                             description: info.description
                         });
-                    } catch(e) {
-                        alert("解析失敗");
-                        resetView();
-                    }
-                } else {
-                    alert("AI 發生錯誤: " + data.message);
-                    resetView();
-                }
+                    } catch(e) { alert("AI 解析失敗"); resetView(); }
+                } else { alert("AI 錯誤: " + data.message); resetView(); }
             })
-            .catch(err => { 
-                alert("AI 連線失敗"); 
-                showLoading(false); 
-                resetView(); 
-            });
+            .catch(err => { alert("AI 連線失敗"); showLoading(false); resetView(); });
         }
 
         function showResult(source, data) {
@@ -259,11 +257,20 @@
             document.getElementById('res-source').innerText = "來源: " + source;
             document.getElementById('res-id').innerText = data.id ? "#" + data.id : "";
             
-            document.getElementById('res-name').innerText = data.name || "未知品名";
-            document.getElementById('res-brand').innerText = data.brand || "未知";
-            document.getElementById('res-country').innerText = data.country || "未知";
-            document.getElementById('res-manufacturer').innerText = data.manufacturer || "未知";
-            document.getElementById('res-desc').innerText = data.description || "無";
+            // 處理圖片顯示
+            const imgEl = document.getElementById('res-img');
+            if(data.imageUrl) {
+                imgEl.src = data.imageUrl;
+                imgEl.style.display = 'block';
+            } else {
+                imgEl.style.display = 'none';
+            }
+
+            document.getElementById('res-name').innerText = data.name;
+            document.getElementById('res-brand').innerText = data.brand;
+            document.getElementById('res-country').innerText = data.country;
+            document.getElementById('res-manufacturer').innerText = data.manufacturer;
+            document.getElementById('res-desc').innerText = data.description;
         }
 
         function showLoading(show) {
