@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V96</title>
+    <title>荒野瓶罐調查回報站 V97</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
@@ -172,8 +172,13 @@
         </div>
         <h2>⏱️ 3. 調查計時器</h2>
         <div class="card">
-            <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">請允許通知，並將手機音量開啟</p>
-            <button id="btn-notify-req" class="btn-outline" onclick="manualRequestNotification()" style="width:100%; margin-bottom:15px; border-style:dashed;">🔔 點此開啟計時通知 (確保響鈴)</button>
+            <div style="background:#fff3e0; border-left:5px solid #ff9800; padding:10px; font-size:14px; color:#5d4037; margin-bottom:15px;">
+                <b>⚠️ 重要提示：</b><br>
+                手機網頁在背景執行時無法發出聲音。<br>
+                若您會關閉螢幕或使用其他 APP，<br>
+                <b>請務必同步設定手機鬧鐘！</b>
+            </div>
+            
             <div class="timer-container">
                 <div class="timer-box" id="timer-10" onclick="toggleTimer(10)">
                     <div class="timer-time" id="time-display-10">10:00</div>
@@ -295,14 +300,14 @@
         let vibrationInterval;
         let wakeLock = null; 
         
-        // V96: 偽裝音樂 (極低音量的白噪音，非完全靜音)
-        const activeAudio = new Audio("data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="); 
-        activeAudio.loop = true;
-        activeAudio.volume = 0.01; // 1% 音量，避免打擾
+        const silentAudio = new Audio("data:audio/mp3;base64,//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+        silentAudio.loop = true;
 
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
+        
+        // ⚠️ 請確認 GAS 網址
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
 
         async function requestWakeLock() {
@@ -317,32 +322,6 @@
         }
         function releaseWakeLock() { if (wakeLock !== null) { wakeLock.release(); wakeLock = null; } }
 
-        function manualRequestNotification() {
-            if (!("Notification" in window)) { alert("您的瀏覽器不支援通知功能"); return; }
-            Notification.requestPermission().then(permission => {
-                updateNotificationButton(permission);
-                if (permission === "granted") new Notification("✅ 測試通知", { body: "設定成功！" });
-                else if (permission === "denied") alert("通知已被封鎖。請至手機「設定」手動開啟通知權限。");
-            });
-        }
-
-        function updateNotificationButton(permission) {
-            const btn = document.getElementById('btn-notify-req');
-            if (permission === 'granted') { btn.innerText = "✅ 通知已開啟"; btn.className = "btn-green"; btn.disabled = true; }
-            else if (permission === 'denied') { btn.innerText = "🚫 通知被封鎖"; btn.className = "btn-red"; btn.disabled = false; }
-            else { btn.innerText = "🔔 點此開啟計時通知"; btn.className = "btn-outline"; btn.disabled = false; }
-        }
-
-        function sendSystemNotification() {
-            if ("Notification" in window && Notification.permission === "granted") {
-                if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-                     navigator.serviceWorker.ready.then(function(registration) { registration.showNotification("⏰ 時間到！", { body: "調查時間已結束。", vibrate: [200, 100, 200] }); });
-                } else {
-                    new Notification("⏰ 時間到！", { body: "調查時間已結束。", vibrate: [200, 100, 200] });
-                }
-            }
-        }
-
         document.addEventListener("visibilitychange", async () => {
           if (document.visibilityState === 'visible') { if (timers[10].running || timers[20].running) requestWakeLock(); }
           else { if (STATE.scanners.record) stopRecordScanner(); if (STATE.scanners.ai) stopAiScanner(); releaseWakeLock(); }
@@ -352,7 +331,6 @@
             if (navigator.userAgent.match(/Line/i)) { document.getElementById('line-warning').style.display = 'flex'; document.getElementById('loading-mask').style.display = 'none'; return; }
             if(localStorage.getItem('surveyor_name')) document.getElementById('inp_name').value = localStorage.getItem('surveyor_name');
             if(localStorage.getItem('surveyor_phone')) document.getElementById('inp_phone').value = localStorage.getItem('surveyor_phone');
-            if ("Notification" in window) updateNotificationButton(Notification.permission);
             restoreState(); checkOfflineQueue(); updateNetworkStatus(); window.addEventListener('online', updateNetworkStatus); window.addEventListener('offline', updateNetworkStatus); loadSurveyPoints();
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
@@ -374,8 +352,8 @@
                     showModal('confirm', '恢復調查', '⚠️ 偵測到未完成紀錄，是否恢復？', () => {
                         document.getElementById('inp_name').value = saved.name || ''; document.getElementById('inp_phone').value = saved.phone || ''; document.getElementById('inp_participants').value = saved.participants || 1; document.getElementById('inp_gps').value = saved.gps || ''; document.getElementById('inp_city').value = saved.city || ''; document.getElementById('inp_point').value = saved.point || ''; document.getElementById('inp_note').value = saved.note || '';
                         STATE.selectedPoint = saved.selectedPoint; STATE.stats = saved.stats || {}; STATE.count = saved.count || 0; STATE.historyStack = saved.historyStack || []; STATE.currentCity = saved.currentCity || "未定位"; updateUI();
-                        if (saved.timer10End && saved.timer10End > Date.now()) { timers[10].endTime = saved.timer10End; timers[10].running = true; resumeTimer(10); activeAudio.play().catch(()=>{}); }
-                        if (saved.timer20End && saved.timer20End > Date.now()) { timers[20].endTime = saved.timer20End; timers[20].running = true; resumeTimer(20); activeAudio.play().catch(()=>{}); }
+                        if (saved.timer10End && saved.timer10End > Date.now()) { timers[10].endTime = saved.timer10End; timers[10].running = true; resumeTimer(10); silentAudio.play().catch(()=>{}); }
+                        if (saved.timer20End && saved.timer20End > Date.now()) { timers[20].endTime = saved.timer20End; timers[20].running = true; resumeTimer(20); silentAudio.play().catch(()=>{}); }
                         document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'block');
                     }, () => { localStorage.removeItem('survey_session'); });
                 }
@@ -395,37 +373,33 @@
         function createRedIcon() { return new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }); }
         function getDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
 
-        // V96: Media Session Strategy
+        // V97: 重點在於「操作引導」而非無效的後台對抗
         function toggleTimer(min) {
             let t = timers[min]; let box = document.getElementById(`timer-${min}`);
+            
             if (t.running) { 
                 clearInterval(t.interval); t.running = false; box.classList.remove('running');
-                saveState(); releaseWakeLock(); activeAudio.pause(); // Stop audio
+                saveState(); releaseWakeLock(); silentAudio.pause(); 
             } else {
-                manualRequestNotification();
-                if (!t.endTime || t.endTime <= Date.now()) t.endTime = Date.now() + (min * 60 * 1000);
-                box.classList.remove('done'); box.classList.add('running'); t.running = true;
-                saveState(); requestWakeLock(); 
-                
-                // V96: Setup Media Session
-                if ('mediaSession' in navigator) {
-                    navigator.mediaSession.metadata = new MediaMetadata({ title: '荒野調查計時中', artist: '請勿關閉網頁', album: `剩餘 ${min} 分鐘` });
+                // V97: 彈出防呆提示
+                if(confirm("⚠️ 系統提示：\n\n手機網頁在「背景模式」或「螢幕關閉」時無法發出聲音。\n\n為了確保您不會錯過時間，請按「確定」並【手動設定手機鬧鐘】。\n\n按「取消」則僅使用網頁計時 (需保持螢幕開啟)。")) {
+                    if (!t.endTime || t.endTime <= Date.now()) t.endTime = Date.now() + (min * 60 * 1000);
+                    box.classList.remove('done'); box.classList.add('running'); t.running = true;
+                    saveState(); requestWakeLock(); silentAudio.play(); 
+                    resumeTimer(min);
                 }
-                activeAudio.play().catch(e => console.log("Audio play failed", e)); // Play fake music
-
-                resumeTimer(min);
             }
         }
         
         function resumeTimer(min) {
              let t = timers[min]; let box = document.getElementById(`timer-${min}`); box.classList.add('running');
-             if(t.running) { requestWakeLock(); activeAudio.play().catch(()=>{}); }
+             if(t.running) { requestWakeLock(); silentAudio.play().catch(()=>{}); }
              t.interval = setInterval(() => {
                 const now = Date.now(); const diff = t.endTime - now;
                 if (diff <= 0) {
                      clearInterval(t.interval); t.running = false; box.classList.remove('running'); box.classList.add('done'); 
                      document.getElementById(`time-display-${min}`).innerText = "00:00";
-                     saveState(); releaseWakeLock(); activeAudio.pause(); triggerAlarm(); sendSystemNotification(); 
+                     saveState(); releaseWakeLock(); silentAudio.pause(); triggerAlarm(); 
                 } else {
                      let m = Math.floor((diff / 1000) / 60).toString().padStart(2, '0');
                      let s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
