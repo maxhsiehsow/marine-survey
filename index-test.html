@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V93</title>
+    <title>荒野瓶罐調查回報站 V94</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* V93: 延續荒野綠主題色 */
+        /* V94: 荒野綠主題色 */
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
         
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; padding-top: 40px; color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -84,7 +84,6 @@
         .preview-label { font-size: 10px; margin-top: 4px; color: #666; font-weight: bold; }
         .preview-icon { font-size: 24px; color: #999; }
         
-        /* V93: 照片警語樣式 */
         .photo-warning { color: #d32f2f; font-size: 13px; font-weight: bold; margin-top: 5px; display: none; background: #ffebee; padding: 8px; border-radius: 6px; border: 1px dashed #ef5350; }
 
         .timer-container { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
@@ -214,7 +213,7 @@
 
         <h2>⏱️ 3. 調查計時器</h2>
         <div class="card">
-            <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">點擊圓圈開始 / 暫停 (結束會持續震動)</p>
+            <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">請允許「通知」權限，並請勿手動關閉螢幕(翻面即可)</p>
             <div class="timer-container">
                 <div class="timer-box" id="timer-10" onclick="toggleTimer(10)">
                     <div class="timer-time" id="time-display-10">10:00</div>
@@ -338,7 +337,11 @@
         const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }, scanners: { record: null, ai: null }, surveyPoints: [], map: null, userMarker: null, selectedPoint: null };
         const timers = { 10: { total: 600, endTime: null, interval: null, running: false }, 20: { total: 1200, endTime: null, interval: null, running: false } };
         let vibrationInterval;
-        let wakeLock = null; // V93: Wake Lock 變數
+        let wakeLock = null; 
+        
+        // V94: 靜音音軌 (欺騙系統用)
+        const silentAudio = new Audio("data:audio/mp3;base64,//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQxAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+        silentAudio.loop = true;
 
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
@@ -360,21 +363,34 @@
             }
         }
         
-        // V93: Wake Lock 釋放函式
         function releaseWakeLock() {
             if (wakeLock !== null) { wakeLock.release(); wakeLock = null; }
         }
 
-        // V93: 監聽網頁能見度，防止相機凍結並管理 Wake Lock
+        // V94: 請求通知權限
+        function requestNotificationPermission() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") console.log("Notification granted");
+                });
+            }
+        }
+
+        // V94: 發送系統通知
+        function sendSystemNotification() {
+            if ("Notification" in window && Notification.permission === "granted") {
+                try {
+                    new Notification("⏰ 時間到！", { body: "調查時間已結束，請停止動作並上傳資料。", icon: "https://cdn-icons-png.flaticon.com/512/299/299905.png", vibrate: [200, 100, 200] });
+                } catch (e) { console.error("Notification failed", e); }
+            }
+        }
+
         document.addEventListener("visibilitychange", async () => {
           if (document.visibilityState === 'visible') {
-            // 如果計時器還在跑，回來時要重新請求 Wake Lock
             if (timers[10].running || timers[20].running) requestWakeLock();
           } else {
-            // 網頁進入背景：關閉相機以防凍結
             if (STATE.scanners.record) stopRecordScanner();
             if (STATE.scanners.ai) stopAiScanner();
-            // 釋放 Wake Lock (通常瀏覽器會自動釋放，但明確寫出較保險)
             releaseWakeLock();
           }
         });
@@ -384,9 +400,7 @@
             if(localStorage.getItem('surveyor_name')) document.getElementById('inp_name').value = localStorage.getItem('surveyor_name');
             if(localStorage.getItem('surveyor_phone')) document.getElementById('inp_phone').value = localStorage.getItem('surveyor_phone');
             
-            // V92: 恢復狀態 (Session Restore)
             restoreState();
-
             checkOfflineQueue(); 
             updateNetworkStatus(); 
             window.addEventListener('online', updateNetworkStatus);
@@ -396,7 +410,6 @@
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
 
-        // V92: Save state
         function saveState() {
             const currentState = {
                 name: document.getElementById('inp_name').value,
@@ -417,7 +430,6 @@
             localStorage.setItem('survey_session', JSON.stringify(currentState));
         }
 
-        // V92: Restore state
         function restoreState() {
             const savedJSON = localStorage.getItem('survey_session');
             if (!savedJSON) return;
@@ -453,7 +465,6 @@
                             resumeTimer(20);
                         }
 
-                        // V92: 顯示照片遺失警語
                         document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'block');
                     }, () => {
                         localStorage.removeItem('survey_session');
@@ -576,26 +587,29 @@
         function createRedIcon() { return new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }); }
         function getDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
 
-        // V93: 計時器 + Wake Lock 整合
+        // V94: Timer logic with Notifications and Audio
         function toggleTimer(min) {
             let t = timers[min]; let box = document.getElementById(`timer-${min}`);
             
             if (t.running) { 
-                // 暫停
                 clearInterval(t.interval); 
                 t.running = false; 
                 box.classList.remove('running');
                 saveState(); 
-                releaseWakeLock(); // V93: 釋放鎖
+                releaseWakeLock(); 
+                silentAudio.pause(); // Stop silent audio
             } else {
-                // 啟動
+                // V94: Request permission on start
+                requestNotificationPermission();
+                
                 if (!t.endTime || t.endTime <= Date.now()) {
                     t.endTime = Date.now() + (min * 60 * 1000); 
                 }
                 
                 box.classList.remove('done'); box.classList.add('running'); t.running = true;
                 saveState();
-                requestWakeLock(); // V93: 請求鎖
+                requestWakeLock(); 
+                silentAudio.play(); // Start silent audio to keep alive
 
                 resumeTimer(min);
             }
@@ -606,8 +620,10 @@
              let box = document.getElementById(`timer-${min}`);
              box.classList.add('running');
              
-             // 如果恢復時是執行中，請求鎖
-             if(t.running) requestWakeLock(); 
+             if(t.running) {
+                 requestWakeLock(); 
+                 silentAudio.play().catch(e=>console.log("Audio autoplay prevented")); // Resume audio
+             }
 
              t.interval = setInterval(() => {
                 const now = Date.now();
@@ -618,8 +634,10 @@
                      box.classList.remove('running'); box.classList.add('done'); 
                      document.getElementById(`time-display-${min}`).innerText = "00:00";
                      saveState(); 
-                     releaseWakeLock(); // V93: 時間到釋放鎖
+                     releaseWakeLock(); 
+                     silentAudio.pause(); // Stop audio
                      triggerAlarm(); 
+                     sendSystemNotification(); // V94: Send notification
                 } else {
                      let m = Math.floor((diff / 1000) / 60).toString().padStart(2, '0');
                      let s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
@@ -643,7 +661,6 @@
         function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value)); }
         function updateUI() { document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0; if (STATE.count === 0) { document.getElementById('css-pie').style.background = "transparent"; document.getElementById('css-pie').style.border = "2px dashed #ddd"; return; } else { document.getElementById('css-pie').style.border = "4px solid #fff"; } for (const [key, val] of Object.entries(STATE.stats)) { const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1); tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`; const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d; } document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`; }
         
-        // V93: Upload logic with Wake Lock
         function uploadData() { 
             if (STATE.count === 0) { showModal('warning', '無資料', '請先收集數據再上傳', null); return; } 
             if (!document.getElementById('inp_name').value) { showModal('warning', '資料未填', '請填寫 [填表人姓名]', () => switchTab('basic')); return; } 
@@ -663,10 +680,10 @@
             if (!navigator.onLine) { saveOffline(payload); return; } 
             
             var btn = document.getElementById('btn-upload'); 
-            btn.innerText = "⏳ 上傳中...請保持螢幕開啟"; // V93: 提示
+            btn.innerText = "⏳ 上傳中...請保持螢幕開啟"; 
             btn.disabled = true; 
             
-            requestWakeLock(); // V93: 上傳請求鎖
+            requestWakeLock(); 
 
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
             .then(res => res.json())
@@ -675,7 +692,7 @@
             .finally(() => { 
                 btn.innerText = "🚀 上傳資料至雲端"; 
                 btn.disabled = false; 
-                releaseWakeLock(); // V93: 上傳結束釋放鎖
+                releaseWakeLock(); 
             }); 
         }
 
