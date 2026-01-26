@@ -165,11 +165,11 @@
         <h2>📝 1. 參與人員資訊</h2>
         <div class="card">
             <label class="required">填表人姓名</label>
-            <input type="text" id="inp_name" placeholder="請輸入真實姓名" onchange="saveState()">
+            <input type="text" id="inp_name" placeholder="請輸入真實姓名" onchange="saveState()" oninput="saveAllToLocalStorage()">
             <label class="required">聯絡人手機</label>
-            <input type="tel" id="inp_phone" placeholder="09xx-xxx-xxx" onchange="saveState()">
+            <input type="tel" id="inp_phone" placeholder="09xx-xxx-xxx" onchange="saveState()" oninput="saveAllToLocalStorage()">
             <label class="required">參與人數</label>
-            <input type="number" id="inp_participants" value="1" min="1" style="text-align:center;" onchange="saveState()">
+            <input type="number" id="inp_participants" value="1" min="1" style="text-align:center;" onchange="saveState()" oninput="saveAllToLocalStorage()">
         </div>
 
         <h2>📍 2. 調查地點</h2>
@@ -192,8 +192,8 @@
             <label>📸 現場照片上傳</label>
             <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
             <div class="img-preview-box">
-                <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
-                <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
+                <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-env')">
+                <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-group')">
                 <div class="preview-item" onclick="document.getElementById('file-env').click()">
                     <img id="img-preview-env" src="" style="display:none">
                     <span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div>
@@ -278,17 +278,17 @@
             <label>特殊／熱點照 (最多3張)</label>
             <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
             <div class="img-preview-box">
-                <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
+                <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot1')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()">
                     <img id="img-preview-hotspot1" src="" style="display:none">
                     <span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div>
                 </div>
-                <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
+                <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot2')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot2').click()">
                     <img id="img-preview-hotspot2" src="" style="display:none">
                     <span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div>
                 </div>
-                <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
+                <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot3')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()">
                     <img id="img-preview-hotspot3" src="" style="display:none">
                     <span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div>
@@ -354,6 +354,120 @@
           }
         });
 
+        // 1. 核心壓縮工具
+async function compressImage(base64Str, maxWidth = 1280, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = base64Str;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = (err) => reject(err);
+    });
+}
+
+// 2. 處理檔案選取、壓縮並自動存入暫存 (Session Restore 的核心)
+async function handleFileSelect(input, previewId) {
+    const file = input.files[0];
+    if (!file) return;
+
+    const previewImg = document.getElementById(previewId);
+    const reader = new FileReader();
+
+    reader.onload = async function (e) {
+        // 先顯示原始圖，讓使用者知道「照片讀到了」
+        previewImg.src = e.target.result;
+        previewImg.style.opacity = "0.5"; // 處理中變半透明
+
+        try {
+            // 執行老王的壓縮大法
+            console.log("正在壓縮 " + previewId + "...");
+            const optimized = await compressImage(e.target.result, 1280, 0.7);
+            
+            // 換成壓縮後的瘦身版
+            previewImg.src = optimized;
+            previewImg.style.opacity = "1";
+            
+            // 這裡呼叫你的暫存邏輯 (原本 V98 散落在各處的儲存動作)
+            saveAllToLocalStorage(); 
+            console.log(previewId + " 壓縮並暫存成功！");
+        } catch (err) {
+            console.error("壓縮失敗", err);
+            previewImg.style.opacity = "1";
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// 3. 統一存檔函式 (這是 V98 防斷片機制的心臟)
+function saveAllToLocalStorage() {
+    const data = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        location: document.getElementById('location').value,
+        lat: document.getElementById('lat').value,
+        lng: document.getElementById('lng').value,
+        hotspotData1: document.getElementById('preview-hotspot1').src,
+        hotspotData2: document.getElementById('preview-hotspot2').src,
+        hotspotData3: document.getElementById('preview-hotspot3').src,
+        envData: document.getElementById('preview-env').src,
+        groupData: document.getElementById('preview-group').src,
+        timestamp: Date.now()
+    };
+    localStorage.setItem('survey_temp_data', JSON.stringify(data));
+}
+        // --- 老王的新增功能：圖片壓縮工具 ---
+async function compressImage(base64Str, maxWidth = 1280, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = base64Str;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = (err) => reject(err);
+    });
+}
+        // --- 老王優化：統一儲存暫存檔 ---
+function saveTempData() {
+    const tempData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        location: document.getElementById('location').value,
+        lat: document.getElementById('lat').value,
+        lng: document.getElementById('lng').value,
+        // 抓取預覽圖的 src (此時應該已經是被壓縮過的)
+        hotspotData1: document.getElementById('preview-hotspot1').src,
+        hotspotData2: document.getElementById('preview-hotspot2').src,
+        hotspotData3: document.getElementById('preview-hotspot3').src,
+        envData: document.getElementById('preview-env').src,
+        groupData: document.getElementById('preview-group').src,
+        // 還有其他欄位可以依此類推加入...
+    };
+    localStorage.setItem('survey_temp_data', JSON.stringify(tempData));
+    console.log("暫存已更新 (含壓縮圖)");
+}
         // V98: 喚醒檢查邏輯
         function checkTimerOnWake() {
             [10, 20].forEach(min => {
