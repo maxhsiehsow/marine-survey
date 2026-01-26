@@ -190,19 +190,20 @@
             <input type="text" id="inp_point" readonly class="locked-field" placeholder="僅限從地圖選擇代號">
             
             <label>📸 現場照片上傳</label>
-            <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-preview-box">
-                <input type="file" accept="image/*" capture="camera" onchange="handleFileSelect(this, 'preview-env')">
-                <input type="file" accept="image/*" capture="camera" onchange="handleFileSelect(this, 'preview-group')">
-                <div class="preview-item" onclick="document.getElementById('preview-env').click()">
-                    <img id="preview-env" src="" style="display:none">
-                    <span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div>
-                </div>
-                <div class="preview-item" onclick="document.getElementById('preview-group').click()">
-                    <img id="preview-group" src="" style="display:none">
-                    <span id="icon-group" class="preview-icon">👥</span><div class="preview-label">合照</div>
-                </div>
-            </div>
+<div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置。</div>
+<div class="img-preview-box">
+    <input type="file" id="real-file-env" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-env')">
+    <input type="file" id="real-file-group" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-group')">
+    
+    <div class="preview-item" onclick="document.getElementById('real-file-env').click()">
+        <img id="preview-env" src="" style="display:none">
+        <span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div>
+    </div>
+    <div class="preview-item" onclick="document.getElementById('real-file-group').click()">
+        <img id="preview-group" src="" style="display:none">
+        <span id="icon-group" class="preview-icon">👥</span><div class="preview-label">合照</div>
+    </div>
+</div>
 
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
                 <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
@@ -275,25 +276,25 @@
 
         <h2>🚀 5. 成果上傳</h2>
         <div class="card">
-            <label>特殊／熱點照 (最多3張)</label>
-            <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-preview-box">
-                <input type="file" accept="image/*" capture="camera" onchange="handleFileSelect(this, 'preview-hotspot1')">
-                <div class="preview-item" onclick="document.getElementById('preview-hotspot1').click()">
-                    <img id="preview-hotspot1" src="" style="display:none">
-                    <span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div>
-                </div>
-                <input type="file" accept="image/*" capture="camera" onchange="handleFileSelect(this, 'preview-hotspot2')">
-                <div class="preview-item" onclick="document.getElementById('preview-hotspot2').click()">
-                    <img id="preview-hotspot2" src="" style="display:none">
-                    <span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div>
-                </div>
-                <input type="file" accept="image/*" capture="camera" onchange="handleFileSelect(this, 'preview-hotspot3')">
-                <div class="preview-item" onclick="document.getElementById('preview-hotspot3').click()">
-                    <img id="preview-hotspot3" src="" style="display:none">
-                    <span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div>
-                </div>
-            </div>
+           <label>特殊／熱點照 (最多3張)</label>
+<div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置。</div>
+<div class="img-preview-box">
+    <input type="file" id="real-file-hotspot1" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot1')">
+    <input type="file" id="real-file-hotspot2" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot2')">
+    <input type="file" id="real-file-hotspot3" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot3')">
+
+    <div class="preview-item" onclick="document.getElementById('real-file-hotspot1').click()">
+        <img id="preview-hotspot1" src="" style="display:none">
+        <span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div>
+    </div>
+    <div class="preview-item" onclick="document.getElementById('real-file-hotspot2').click()">
+        <img id="preview-hotspot2" src="" style="display:none">
+        <span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div>
+    </div>
+    <div class="preview-item" onclick="document.getElementById('preview-hotspot3').click()"> <input type="file" id="real-file-hotspot3-backup" style="display:none"> <img id="preview-hotspot3" src="" style="display:none">
+        <span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div>
+    </div>
+</div>
             <label style="margin-top:15px;">其他記錄</label>
             <textarea id="inp_note" rows="3" placeholder="請填寫任何值得記錄的觀察..." onchange="saveState()"></textarea>
             <button id="btn-upload" onclick="uploadData()" class="btn-upload" style="margin-top:20px;">🚀 上傳資料至雲端</button>
@@ -377,53 +378,66 @@ async function compressImage(base64Str, maxWidth = 1280, quality = 0.7) {
     });
 }
 
-function handleFileSelect(input, previewId) {
+async function handleFileSelect(input, previewId) {
     const file = input.files[0];
     if (!file) return;
 
     const previewImg = document.getElementById(previewId);
-    const reader = new FileReader();
+    const iconSpan = document.getElementById('icon-' + previewId.split('-')[1]); // 抓 icon-env 等
+    
+    if (!previewImg) return console.error("找不到預覽框: " + previewId);
 
+    const reader = new FileReader();
     reader.onload = async function (e) {
-        // 第一步：先顯示原圖（保證使用者看得到照片）
+        // 1. 顯示並預覽
         previewImg.src = e.target.result;
-        
+        previewImg.style.display = 'block'; // 關鍵：把隱藏的圖片秀出來
+        if(iconSpan) iconSpan.style.display = 'none'; // 把圖示藏起來
+
         try {
-            // 第二步：背後默默壓縮
-            console.log("正在優化圖片...");
+            // 2. 壓縮
             const optimized = await compressImage(e.target.result, 1280, 0.7);
-            previewImg.src = optimized; // 替換為瘦身版
+            previewImg.src = optimized;
             
-            // 第三步：存入暫存
+            // 3. 存入暫存
             saveAllToLocalStorage();
         } catch (err) {
-            console.error("壓縮過程出錯，使用原圖存檔", err);
-            saveAllToLocalStorage(); // 就算壓縮失敗也要存檔
+            console.error("壓縮失敗", err);
+            saveAllToLocalStorage();
         }
     };
     reader.readAsDataURL(file);
 }
-// 統一存檔函式：增加安全檢查
+
 function saveAllToLocalStorage() {
     try {
         const data = {
-            // 這裡的 ID 必須對應你 HTML 裡的 id="..."
-            name: document.getElementById('name')?.value || "",
-            phone: document.getElementById('phone')?.value || "",
-            location: document.getElementById('location')?.value || "",
-            lat: document.getElementById('lat')?.value || "",
-            lng: document.getElementById('lng')?.value || "",
-            // 抓取預覽圖
+            // 對應你的 HTML ID：inp_name, inp_phone, inp_gps 等 
+            name: document.getElementById('inp_name')?.value || "",
+            phone: document.getElementById('inp_phone')?.value || "",
+            participants: document.getElementById('inp_participants')?.value || "1",
+            gps: document.getElementById('inp_gps')?.value || "",
+            city: document.getElementById('inp_city')?.value || "",
+            point: document.getElementById('inp_point')?.value || "",
+            // 抓取預覽圖 src 
             hotspotData1: document.getElementById('preview-hotspot1')?.src || "",
             hotspotData2: document.getElementById('preview-hotspot2')?.src || "",
             hotspotData3: document.getElementById('preview-hotspot3')?.src || "",
             envData: document.getElementById('preview-env')?.src || "",
             groupData: document.getElementById('preview-group')?.src || "",
+            note: document.getElementById('inp_note')?.value || "",
             timestamp: Date.now()
         };
         localStorage.setItem('survey_temp_data', JSON.stringify(data));
+        
+        // 老王特別加贈：同步更新 V98 的 STATE 物件，確保上傳按鈕抓得到圖
+        STATE.imgs.hotspot1 = data.hotspotData1.split(',')[1] || null;
+        STATE.imgs.hotspot2 = data.hotspotData2.split(',')[1] || null;
+        STATE.imgs.hotspot3 = data.hotspotData3.split(',')[1] || null;
+        STATE.imgs.env = data.envData.split(',')[1] || null;
+        STATE.imgs.group = data.groupData.split(',')[1] || null;
     } catch (e) {
-        console.warn("暫存失敗，可能是 localStorage 已滿:", e);
+        console.warn("暫存失敗:", e);
     }
 }
         // --- 老王優化：統一儲存暫存檔 ---
