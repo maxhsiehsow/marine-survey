@@ -192,9 +192,8 @@
             <label>📸 現場照片上傳</label>
 <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置。</div>
 <div class="img-preview-box">
-    <input type="file" id="real-file-env" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-env')">
-    <input type="file" id="real-file-group" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-group')">
-    
+    <input type="file" id="real-file-env" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-env')">
+    <input type="file" id="real-file-group" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-group')">
     <div class="preview-item" onclick="document.getElementById('real-file-env').click()">
         <img id="preview-env" src="" style="display:none">
         <span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div>
@@ -279,10 +278,9 @@
            <label>特殊／熱點照 (最多3張)</label>
 <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置。</div>
 <div class="img-preview-box">
-    <input type="file" id="real-file-hotspot1" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot1')">
-    <input type="file" id="real-file-hotspot2" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot2')">
-    <input type="file" id="real-file-hotspot3" accept="image/*" capture="camera" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot3')">
-
+    <input type="file" id="real-file-hotspot1" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot1')">
+    <input type="file" id="real-file-hotspot2" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot2')">
+    <input type="file" id="real-file-hotspot3" accept="image/*" style="display:none" onchange="handleFileSelect(this, 'preview-hotspot3')">
     <div class="preview-item" onclick="document.getElementById('real-file-hotspot1').click()">
         <img id="preview-hotspot1" src="" style="display:none">
         <span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div>
@@ -431,11 +429,12 @@ function saveAllToLocalStorage() {
         localStorage.setItem('survey_temp_data', JSON.stringify(data));
         
         // 老王特別加贈：同步更新 V98 的 STATE 物件，確保上傳按鈕抓得到圖
-        STATE.imgs.hotspot1 = data.hotspotData1.split(',')[1] || null;
-        STATE.imgs.hotspot2 = data.hotspotData2.split(',')[1] || null;
-        STATE.imgs.hotspot3 = data.hotspotData3.split(',')[1] || null;
-        STATE.imgs.env = data.envData.split(',')[1] || null;
-        STATE.imgs.group = data.groupData.split(',')[1] || null;
+        // 在 saveAllToLocalStorage 函式末端加入
+            STATE.imgs.hotspot1 = document.getElementById('preview-hotspot1').src.split(',')[1] || null;
+            STATE.imgs.hotspot2 = document.getElementById('preview-hotspot2').src.split(',')[1] || null;
+            STATE.imgs.hotspot3 = document.getElementById('preview-hotspot3').src.split(',')[1] || null;
+            STATE.imgs.env = document.getElementById('preview-env').src.split(',')[1] || null;
+            STATE.imgs.group = document.getElementById('preview-group').src.split(',')[1] || null;
     } catch (e) {
         console.warn("暫存失敗:", e);
     }
