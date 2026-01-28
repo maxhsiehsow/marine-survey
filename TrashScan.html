@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V98 (Fat Log)</title>
+    <title>荒野瓶罐調查回報站 V98 (Fat Log Fix)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* V98: 荒野綠主題色 (保持不變) */
@@ -657,7 +657,7 @@
         function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1, null); box.style.display = 'none'; switchTab('record'); }; }
         function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1, { source: "Manual_Prefix", barcode: prefix }); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
         
-        // [Fat Log] 修改: addRecord 增加 details 參數
+        // [Fat Log] 修改 1: 增加 shouldLog 判斷
         function addRecord(country, qty, details) { 
             let safeName = normalizeName(country); 
             if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; 
@@ -665,28 +665,39 @@
             STATE.count += qty; 
             
             // 處理細節記錄
-            const logEntry = details || { source: "Manual", barcode: "" };
+            const logEntry = details || { source: "Manual_Select", barcode: "" };
             logEntry.origin = safeName; // 確保有正規化後的產地
             
+            // 判斷是否需要寫入 Scan_Logs
+            // 只有當 source 不是 "Manual_Select" 和 "Manual_Prefix" 時才記錄
+            const shouldLog = (logEntry.source !== "Manual_Select" && logEntry.source !== "Manual_Prefix");
+
             for(let i=0; i<qty; i++) {
-                STATE.historyStack.push({key: safeName, qty: 1});
-                STATE.scanLogs.push(logEntry); // 同步推入詳細Log
+                // historyStack 現在多存一個 hasLog 標記，以便 undo 時知道要不要刪 scanLogs
+                STATE.historyStack.push({key: safeName, qty: 1, hasLog: shouldLog});
+                
+                if (shouldLog) {
+                    STATE.scanLogs.push(logEntry); // 同步推入詳細Log
+                }
             }
             
             updateUI(); 
             saveState(); 
         }
 
-        // [Fat Log] 修改: undoRecord 也要同步移除 scanLogs
+        // [Fat Log] 修改 2: undoRecord 邏輯修正
         function undoRecord() { 
             if (STATE.historyStack.length === 0) return; 
+            
             const last = STATE.historyStack.pop(); 
             STATE.stats[last.key] -= last.qty; 
             if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; 
             STATE.count -= last.qty; 
             
-            // 同步移除最後一筆詳細 Log
-            if (STATE.scanLogs.length > 0) STATE.scanLogs.pop();
+            // 只有當這一筆當初有產生 Log 時，才去 scanLogs 移除
+            if (last.hasLog && STATE.scanLogs.length > 0) {
+                STATE.scanLogs.pop();
+            }
             
             updateUI(); 
             saveState(); 
