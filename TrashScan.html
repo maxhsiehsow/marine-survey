@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V98 (條碼增強版)</title>
+    <title>荒野瓶罐調查回報站 V98 (Fat Log)</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* V98: 荒野綠主題色 (保持不變) */
@@ -335,7 +335,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }, scanners: { record: null, ai: null }, surveyPoints: [], map: null, userMarker: null, selectedPoint: null };
+        // V98: 新增 productCache (本地快取), scanLogs (肥Log暫存)
+        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, map: null, userMarker: null, selectedPoint: null };
         const timers = { 10: { total: 600, endTime: null, interval: null, running: false }, 20: { total: 1200, endTime: null, interval: null, running: false } };
         
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
@@ -343,7 +344,7 @@
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
         
         // ⚠️ 請確認 GAS 網址
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby1kiaaRdWuUtBEBnjG-HuTqedenqisFug4zQ6pyCWXrT0Ja7TF4RCAicTA1Q3u8TA9/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
         document.addEventListener("visibilitychange", async () => {
           if (document.visibilityState === 'hidden') {
@@ -383,6 +384,7 @@
             window.addEventListener('online', updateNetworkStatus);
             window.addEventListener('offline', updateNetworkStatus);
             loadSurveyPoints();
+            loadProductDB(); // [Fat Log]: 開機預載常見商品庫
 
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
@@ -399,6 +401,7 @@
                 stats: STATE.stats,
                 count: STATE.count,
                 historyStack: STATE.historyStack,
+                scanLogs: STATE.scanLogs, // [Fat Log]: 儲存詳細 Log
                 note: document.getElementById('inp_note').value,
                 currentCity: STATE.currentCity,
                 timer10End: timers[10].running ? timers[10].endTime : null,
@@ -427,6 +430,7 @@
                         STATE.stats = saved.stats || {};
                         STATE.count = saved.count || 0;
                         STATE.historyStack = saved.historyStack || [];
+                        STATE.scanLogs = saved.scanLogs || []; // [Fat Log]
                         STATE.currentCity = saved.currentCity || "未定位";
 
                         updateUI();
@@ -436,13 +440,11 @@
                             timers[10].endTime = saved.timer10End;
                             timers[10].running = true;
                             if (Date.now() >= saved.timer10End) {
-                                // 已超時：直接顯示結束
                                 document.getElementById('timer-10').classList.add('done');
                                 document.getElementById('time-display-10').innerText = "00:00";
                                 timers[10].running = false;
                                 showModal('alarm', '時間到！', '調查時間已結束。', null);
                             } else {
-                                // 未超時：繼續跑
                                 resumeTimer(10);
                             }
                         }
@@ -473,6 +475,20 @@
         function clearState() {
              localStorage.removeItem('survey_session');
              document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'none');
+        }
+
+        // [Fat Log] 新增: 預載常見商品資料庫
+        function loadProductDB() {
+            if (!navigator.onLine) return;
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === "success") {
+                    STATE.productCache = data.products;
+                    console.log("Product DB Loaded:", Object.keys(STATE.productCache).length);
+                }
+            })
+            .catch(e => console.error("DB Load Error:", e));
         }
 
         function loadSurveyPoints() {
@@ -581,25 +597,20 @@
         function createRedIcon() { return new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] }); }
         function getDistance(lat1, lon1, lat2, lon2) { const R = 6371; const dLat = (lat2 - lat1) * Math.PI / 180; const dLon = (lon2 - lon1) * Math.PI / 180; const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
 
-        // V98: 簡單計時邏輯 (無背景音樂/無通知)
         function toggleTimer(min) {
             let t = timers[min]; let box = document.getElementById(`timer-${min}`);
             
             if (t.running) { 
-                // 暫停
                 clearInterval(t.interval); 
                 t.running = false; 
                 box.classList.remove('running');
                 saveState(); 
             } else {
-                // 開始
                 if (!t.endTime || t.endTime <= Date.now()) {
                     t.endTime = Date.now() + (min * 60 * 1000); 
                 }
-                
                 box.classList.remove('done'); box.classList.add('running'); t.running = true;
                 saveState();
-                
                 resumeTimer(min);
             }
         }
@@ -612,9 +623,7 @@
              t.interval = setInterval(() => {
                 const now = Date.now();
                 const diff = t.endTime - now;
-                
                 if (diff <= 0) {
-                     // 時間到
                      clearInterval(t.interval); t.running = false; 
                      box.classList.remove('running'); box.classList.add('done'); 
                      document.getElementById(`time-display-${min}`).innerText = "00:00";
@@ -629,7 +638,6 @@
         }
 
         function triggerAlarm() { 
-            // 只有在網頁開啟時才會觸發 (V98 設計)
             let utterance = new SpeechSynthesisUtterance("時間到，請結束調查"); 
             window.speechSynthesis.speak(utterance); 
             showModal('alarm', '時間到！', '請結束調查並上傳資料', () => { 
@@ -646,13 +654,45 @@
         function switchTab(tabName) { document.querySelectorAll('.container').forEach(el => el.classList.remove('active-tab')); document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); document.getElementById('view-' + tabName).classList.add('active-tab'); document.getElementById('nav-' + tabName).classList.add('active'); stopRecordScanner(); stopAiScanner(); }
         function handleImgUpload(input, type) { if (!input.files || !input.files[0]) return; const file = input.files[0]; const reader = new FileReader(); reader.onload = function(e) { const imgId = `img-preview-${type}`; const imgEl = document.getElementById(imgId); imgEl.src = e.target.result; imgEl.style.display = 'block'; const icon = document.getElementById(`icon-${type}`); if(icon) icon.style.display = 'none'; const temp = new Image(); temp.src = e.target.result; temp.onload = function() { const cvs = document.createElement('canvas'); let s = 1024 / temp.width; if (s > 1) s = 1; cvs.width = temp.width * s; cvs.height = temp.height * s; cvs.getContext('2d').drawImage(temp, 0, 0, cvs.width, cvs.height); STATE.imgs[type] = cvs.toDataURL('image/jpeg', 0.7).split(',')[1]; } }; reader.readAsDataURL(file); }
         function takeAiSnapshot() { var videoEl = document.querySelector("#reader-ai video"); if (!videoEl) { alert("相機未啟動"); return; } videoEl.pause(); document.getElementById('loading-mask').style.display = 'flex'; var cvs = document.createElement("canvas"); var max = 800; var w = videoEl.videoWidth; var h = videoEl.videoHeight; var s = (w>h ? (w>max?max/w:1) : (h>max?max/h:1)); cvs.width = w*s; cvs.height = h*s; cvs.getContext("2d").drawImage(videoEl, 0, 0, cvs.width, cvs.height); var b64Full = cvs.toDataURL("image/jpeg", 0.6); stopAiScanner(); fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "identify", image: b64Full.split(',')[1] }) }).then(res => res.json()).then(data => { document.getElementById('loading-mask').style.display = 'none'; if (data.status === "success") { try { var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result); var match = raw.match(/\{[\s\S]*\}/); if (match) displayAiResult(JSON.parse(match[0]), b64Full); else alert("AI 格式錯誤: " + raw); } catch(e) { alert("解析失敗: " + e.message); } } else { alert("後端錯誤: " + data.message); } }).catch(err => { document.getElementById('loading-mask').style.display = 'none'; alert("連線失敗: " + err); }); }
-        function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1); box.style.display = 'none'; switchTab('record'); }; }
-        function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
+        function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1, null); box.style.display = 'none'; switchTab('record'); }; }
+        function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1, { source: "Manual_Prefix", barcode: prefix }); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
         
-        function addRecord(country, qty) { let safeName = normalizeName(country); if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; STATE.stats[safeName] += qty; STATE.count += qty; for(let i=0; i<qty; i++) STATE.historyStack.push({key: safeName, qty: 1}); updateUI(); saveState(); }
-        function undoRecord() { if (STATE.historyStack.length === 0) return; const last = STATE.historyStack.pop(); STATE.stats[last.key] -= last.qty; if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; STATE.count -= last.qty; updateUI(); saveState(); }
+        // [Fat Log] 修改: addRecord 增加 details 參數
+        function addRecord(country, qty, details) { 
+            let safeName = normalizeName(country); 
+            if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; 
+            STATE.stats[safeName] += qty; 
+            STATE.count += qty; 
+            
+            // 處理細節記錄
+            const logEntry = details || { source: "Manual", barcode: "" };
+            logEntry.origin = safeName; // 確保有正規化後的產地
+            
+            for(let i=0; i<qty; i++) {
+                STATE.historyStack.push({key: safeName, qty: 1});
+                STATE.scanLogs.push(logEntry); // 同步推入詳細Log
+            }
+            
+            updateUI(); 
+            saveState(); 
+        }
+
+        // [Fat Log] 修改: undoRecord 也要同步移除 scanLogs
+        function undoRecord() { 
+            if (STATE.historyStack.length === 0) return; 
+            const last = STATE.historyStack.pop(); 
+            STATE.stats[last.key] -= last.qty; 
+            if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; 
+            STATE.count -= last.qty; 
+            
+            // 同步移除最後一筆詳細 Log
+            if (STATE.scanLogs.length > 0) STATE.scanLogs.pop();
+            
+            updateUI(); 
+            saveState(); 
+        }
         
-        function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value)); }
+        function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value), { source: "Manual_Select" }); }
         function updateUI() { document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0; if (STATE.count === 0) { document.getElementById('css-pie').style.background = "transparent"; document.getElementById('css-pie').style.border = "2px dashed #ddd"; return; } else { document.getElementById('css-pie').style.border = "4px solid #fff"; } for (const [key, val] of Object.entries(STATE.stats)) { const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1); tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`; const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d; } document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`; }
         
         function uploadData() { 
@@ -669,7 +709,26 @@
             let others = []; 
             for(let k in STATE.stats) { if(k.includes("台灣")) statsOut.cnt_tw += STATE.stats[k]; else if(k.includes("中國")) statsOut.cnt_cn += STATE.stats[k]; else if(k.includes("越南")) statsOut.cnt_vn += STATE.stats[k]; else if(k.includes("菲律賓")) statsOut.cnt_ph += STATE.stats[k]; else if(k.includes("泰國")) statsOut.cnt_th += STATE.stats[k]; else if(k.includes("印尼")) statsOut.cnt_id += STATE.stats[k]; else if(k.includes("馬來西亞")) statsOut.cnt_my += STATE.stats[k]; else if(k.includes("韓國")) statsOut.cnt_kr += STATE.stats[k]; else if(k.includes("日本")) statsOut.cnt_jp += STATE.stats[k]; else others.push(`${k}*${STATE.stats[k]}`); } 
             statsOut.cnt_other = others.join(", "); 
-            var payload = { action: "save", name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value, city: document.getElementById('inp_city').value, surveyPoint: document.getElementById('inp_point').value, gps: document.getElementById('inp_gps').value, total: STATE.count, note: document.getElementById('inp_note').value, hotspotData1: STATE.imgs.hotspot1 || "", hotspotData2: STATE.imgs.hotspot2 || "", hotspotData3: STATE.imgs.hotspot3 || "", envData: STATE.imgs.env || "", groupData: STATE.imgs.group || "", ...statsOut }; 
+            
+            // [Fat Log] Payload 增加 scanLogs
+            var payload = { 
+                action: "save", 
+                name: document.getElementById('inp_name').value, 
+                phone: document.getElementById('inp_phone').value, 
+                participants: document.getElementById('inp_participants').value, 
+                city: document.getElementById('inp_city').value, 
+                surveyPoint: document.getElementById('inp_point').value, 
+                gps: document.getElementById('inp_gps').value, 
+                total: STATE.count, 
+                note: document.getElementById('inp_note').value, 
+                hotspotData1: STATE.imgs.hotspot1 || "", 
+                hotspotData2: STATE.imgs.hotspot2 || "", 
+                hotspotData3: STATE.imgs.hotspot3 || "", 
+                envData: STATE.imgs.env || "", 
+                groupData: STATE.imgs.group || "",
+                scanLogs: STATE.scanLogs, // 傳送詳細 Log
+                ...statsOut 
+            }; 
             
             if (!navigator.onLine) { saveOffline(payload); return; } 
             
@@ -691,6 +750,7 @@
             if(document.getElementById('success-modal')) document.getElementById('success-modal').style.display = 'none'; 
             if(document.getElementById('custom-modal')) document.getElementById('custom-modal').style.display = 'none'; 
             STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
+            STATE.scanLogs = []; // 清空詳細 Log
             STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }; 
             ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => { document.getElementById(`img-preview-${k}`).style.display='none'; if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block'; }); 
             document.getElementById('inp_gps').value = ""; document.getElementById('inp_city').value = ""; STATE.currentCity = "未定位"; document.getElementById('inp_point').value = ""; document.getElementById('sel_country').selectedIndex = 0; document.getElementById('inp_qty').value = 1; document.getElementById('inp_note').value = ""; 
@@ -708,16 +768,46 @@
             
             STATE.scanners.record = new Html5Qrcode("reader-record"); 
             STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { 
-                // [Node A]: 掃描成功但數據異常檢查
                 if (!txt || txt.trim() === "") {
                     showModal('warning', '掃描錯誤', '⚠️ 掃描成功但數據異常：內容為空', null);
                     return;
                 }
-
                 STATE.scanners.record.pause(); 
-                const c = getCountryFromCode(txt); 
                 
-                // 動態生成 HTML 內容
+                // [Fat Log Strategy] 1. 優先查 Local Cache
+                if (STATE.productCache[txt]) {
+                    const local = STATE.productCache[txt];
+                    const c = local.origin || "未知";
+                    
+                    const modalHtml = `
+                        <div style="background:#e8f5e9; padding:15px; border-radius:12px; margin-bottom:10px; border:2px solid var(--primary);">
+                            <div style="font-size:12px; color:var(--primary); font-weight:bold;">✨ 本地資料庫命中</div>
+                            <div style="font-size:26px; font-weight:900; color:#333; margin:5px 0;">${txt}</div>
+                            <div style="font-size:18px; font-weight:bold; color:var(--primary);">${c}</div>
+                            <div style="margin-top:10px; text-align:left; background:white; padding:10px; border-radius:8px;">
+                                <div style="font-size:12px; color:#666;">${local.brand || ""}</div>
+                                <div style="font-size:15px; font-weight:bold;">${local.name}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    showModal('confirm', '掃描成功', modalHtml, () => { 
+                        // 記錄資料 (Source: Local_DB)
+                        addRecord(c, 1, { 
+                            barcode: txt, 
+                            name: local.name, 
+                            brand: local.brand, 
+                            img_url: local.img_url, 
+                            source: "Local_DB" 
+                        });
+                        setTimeout(()=>STATE.scanners.record.resume(), 500); 
+                    }, () => setTimeout(()=>STATE.scanners.record.resume(), 500));
+                    
+                    return; // 命中就結束，不查 API
+                }
+
+                // 2. Local 沒中，查 API
+                const c = getCountryFromCode(txt); 
                 const modalHtml = `
                     <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-bottom:10px;">
                         <div style="font-size:12px; color:#666;">掃描條碼</div>
@@ -727,70 +817,87 @@
                             <span style="font-size:18px; font-weight:bold; color:var(--primary);">${c}</span>
                         </div>
                     </div>
-                    
                     <div id="api-product-area" style="min-height:90px; border-top:1px dashed #ddd; margin-top:15px; padding-top:15px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                         <div class="spinner" style="width:25px; height:25px; border-width:3px;"></div>
                         <div style="font-size:13px; color:#587a30; margin-top:8px;">🔄 雲端商品資料查詢中...</div>
                     </div>
                 `;
 
+                // 準備 API 資料暫存物件
+                let apiDataBuffer = null;
+
                 showModal('confirm', '掃描成功', modalHtml, () => { 
-                    addRecord(c, 1); 
+                    // 按下確定時，檢查 apiDataBuffer 是否有資料
+                    if (apiDataBuffer) {
+                        addRecord(c, 1, apiDataBuffer);
+                    } else {
+                        // 若 API 還沒回來或失敗，只存基本條碼
+                        addRecord(c, 1, { barcode: txt, source: "API_Pending_Or_Fail" });
+                    }
                     setTimeout(()=>STATE.scanners.record.resume(), 500); 
-                }, () => { 
-                    setTimeout(()=>STATE.scanners.record.resume(), 500); 
-                });
+                }, () => setTimeout(()=>STATE.scanners.record.resume(), 500));
                 
-                // 呼叫 API 查詢
-                fetchProductData(txt);
+                // 異步呼叫並更新 Buffer
+                fetchProductData(txt).then(data => {
+                    apiDataBuffer = data; // 存入暫存
+                    updateApiAreaUI(data); // 更新介面
+                });
 
             }, ()=>{} ); 
         }
 
-        // [New Function] 專門負責處理 Open Food Facts API 的異步查詢
-        function fetchProductData(barcode) {
-            const area = document.getElementById('api-product-area');
-            if(!area) return; // 防呆
-
-            // [Node B]: 檢查網路連線
+        // [Fat Log] 修改: 回傳資料物件，非僅更新UI
+        async function fetchProductData(barcode) {
             if (!navigator.onLine) {
-                area.innerHTML = `<div style="color:#f57c00; font-size:13px; font-weight:bold;">⚠️ 離線模式</div><div style="font-size:12px; color:#999;">無法連接商品資料庫 (Network Error)<br>僅保留條碼數據。</div>`;
-                return;
+                updateApiAreaUI({ error: "offline" });
+                return null;
             }
-
-            // 發起請求
-            fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`)
-            .then(res => res.json())
-            .then(data => {
-                // [Node C]: 解析回傳狀態 (status: 1 為找到)
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+                const data = await res.json();
                 if (data.status === 1) {
                     const p = data.product;
-                    const name = p.product_name_zh || p.product_name || "未命名商品";
-                    const brand = p.brands || "未知品牌";
-                    const imgUrl = p.image_front_small_url || "";
-                    
-                    // [Node D]: 圖片與資料渲染
-                    area.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:15px; width:100%; text-align:left;">
-                            <div style="width:60px; height:60px; flex-shrink:0; background:#fff; border-radius:8px; border:1px solid #eee; overflow:hidden; display:flex; align-items:center; justify-content:center;">
-                                ${imgUrl ? `<img src="${imgUrl}" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; this.parentNode.innerText='無圖';">` : '<span style="font-size:10px; color:#ccc;">無圖</span>'}
-                            </div>
-                            <div style="flex:1;">
-                                <div style="font-size:12px; color:#888; font-weight:bold;">${brand}</div>
-                                <div style="font-size:15px; color:#333; font-weight:bold; line-height:1.3; margin-top:2px;">${name}</div>
-                            </div>
-                        </div>
-                    `;
+                    return {
+                        barcode: barcode,
+                        name: p.product_name_zh || p.product_name || "未命名商品",
+                        brand: p.brands || "未知品牌",
+                        img_url: p.image_front_small_url || "",
+                        source: "Cloud_API"
+                    };
                 } else {
-                    // status 0 或其他: 找不到
-                    area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫無此條碼資料 (Product Not Found)</div>`;
+                    updateApiAreaUI({ error: "not_found" });
+                    return { barcode: barcode, source: "API_Not_Found" };
                 }
-            })
-            .catch(err => {
-                // Fetch 過程發生錯誤
+            } catch (err) {
                 console.error(err);
-                area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 無法連接商品資料庫</div>`;
-            });
+                updateApiAreaUI({ error: "network_error" });
+                return null;
+            }
+        }
+
+        function updateApiAreaUI(data) {
+            const area = document.getElementById('api-product-area');
+            if(!area) return;
+
+            if (data && data.source === "Cloud_API") {
+                area.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:15px; width:100%; text-align:left;">
+                        <div style="width:60px; height:60px; flex-shrink:0; background:#fff; border-radius:8px; border:1px solid #eee; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            ${data.img_url ? `<img src="${data.img_url}" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; this.parentNode.innerText='無圖';">` : '<span style="font-size:10px; color:#ccc;">無圖</span>'}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:12px; color:#888; font-weight:bold;">${data.brand}</div>
+                            <div style="font-size:15px; color:#333; font-weight:bold; line-height:1.3; margin-top:2px;">${data.name}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (data && data.error === "offline") {
+                area.innerHTML = `<div style="color:#f57c00; font-size:13px; font-weight:bold;">⚠️ 離線模式</div><div style="font-size:12px; color:#999;">無法連接資料庫</div>`;
+            } else if (data && data.error === "not_found") {
+                area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫無此條碼資料</div>`;
+            } else {
+                 area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線錯誤</div>`;
+            }
         }
 
         function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
