@@ -343,7 +343,7 @@
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
         
-        // ⚠️ 請確認 GAS 網址       
+       // ⚠️ 請確認 GAS 網址       
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
         document.addEventListener("visibilitychange", async () => {
@@ -657,6 +657,10 @@
         function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1, null); box.style.display = 'none'; switchTab('record'); }; }
         function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1, { source: "Manual_Prefix", barcode: prefix }); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
         
+        // [V98 Fix] 生成唯一的 Session ID (場次代碼)
+        // 確保在 App 載入時就生成，或者每次提交前生成。這邊採用每次提交生成確保唯一性。
+        // 但為了跨分頁一致性，建議在 uploadData 時生成一次。
+        
         // [Fat Log] 修改 1: 增加 shouldLog 判斷
         function addRecord(country, qty, details) { 
             let safeName = normalizeName(country); 
@@ -868,6 +872,13 @@
             }
             try {
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+                // [Robust Fix] 處理 HTTP 404
+                if (res.status === 404) {
+                    updateApiAreaUI({ error: "not_found" });
+                    return { barcode: barcode, source: "API_Not_Found" };
+                }
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                
                 const data = await res.json();
                 
                 // [Fix] 明確區分 Found 與 Not Found
@@ -895,10 +906,12 @@
             }
         }
 
+        // [UI Fix] 修正顯示邏輯，明確區分 Not Found 與 Error
         function updateApiAreaUI(data) {
             const area = document.getElementById('api-product-area');
             if(!area) return;
 
+            // Case 1: 成功找到資料
             if (data && data.source === "Cloud_API") {
                 area.innerHTML = `
                     <div style="display:flex; align-items:center; gap:15px; width:100%; text-align:left;">
@@ -911,13 +924,18 @@
                         </div>
                     </div>
                 `;
-            } else if (data && data.error === "offline") {
-                area.innerHTML = `<div style="color:#f57c00; font-size:13px; font-weight:bold;">⚠️ 離線模式</div><div style="font-size:12px; color:#999;">無法連接資料庫</div>`;
-            } else if (data && data.error === "not_found") {
-                // [Fix] 顯示灰色訊息，而非紅色錯誤
+            } 
+            // Case 2: 資料庫比對不到 (包含內部錯誤代碼或回傳物件標記)
+            else if (data && (data.error === "not_found" || data.source === "API_Not_Found")) {
                 area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫比對不到 (將記錄條碼)</div>`;
-            } else {
-                 area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線錯誤</div>`;
+            } 
+            // Case 3: 離線模式
+            else if (data && data.error === "offline") {
+                area.innerHTML = `<div style="color:#f57c00; font-size:13px; font-weight:bold;">⚠️ 離線模式</div><div style="font-size:12px; color:#999;">無法連接資料庫</div>`;
+            } 
+            // Case 4: 其他錯誤 (Default Fallback)
+            else {
+                 area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線錯誤 / 無法取得資訊</div>`;
             }
         }
 
