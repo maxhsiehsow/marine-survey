@@ -869,6 +869,8 @@
             try {
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
                 const data = await res.json();
+                
+                // [Fix] 明確區分 Found 與 Not Found
                 if (data.status === 1) {
                     const p = data.product;
                     return {
@@ -878,9 +880,13 @@
                         img_url: p.image_front_small_url || "",
                         source: "Cloud_API"
                     };
-                } else {
+                } else if (data.status === 0) {
+                    // [Fix] 狀態 0 表示資料庫沒有，不是連線錯誤
                     updateApiAreaUI({ error: "not_found" });
                     return { barcode: barcode, source: "API_Not_Found" };
+                } else {
+                    updateApiAreaUI({ error: "unknown" });
+                    return { barcode: barcode, source: "API_Error" };
                 }
             } catch (err) {
                 console.error(err);
@@ -908,7 +914,8 @@
             } else if (data && data.error === "offline") {
                 area.innerHTML = `<div style="color:#f57c00; font-size:13px; font-weight:bold;">⚠️ 離線模式</div><div style="font-size:12px; color:#999;">無法連接資料庫</div>`;
             } else if (data && data.error === "not_found") {
-                area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫無此條碼資料</div>`;
+                // [Fix] 顯示灰色訊息，而非紅色錯誤
+                area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫比對不到 (將記錄條碼)</div>`;
             } else {
                  area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線錯誤</div>`;
             }
