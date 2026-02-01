@@ -3,24 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V98 (Final Release)</title>
-    
+    <title>荒野瓶罐調查回報站</title>
+
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#587a30">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="荒野調查">
-    <!-- iOS 圖示 (已替換為您的 Google Drive 直連圖片) -->
-    <link rel="apple-touch-icon" href="https://drive.google.com/uc?export=view&id=1JXFau5hVHKKXFLyG0rjEIs2QNTBjzt07">
-
+    <meta name="apple-mobile-web-app-title" content="荒野瓶罐調查">
+    
+    <!-- iOS 圖示 (改讀取本地檔案，解決 CORS 問題) -->
+    <link rel="apple-touch-icon" href="logo.png">
+    
     <!-- [Social Sharing 設定] (Open Graph) -->
     <meta property="og:title" content="荒野瓶罐調查回報站">
     <meta property="og:description" content="結合 AI 辨識與大數據的海廢調查工具，一起為海洋盡一份力！">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://marine-survey.vercel.app/TrashScan.html">
-    <!-- 預覽圖片 (已替換為您的 Google Drive 直連圖片) -->
-    <meta property="og:image" content="https://drive.google.com/uc?export=view&id=1JXFau5hVHKKXFLyG0rjEIs2QNTBjzt07">
+    
+    <!-- 預覽圖片 (社群分享建議使用 Vercel 的絕對路徑) -->
+    <meta property="og:image" content="https://marine-survey.vercel.app/logo.png">
+    
+
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
