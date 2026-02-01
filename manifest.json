@@ -1,6 +1,6 @@
 {
   "name": "荒野瓶罐調查回報站 V98",
-  "short_name": "荒野調查",
+  "short_name": "荒野瓶罐調查",
   "start_url": "./TrashScan.html",
   "display": "standalone",
   "background_color": "#f4f7f4",
@@ -19,3 +19,4 @@
     }
   ]
 }
+
