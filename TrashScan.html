@@ -4,30 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>荒野瓶罐調查回報站</title>
-
+    
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#587a30">
+    
+    <!-- [Fix 1] 新增現代瀏覽器標準標籤，消除警告 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- 保留 iOS 舊標籤以支援舊裝置 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
+    
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="荒野瓶罐調查">
-    
-    <!-- iOS 圖示 (改讀取本地檔案，解決 CORS 問題) -->
+    <!-- iOS 圖示 -->
     <link rel="apple-touch-icon" href="logo.png">
-    
-    <!-- [Social Sharing 設定] (Open Graph) -->
+
+    <!-- [Social Sharing 設定] -->
     <meta property="og:title" content="荒野瓶罐調查回報站">
     <meta property="og:description" content="結合 AI 辨識與大數據的海廢調查工具，一起為海洋盡一份力！">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://marine-survey.vercel.app/TrashScan.html">
-    
-    <!-- 預覽圖片 (社群分享建議使用 Vercel 的絕對路徑) -->
+    <!-- 預覽圖片 -->
     <meta property="og:image" content="https://marine-survey.vercel.app/logo.png">
-    
-
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        /* ... CSS 樣式保持不變 ... */
         /* V98: 荒野綠主題色 (保持不變) */
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
         
@@ -263,7 +265,7 @@
         </div>
 
         <div class="footer-credit">
-            網頁設計規劃：荒野保護協會 棲地守護部雁子<br>
+            網頁規劃設計：荒野保護協會 棲地守護部雁子<br>
             聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a>
         </div>
     </div>
@@ -730,10 +732,6 @@
         function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1, null); box.style.display = 'none'; switchTab('record'); }; }
         function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1, { source: "Manual_Prefix", barcode: prefix }); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
         
-        // [V98 Fix] 生成唯一的 Session ID (場次代碼)
-        // 確保在 App 載入時就生成，或者每次提交前生成。這邊採用每次提交生成確保唯一性。
-        // 但為了跨分頁一致性，建議在 uploadData 時生成一次。
-        
         // [Fat Log] 修改 1: 增加 shouldLog 判斷
         function addRecord(country, qty, details) { 
             let safeName = normalizeName(country); 
@@ -803,7 +801,7 @@
 
             var payload = { 
                 action: "save", 
-                sessionId: sessionId, 
+                sessionId: sessionId, // 新增：傳送場次ID
                 name: document.getElementById('inp_name').value, 
                 phone: document.getElementById('inp_phone').value, 
                 participants: document.getElementById('inp_participants').value, 
@@ -845,21 +843,13 @@
             if(document.getElementById('success-modal')) document.getElementById('success-modal').style.display = 'none'; 
             if(document.getElementById('custom-modal')) document.getElementById('custom-modal').style.display = 'none'; 
             STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
-            STATE.scanLogs = []; 
-            // [Feature] 清空 6 張照片
-            STATE.imgs = { 
-                env: null, group: null, 
-                hotspot1: null, hotspot2: null, hotspot3: null, 
-                hotspot4: null, hotspot5: null, hotspot6: null 
-            }; 
-            // 迴圈隱藏所有預覽圖
-            ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3', 'hotspot4', 'hotspot5', 'hotspot6'].forEach(k => { 
-                if(document.getElementById(`img-preview-${k}`)) document.getElementById(`img-preview-${k}`).style.display='none'; 
-                if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block'; 
-            }); 
+            STATE.scanLogs = []; // 清空詳細 Log
+            STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }; 
+            ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => { document.getElementById(`img-preview-${k}`).style.display='none'; if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block'; }); 
             document.getElementById('inp_gps').value = ""; document.getElementById('inp_city').value = ""; STATE.currentCity = "未定位"; document.getElementById('inp_point').value = ""; document.getElementById('sel_country').selectedIndex = 0; document.getElementById('inp_qty').value = 1; document.getElementById('inp_note').value = ""; 
             
             clearState();
+            
             updateUI(); checkOfflineQueue(); switchTab('basic'); 
         }
 
