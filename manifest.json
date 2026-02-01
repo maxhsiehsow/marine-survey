@@ -1,5 +1,5 @@
 {
-  "name": "荒野瓶罐調查回報站 V98",
+  "name": "荒野瓶罐調查回報站",
   "short_name": "荒野瓶罐調查",
   "start_url": "./TrashScan.html",
   "display": "standalone",
@@ -8,15 +8,14 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "logo.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "logo.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ]
 }
-
