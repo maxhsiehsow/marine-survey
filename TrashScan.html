@@ -3,34 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站</title>
+    <title>荒野瓶罐調查回報站 V99 (Final Stable)</title>
     
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#587a30">
-    
-    <!-- [Fix 1] 新增現代瀏覽器標準標籤，消除警告 -->
     <meta name="mobile-web-app-capable" content="yes">
-    <!-- 保留 iOS 舊標籤以支援舊裝置 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="荒野瓶罐調查">
-    <!-- iOS 圖示 -->
+    <meta name="apple-mobile-web-app-title" content="荒野調查">
+    <!-- iOS 圖示 (請確認目錄下有 logo.png) -->
     <link rel="apple-touch-icon" href="logo.png">
 
     <!-- [Social Sharing 設定] -->
-    <meta property="og:title" content="荒野瓶罐調查回報站">
-    <meta property="og:description" content="結合 AI 辨識與大數據的海廢調查工具，一起為海洋盡一份力！">
+    <meta property="og:title" content="荒野瓶罐調查回報站 V99">
+    <meta property="og:description" content="結合 AI 辨識與大數據的海廢調查工具。">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://marine-survey.vercel.app/TrashScan.html">
-    <!-- 預覽圖片 -->
+    <!-- 預覽圖片 (建議改為 Vercel 絕對路徑) -->
     <meta property="og:image" content="https://marine-survey.vercel.app/logo.png">
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* ... CSS 樣式保持不變 ... */
-        /* V98: 荒野綠主題色 (保持不變) */
+        /* V98: 荒野綠主題色 */
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
         
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; padding-top: 40px; color: var(--text); -webkit-font-smoothing: antialiased; }
@@ -85,42 +79,29 @@
         .required::after { content: " *"; color: #e53935; }
         input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; background: #fafafa; transition: border 0.2s, background 0.2s; appearance: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
-        
         input[readonly].locked-field { background: #e0e0e0; color: #555; border-color: #bdbdbd; cursor: not-allowed; }
         input[readonly] { color: var(--primary); font-weight: bold; background: #f1f8e9; }
-
         #ai-country-select { font-size: 24px; font-weight: 800; color: #333; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; height: auto; background: #fff; }
-
         button, .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 10px; text-align: center; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:active { transform: scale(0.98); }
-        .btn-blue { background: #0288d1; } 
-        .btn-green { background: var(--primary); } 
-        .btn-red { background: #d32f2f; } 
-        .btn-orange { background: #f57c00; } 
-        .btn-upload { background: var(--primary-dark); } 
-        .btn-grey { background: #90a4ae; color: white; } 
-        .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
+        .btn-blue { background: #0288d1; } .btn-green { background: var(--primary); } .btn-red { background: #d32f2f; } .btn-orange { background: #f57c00; } .btn-upload { background: var(--primary-dark); } .btn-grey { background: #90a4ae; color: white; } .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
         .btn-disabled { background: #cfd8dc !important; color: #90a4ae !important; cursor: not-allowed !important; pointer-events: none; }
-
-        /* 通用圖片預覽容器 (Environment / Group) - 維持左右滑動 */
-        .img-preview-box { display: flex; gap: 10px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
         
+        .img-preview-box { display: flex; gap: 10px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
         /* [New] 熱點照片專用網格佈局 (3欄 x 2列) */
         .img-grid-6 {
             display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3等分 */
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 8px;
             padding-bottom: 5px;
         }
-        /* 調整 grid 內的 item 寬度填滿格子 */
         .img-grid-6 .preview-item { width: 100%; height: auto; aspect-ratio: 1/1; }
 
         .preview-item { width: 85px; height: 85px; background: #f5f5f5; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 2px dashed #ccc; flex-shrink: 0; cursor: pointer; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .preview-label { font-size: 10px; margin-top: 4px; color: #666; font-weight: bold; }
         .preview-icon { font-size: 24px; color: #999; }
-        
         .photo-warning { color: #d32f2f; font-size: 13px; font-weight: bold; margin-top: 5px; display: none; background: #ffebee; padding: 8px; border-radius: 6px; border: 1px dashed #ef5350; }
 
         .timer-container { display: flex; gap: 20px; justify-content: center; margin-top: 20px; }
@@ -180,7 +161,6 @@
         <div id="modal-content-box" class="modal-content">
             <span id="modal-icon" class="modal-icon">⚠️</span>
             <div id="modal-title" class="modal-title">提示</div>
-            <!-- 修改：這裡會被 innerHTML 動態替換，支援更豐富的 HTML 結構 -->
             <div id="modal-msg" class="modal-msg">內容</div>
             <div id="modal-btns" class="modal-btns">
                 <button id="btn-modal-cancel" class="btn-grey">取消</button>
@@ -193,13 +173,11 @@
 
     <div id="view-basic" class="container active-tab">
         <h1 class="app-title">荒野瓶罐調查回報站</h1>
-
         <div id="offline-sync-box">
             <div style="font-weight:bold; color:#e65100;">⚠️ 您有 <span id="offline-count">0</span> 筆資料尚未上傳</div>
             <div style="font-size:12px; color:#666; margin:5px 0;">已偵測到網路，請點擊下方按鈕同步</div>
             <button id="btn-sync" class="btn" onclick="syncOfflineData()">☁️ 立即上傳暫存資料 (含地址補全)</button>
         </div>
-
         <h2>📝 1. 參與人員資訊</h2>
         <div class="card">
             <label class="required">填表人姓名</label>
@@ -209,7 +187,6 @@
             <label class="required">參與人數</label>
             <input type="number" id="inp_participants" value="1" min="1" style="text-align:center;" onchange="saveState()">
         </div>
-
         <h2>📍 2. 調查地點</h2>
         <div class="card">
             <label class="required">位置設定</label>
@@ -217,16 +194,12 @@
                 <button onclick="runGPS()" class="btn-blue" style="margin:0; flex:1;">📡 自動定位</button>
                 <button onclick="openMap()" class="btn-outline" style="margin:0; flex:1;">🧭 尋找樣點</button>
             </div>
-
             <label>GPS 座標</label>
             <input type="text" id="inp_gps" readonly placeholder="定位後自動顯示" style="background:#f5f5f5;">
-            
             <label>調查地點</label>
             <input type="text" id="inp_city" readonly placeholder="縣市鄉鎮或樣點名稱">
-            
             <label>調查樣點</label>
             <input type="text" id="inp_point" readonly class="locked-field" placeholder="僅限從地圖選擇代號">
-            
             <label>📸 現場照片上傳</label>
             <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
             <div class="img-preview-box">
@@ -241,14 +214,12 @@
                     <span id="icon-group" class="preview-icon">👥</span><div class="preview-label">合照</div>
                 </div>
             </div>
-
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
                 <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
                 <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報。</p>
                 <button class="btn-red" onclick="window.open('https://ecolife2.moenv.gov.tw/BeachCleanup/Dirty/Add', '_blank')">📢 前往環境部海岸髒亂通報</button>
             </div>
         </div>
-
         <h2>⏱️ 3. 調查計時器</h2>
         <div class="card">
             <p style="text-align:center; font-size:13px; color:#78909c; margin:0 0 10px;">點擊圓圈開始 / 暫停<br>(切換APP或關螢幕不會響鈴，請留意時間)</p>
@@ -263,11 +234,7 @@
                 </div>
             </div>
         </div>
-
-        <div class="footer-credit">
-            網頁規劃設計：荒野保護協會 棲地守護部雁子<br>
-            聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a>
-        </div>
+        <div class="footer-credit">網頁設計規劃：荒野保護協會 棲地守護部雁子<br>聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a></div>
     </div>
 
     <div id="view-record" class="container">
@@ -277,11 +244,9 @@
             <div style="text-align:center; font-size:42px; font-weight:800; color:var(--primary); margin-bottom:15px; font-family:sans-serif;">
                 <span id="disp_count">0</span> <span style="font-size:18px; color:#999; font-weight:normal;">/ 100</span>
             </div>
-            
             <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼記錄</button>
             <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
             <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
-            
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
             <label>🔍 條碼前 3 碼查詢記錄</label>
             <div style="display:flex; gap:10px;">
@@ -310,48 +275,29 @@
                 <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
             </div>
         </div>
-
         <h2>🚀 5. 成果上傳</h2>
         <div class="card">
             <label>特殊瓶罐/熱點照 (最多6張)</label>
             <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
             <div class="img-grid-6">
-                <!-- Hotspot 1 -->
+                <!-- 1~6 Photo Inputs -->
                 <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()">
-                    <img id="img-preview-hotspot1" src="" style="display:none">
-                    <span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div>
-                </div>
-                <!-- Hotspot 2 -->
+                <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()"><img id="img-preview-hotspot1" src="" style="display:none"><span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div></div>
+                
                 <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot2').click()">
-                    <img id="img-preview-hotspot2" src="" style="display:none">
-                    <span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div>
-                </div>
-                <!-- Hotspot 3 -->
+                <div class="preview-item" onclick="document.getElementById('file-hotspot2').click()"><img id="img-preview-hotspot2" src="" style="display:none"><span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div></div>
+                
                 <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()">
-                    <img id="img-preview-hotspot3" src="" style="display:none">
-                    <span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div>
-                </div>
-                <!-- Hotspot 4 (New) -->
+                <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()"><img id="img-preview-hotspot3" src="" style="display:none"><span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div></div>
+                
                 <input type="file" id="file-hotspot4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot4')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot4').click()">
-                    <img id="img-preview-hotspot4" src="" style="display:none">
-                    <span id="icon-hotspot4" class="preview-icon">4</span><div class="preview-label">照片 4</div>
-                </div>
-                <!-- Hotspot 5 (New) -->
+                <div class="preview-item" onclick="document.getElementById('file-hotspot4').click()"><img id="img-preview-hotspot4" src="" style="display:none"><span id="icon-hotspot4" class="preview-icon">4</span><div class="preview-label">照片 4</div></div>
+                
                 <input type="file" id="file-hotspot5" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot5')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot5').click()">
-                    <img id="img-preview-hotspot5" src="" style="display:none">
-                    <span id="icon-hotspot5" class="preview-icon">5</span><div class="preview-label">照片 5</div>
-                </div>
-                <!-- Hotspot 6 (New) -->
+                <div class="preview-item" onclick="document.getElementById('file-hotspot5').click()"><img id="img-preview-hotspot5" src="" style="display:none"><span id="icon-hotspot5" class="preview-icon">5</span><div class="preview-label">照片 5</div></div>
+                
                 <input type="file" id="file-hotspot6" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot6')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot6').click()">
-                    <img id="img-preview-hotspot6" src="" style="display:none">
-                    <span id="icon-hotspot6" class="preview-icon">6</span><div class="preview-label">照片 6</div>
-                </div>
+                <div class="preview-item" onclick="document.getElementById('file-hotspot6').click()"><img id="img-preview-hotspot6" src="" style="display:none"><span id="icon-hotspot6" class="preview-icon">6</span><div class="preview-label">照片 6</div></div>
             </div>
             <label style="margin-top:15px;">其他記錄</label>
             <textarea id="inp_note" rows="3" placeholder="請填寫任何值得記錄的觀察..." onchange="saveState()"></textarea>
@@ -365,9 +311,7 @@
             <p id="ai-offline-warning" style="display:none; color:#d32f2f; font-weight:bold; background:#ffebee; padding:10px; border-radius:8px;">⚠️ 離線模式無法使用 AI，請改用掃碼</p>
             <p style="color:#666;">拍一張，AI 幫你分類！</p>
             <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
-            <div id="camera-box-ai" class="camera-box">
-                <div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div>
-            </div>
+            <div id="camera-box-ai" class="camera-box"><div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div></div>
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:140px; height:140px; object-fit:cover; border-radius:12px; border:3px solid white; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
                 <h3 style="color:var(--primary); margin:15px 0 8px;">AI 認為是：</h3>
@@ -393,24 +337,11 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // V98: 新增 productCache (本地快取), scanLogs (肥Log暫存), 擴充熱點照至6張
+        // V99: 新增 manufacturerCache
         const STATE = { 
-            count: 0, 
-            target: 100, 
-            stats: {}, 
-            historyStack: [], 
-            scanLogs: [], 
-            currentCity: "未定位", 
-            // 擴充 imgs 狀態
-            imgs: { 
-                env: null, group: null, 
-                hotspot1: null, hotspot2: null, hotspot3: null, 
-                hotspot4: null, hotspot5: null, hotspot6: null 
-            }, 
-            scanners: { record: null, ai: null }, 
-            surveyPoints: [], 
-            productCache: {}, 
-            map: null, userMarker: null, selectedPoint: null 
+            count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", 
+            imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, 
+            scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null 
         };
         const timers = { 10: { total: 600, endTime: null, interval: null, running: false }, 20: { total: 1200, endTime: null, interval: null, running: false } };
         
@@ -430,6 +361,41 @@
             checkTimerOnWake();
           }
         });
+
+        // 解決 updateNetworkStatus is not defined 錯誤
+        function updateNetworkStatus() {
+            const bar = document.getElementById('network-status');
+            const syncBox = document.getElementById('offline-sync-box');
+            const btnAi = document.getElementById('btn-ai-start');
+            const warnAi = document.getElementById('ai-offline-warning');
+            
+            if (navigator.onLine) {
+                bar.className = 'status-online';
+                bar.innerText = "🟢 系統連線中";
+                checkOfflineQueue();
+                if (btnAi) {
+                    btnAi.className = 'btn-blue';
+                    btnAi.disabled = false;
+                    btnAi.innerText = '📷 啟動 AI 相機';
+                }
+                if (warnAi) warnAi.style.display = 'none';
+            } else {
+                bar.className = 'status-offline';
+                bar.innerText = "🔴 離線模式 (資料將暫存於手機)";
+                syncBox.style.display = 'none';
+                if (btnAi) {
+                    btnAi.className = 'btn-disabled';
+                    btnAi.disabled = true;
+                    btnAi.innerText = '⚠️ 離線無法使用';
+                }
+                if (warnAi) warnAi.style.display = 'block';
+            }
+        }
+
+        // 解決 getCountryFromCode 錯誤
+        function getCountryFromCode(code) {
+            return (code && code.length >= 3) ? (PREFIX_DB[code.substring(0, 3)] || "未知") : "未知";
+        }
 
         // V98: 喚醒檢查邏輯
         function checkTimerOnWake() {
@@ -492,7 +458,7 @@
             try {
                 const saved = JSON.parse(savedJSON);
                 if (saved.count > 0 || saved.gps) {
-                    showModal('confirm', '恢復調查', '⚠️ 偵測到您上次有未完成的紀錄（地點、計數），是否恢復？', () => {
+                    showModal('confirm', '恢復調查', '⚠️ 偵測到您上次有未完成的紀錄，是否恢復？', () => {
                         document.getElementById('inp_name').value = saved.name || '';
                         document.getElementById('inp_phone').value = saved.phone || '';
                         document.getElementById('inp_participants').value = saved.participants || 1;
@@ -560,7 +526,8 @@
             .then(data => {
                 if(data.status === "success") {
                     STATE.productCache = data.products;
-                    console.log("Product DB Loaded:", Object.keys(STATE.productCache).length);
+                    STATE.manufacturerCache = data.manufacturers; // 存廠商庫
+                    console.log("DB Loaded. P:", Object.keys(STATE.productCache).length, "M:", Object.keys(STATE.manufacturerCache).length);
                 }
             })
             .catch(e => console.error("DB Load Error:", e));
@@ -731,8 +698,9 @@
         function takeAiSnapshot() { var videoEl = document.querySelector("#reader-ai video"); if (!videoEl) { alert("相機未啟動"); return; } videoEl.pause(); document.getElementById('loading-mask').style.display = 'flex'; var cvs = document.createElement("canvas"); var max = 800; var w = videoEl.videoWidth; var h = videoEl.videoHeight; var s = (w>h ? (w>max?max/w:1) : (h>max?max/h:1)); cvs.width = w*s; cvs.height = h*s; cvs.getContext("2d").drawImage(videoEl, 0, 0, cvs.width, cvs.height); var b64Full = cvs.toDataURL("image/jpeg", 0.6); stopAiScanner(); fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "identify", image: b64Full.split(',')[1] }) }).then(res => res.json()).then(data => { document.getElementById('loading-mask').style.display = 'none'; if (data.status === "success") { try { var raw = typeof data.result === 'string' ? data.result : JSON.stringify(data.result); var match = raw.match(/\{[\s\S]*\}/); if (match) displayAiResult(JSON.parse(match[0]), b64Full); else alert("AI 格式錯誤: " + raw); } catch(e) { alert("解析失敗: " + e.message); } } else { alert("後端錯誤: " + data.message); } }).catch(err => { document.getElementById('loading-mask').style.display = 'none'; alert("連線失敗: " + err); }); }
         function displayAiResult(data, imgSrc) { const box = document.getElementById('ai-result-box'); box.style.display = 'block'; document.getElementById('ai-preview-img').src = imgSrc; document.getElementById('ai-desc-text').innerText = data.keywords || "無特徵"; const select = document.getElementById('ai-country-select'); select.innerHTML = ""; let aiGuess = normalizeName(data.country); if (aiGuess !== "其它") { select.add(new Option(`🤖 AI: ${aiGuess}`, aiGuess, true, true)); select.add(new Option("---", "disabled", false, false)); } for (let c of Object.keys(COLORS)) { if (c !== aiGuess) select.add(new Option(c, c)); } if (aiGuess === "其它") select.value = "其它"; const query = `${data.country || ""} ${data.keywords || ""} bottle`.trim(); document.getElementById('btn-google-check').onclick = () => window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`, '_blank'); document.getElementById('btn-confirm-ai').onclick = () => { if (select.value === "disabled") return; addRecord(select.value, 1, null); box.style.display = 'none'; switchTab('record'); }; }
         function handlePrefixCheck() { const code = document.getElementById('inp_prefix').value; if (!code || code.length < 3) { showModal('warning', '輸入錯誤', '請輸入至少 3 碼', null); return; } const prefix = code.substring(0, 3); const country = PREFIX_DB[prefix]; if (country) { showModal('confirm', '查詢結果', `代碼：${prefix}<br><span class="big-result-text">${country}</span>要加入記錄嗎？`, () => { addRecord(country, 1, { source: "Manual_Prefix", barcode: prefix }); document.getElementById('inp_prefix').value = ""; }); } else { showModal('warning', '查無結果', `查無代碼 [${prefix}] 的歸屬地`, null); } }
+        function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value), { source: "Manual_Select" }); }
+        function updateUI() { document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0; if (STATE.count === 0) { document.getElementById('css-pie').style.background = "transparent"; document.getElementById('css-pie').style.border = "2px dashed #ddd"; return; } else { document.getElementById('css-pie').style.border = "4px solid #fff"; } for (const [key, val] of Object.entries(STATE.stats)) { const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1); tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`; const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d; } document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`; }
         
-        // [Fat Log] 修改 1: 增加 shouldLog 判斷
         function addRecord(country, qty, details) { 
             let safeName = normalizeName(country); 
             if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; 
@@ -777,9 +745,6 @@
             updateUI(); 
             saveState(); 
         }
-        
-        function handleManualAdd() { addRecord(document.getElementById('sel_country').value, parseInt(document.getElementById('inp_qty').value), { source: "Manual_Select" }); }
-        function updateUI() { document.getElementById('disp_count').innerText = STATE.count; const tbody = document.getElementById('stats-body'); tbody.innerHTML = ""; let grad = [], deg = 0; if (STATE.count === 0) { document.getElementById('css-pie').style.background = "transparent"; document.getElementById('css-pie').style.border = "2px dashed #ddd"; return; } else { document.getElementById('css-pie').style.border = "4px solid #fff"; } for (const [key, val] of Object.entries(STATE.stats)) { const color = COLORS[key] || '#757575'; const pct = ((val / STATE.count) * 100).toFixed(1); tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`; const d = (val / STATE.count) * 360; grad.push(`${color} ${deg}deg ${deg + d}deg`); deg += d; } document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`; }
         
         function uploadData() { 
             if (STATE.count === 0) { showModal('warning', '無資料', '請先收集數據再上傳', null); return; } 
@@ -844,15 +809,29 @@
             if(document.getElementById('custom-modal')) document.getElementById('custom-modal').style.display = 'none'; 
             STATE.count=0; STATE.stats={}; STATE.historyStack=[]; 
             STATE.scanLogs = []; // 清空詳細 Log
-            STATE.imgs = { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null }; 
-            ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3'].forEach(k => { document.getElementById(`img-preview-${k}`).style.display='none'; if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block'; }); 
+            // [Feature] 清空 6 張照片
+            STATE.imgs = { 
+                env: null, group: null, 
+                hotspot1: null, hotspot2: null, hotspot3: null, 
+                hotspot4: null, hotspot5: null, hotspot6: null 
+            }; 
+            // 迴圈隱藏所有預覽圖
+            ['env', 'group', 'hotspot1', 'hotspot2', 'hotspot3', 'hotspot4', 'hotspot5', 'hotspot6'].forEach(k => { 
+                if(document.getElementById(`img-preview-${k}`)) document.getElementById(`img-preview-${k}`).style.display='none'; 
+                if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display='block'; 
+            }); 
             document.getElementById('inp_gps').value = ""; document.getElementById('inp_city').value = ""; STATE.currentCity = "未定位"; document.getElementById('inp_point').value = ""; document.getElementById('sel_country').selectedIndex = 0; document.getElementById('inp_qty').value = 1; document.getElementById('inp_note').value = ""; 
             
             clearState();
-            
             updateUI(); checkOfflineQueue(); switchTab('basic'); 
         }
 
+        function saveOffline(payload) { try { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); queue.push(payload); localStorage.setItem('offline_queue', JSON.stringify(queue)); showModal('offline', '已暫存', '網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。', () => handleSuccessConfirm(true)); } catch (e) { showModal('warning', '儲存失敗', '手機儲存空間不足。', null); } }
+        function checkOfflineQueue() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); const syncBox = document.getElementById('offline-sync-box'); if (queue.length > 0 && navigator.onLine) { syncBox.style.display = 'block'; document.getElementById('offline-count').innerText = queue.length; } else { syncBox.style.display = 'none'; } }
+        async function syncOfflineData() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); if (queue.length === 0) return; const btn = document.getElementById('btn-sync'); btn.disabled = true; btn.innerText = "⏳ 同步中 (補全地址)..."; let successCount = 0; let failCount = 0; let newQueue = []; for (let item of queue) { if (item.gps && (item.city.includes("離線") || item.city === "")) { try { let [lat, long] = item.gps.split(', '); let res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`); let data = await res.json(); item.city = `${(data.principalSubdivision || "").replace("Province", "").trim()} ${(data.locality || "").trim()}`; } catch(e) {} } try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) }); successCount++; } catch (e) { failCount++; newQueue.push(item); } } localStorage.setItem('offline_queue', JSON.stringify(newQueue)); checkOfflineQueue(); btn.disabled = false; btn.innerText = "☁️ 立即上傳暫存資料"; if (failCount === 0) showModal('success', '同步完成', `成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`, null); else showModal('warning', '部分失敗', `成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`, null); }
+        function showModal(type, title, msg, onConfirm, onCancel) { const modal = document.getElementById('custom-modal'); const box = document.getElementById('modal-content-box'); const icon = document.getElementById('modal-icon'); const btnConfirm = document.getElementById('btn-modal-confirm'); const btnCancel = document.getElementById('btn-modal-cancel'); box.className = 'modal-content'; btnCancel.style.display = 'block'; btnConfirm.innerText = "確定"; document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerHTML = msg; if (type === 'warning') { box.classList.add('style-warning'); icon.innerText = "⚠️"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else if (type === 'success') { box.classList.add('style-success'); icon.innerText = "🎉"; btnCancel.style.display = 'none'; btnConfirm.innerText = "好，繼續下一筆"; } else if (type === 'alarm') { box.classList.add('style-alarm'); icon.innerText = "⏰"; btnCancel.style.display = 'none'; btnConfirm.innerText = "確定 (停止震動)"; } else if (type === 'offline') { box.classList.add('style-offline'); icon.innerText = "💾"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else { icon.innerText = "🤔"; } btnConfirm.onclick = () => { modal.style.display = 'none'; if (onConfirm) onConfirm(); }; btnCancel.onclick = () => { modal.style.display = 'none'; if (onCancel) onCancel(); }; modal.style.display = 'flex'; }
+
+        // [V99 Logic] 核心掃描與判斷邏輯
         function startRecordScanner() { 
             if (STATE.scanners.record) return; 
             document.getElementById('camera-box-record').style.display = 'block'; 
@@ -867,74 +846,99 @@
                 }
                 STATE.scanners.record.pause(); 
                 
-                // [Fat Log Strategy] 1. 優先查 Local Cache
-                if (STATE.productCache[txt]) {
-                    const local = STATE.productCache[txt];
-                    const c = local.origin || "未知";
-                    
+                // --- 1. 廠商優先邏輯 (Manufacturer First) ---
+                const prefix7 = txt.substring(0, 7);
+                const manuData = STATE.manufacturerCache[prefix7];
+                const prodData = STATE.productCache[txt];
+                
+                let displayCountry = getCountryFromCode(txt);
+                let displayBrand = "";
+                let displayName = "";
+                let displayImg = "";
+                let logSource = "";
+                let isHit = false;
+
+                // Case A: 命中商品庫 (最高優先)
+                if (prodData) {
+                    isHit = true;
+                    logSource = "Local_Product";
+                    displayCountry = prodData.origin || displayCountry;
+                    displayBrand = prodData.brand || (manuData ? manuData.name : "");
+                    displayName = prodData.name;
+                    displayImg = prodData.img_url;
+                }
+                // Case B: 命中廠商庫
+                else if (manuData) {
+                    isHit = true;
+                    logSource = "Local_Manufacturer";
+                    displayBrand = manuData.name;
+                    displayName = "(未建檔商品)";
+                    // Country 維持條碼推算
+                }
+
+                if (isHit) {
+                    // 本地有資料 -> 直接顯示
                     const modalHtml = `
                         <div style="background:#e8f5e9; padding:15px; border-radius:12px; margin-bottom:10px; border:2px solid var(--primary);">
                             <div style="font-size:12px; color:var(--primary); font-weight:bold;">✨ 本地資料庫命中</div>
                             <div style="font-size:26px; font-weight:900; color:#333; margin:5px 0;">${txt}</div>
-                            <div style="font-size:18px; font-weight:bold; color:var(--primary);">${c}</div>
+                            <div style="font-size:18px; font-weight:bold; color:var(--primary);">${displayCountry}</div>
                             <div style="margin-top:10px; text-align:left; background:white; padding:10px; border-radius:8px;">
-                                <div style="font-size:12px; color:#666;">${local.brand || ""}</div>
-                                <div style="font-size:15px; font-weight:bold;">${local.name}</div>
+                                <div style="font-size:12px; color:#666;">${displayBrand}</div>
+                                <div style="font-size:15px; font-weight:bold;">${displayName}</div>
                             </div>
                         </div>
                     `;
                     
                     showModal('confirm', '掃描成功', modalHtml, () => { 
-                        // 記錄資料 (Source: Local_DB)
-                        addRecord(c, 1, { 
+                        // 記錄資料
+                        addRecord(displayCountry, 1, { 
                             barcode: txt, 
-                            name: local.name, 
-                            brand: local.brand, 
-                            img_url: local.img_url, 
-                            source: "Local_DB" 
+                            name: displayName, 
+                            brand: displayBrand, 
+                            origin: displayCountry, 
+                            img_url: displayImg, 
+                            source: logSource 
                         });
                         setTimeout(()=>STATE.scanners.record.resume(), 500); 
                     }, () => setTimeout(()=>STATE.scanners.record.resume(), 500));
-                    
-                    return; // 命中就結束，不查 API
-                }
 
-                // 2. Local 沒中，查 API
-                const c = getCountryFromCode(txt); 
-                const modalHtml = `
-                    <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-bottom:10px;">
-                        <div style="font-size:12px; color:#666;">掃描條碼</div>
-                        <div style="font-size:26px; font-weight:900; color:#333; letter-spacing:1px; margin:5px 0;">${txt}</div>
-                        <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:8px;">
-                            <span style="font-size:14px; color:#555;">產地歸屬：</span>
-                            <span style="font-size:18px; font-weight:bold; color:var(--primary);">${c}</span>
+                } else {
+                    // 本地無資料 -> 查 API
+                    const modalHtml = `
+                        <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-bottom:10px;">
+                            <div style="font-size:12px; color:#666;">掃描條碼</div>
+                            <div style="font-size:26px; font-weight:900; color:#333; letter-spacing:1px; margin:5px 0;">${txt}</div>
+                            <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:8px;">
+                                <span style="font-size:14px; color:#555;">產地歸屬：</span>
+                                <span style="font-size:18px; font-weight:bold; color:var(--primary);">${displayCountry}</span>
+                            </div>
                         </div>
-                    </div>
-                    <div id="api-product-area" style="min-height:90px; border-top:1px dashed #ddd; margin-top:15px; padding-top:15px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
-                        <div class="spinner" style="width:25px; height:25px; border-width:3px;"></div>
-                        <div style="font-size:13px; color:#587a30; margin-top:8px;">🔄 雲端商品資料查詢中...</div>
-                    </div>
-                `;
+                        <div id="api-product-area" style="min-height:90px; border-top:1px dashed #ddd; margin-top:15px; padding-top:15px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+                            <div class="spinner" style="width:25px; height:25px; border-width:3px;"></div>
+                            <div style="font-size:13px; color:#587a30; margin-top:8px;">🔄 雲端商品資料查詢中...</div>
+                        </div>
+                    `;
 
-                // 準備 API 資料暫存物件
-                let apiDataBuffer = null;
+                    // 準備暫存
+                    let apiDataBuffer = null;
 
-                showModal('confirm', '掃描成功', modalHtml, () => { 
-                    // 按下確定時，檢查 apiDataBuffer 是否有資料
-                    if (apiDataBuffer) {
-                        addRecord(c, 1, apiDataBuffer);
-                    } else {
-                        // 若 API 還沒回來或失敗，只存基本條碼
-                        addRecord(c, 1, { barcode: txt, source: "API_Pending_Or_Fail" });
-                    }
-                    setTimeout(()=>STATE.scanners.record.resume(), 500); 
-                }, () => setTimeout(()=>STATE.scanners.record.resume(), 500));
-                
-                // 異步呼叫並更新 Buffer
-                fetchProductData(txt).then(data => {
-                    apiDataBuffer = data; // 存入暫存
-                    updateApiAreaUI(data); // 更新介面
-                });
+                    showModal('confirm', '掃描成功', modalHtml, () => { 
+                        if (apiDataBuffer) {
+                            addRecord(displayCountry, 1, apiDataBuffer);
+                        } else {
+                            // API 失敗或未回傳，仍記錄條碼
+                            addRecord(displayCountry, 1, { barcode: txt, source: "API_Pending_Or_Fail" });
+                        }
+                        setTimeout(()=>STATE.scanners.record.resume(), 500); 
+                    }, () => setTimeout(()=>STATE.scanners.record.resume(), 500));
+                    
+                    // 異步呼叫
+                    fetchProductData(txt).then(data => {
+                        apiDataBuffer = data; // 存入暫存
+                        updateApiAreaUI(data); // 更新介面
+                    });
+                }
 
             }, ()=>{} ); 
         }
@@ -947,13 +951,13 @@
             }
             try {
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-                // [Robust Fix] 處理 HTTP 404
+                
+                // [Robust] 處理 404
                 if (res.status === 404) {
                     updateApiAreaUI({ error: "not_found" });
                     return { barcode: barcode, source: "API_Not_Found" };
                 }
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                
+
                 const data = await res.json();
                 
                 // [Fix] 明確區分 Found 與 Not Found
@@ -981,12 +985,11 @@
             }
         }
 
-        // [UI Fix] 修正顯示邏輯，明確區分 Not Found 與 Error
+        // [UI Fix] 修正顯示邏輯
         function updateApiAreaUI(data) {
             const area = document.getElementById('api-product-area');
             if(!area) return;
 
-            // Case 1: 成功找到資料
             if (data && data.source === "Cloud_API") {
                 area.innerHTML = `
                     <div style="display:flex; align-items:center; gap:15px; width:100%; text-align:left;">
@@ -999,30 +1002,19 @@
                         </div>
                     </div>
                 `;
-            } 
-            // Case 2: 資料庫比對不到 (包含內部錯誤代碼或回傳物件標記)
-            else if (data && (data.error === "not_found" || data.source === "API_Not_Found")) {
+            } else if (data && (data.error === "not_found" || data.source === "API_Not_Found")) {
                 area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫比對不到 (將記錄條碼)</div>`;
-            } 
-            // Case 3: 離線模式
-            else if (data && data.error === "offline") {
+            } else if (data && data.error === "offline") {
                 area.innerHTML = `<div style="color:#f57c00; font-size:13px; font-weight:bold;">⚠️ 離線模式</div><div style="font-size:12px; color:#999;">無法連接資料庫</div>`;
-            } 
-            // Case 4: 其他錯誤 (Default Fallback)
-            else {
+            } else {
                  area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線錯誤 / 無法取得資訊</div>`;
             }
         }
 
+        // ... (以下為既有輔助函式，維持原樣) ...
         function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
         function startAiCamera() { document.getElementById('ai-result-box').style.display='none'; document.getElementById('camera-box-ai').style.display='block'; document.getElementById('btn-ai-start').style.display='none'; STATE.scanners.ai = new Html5Qrcode("reader-ai"); STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); }
         function stopAiScanner() { if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); document.getElementById('camera-box-ai').style.display='none'; document.getElementById('btn-ai-start').style.display='inline-block'; }
-        function getCountryFromCode(code) { return (code && code.length>=3) ? (PREFIX_DB[code.substring(0,3)]||"未知") : "未知"; }
-        function updateNetworkStatus() { const bar = document.getElementById('network-status'); const syncBox = document.getElementById('offline-sync-box'); const btnAi = document.getElementById('btn-ai-start'); const warnAi = document.getElementById('ai-offline-warning'); if(navigator.onLine) { bar.className = 'status-online'; bar.innerText = "🟢 系統連線中"; checkOfflineQueue(); if(btnAi) { btnAi.className = 'btn-blue'; btnAi.disabled = false; btnAi.innerText = '📷 啟動 AI 相機'; } if(warnAi) warnAi.style.display = 'none'; } else { bar.className = 'status-offline'; bar.innerText = "🔴 離線模式 (資料將暫存於手機)"; syncBox.style.display = 'none'; if(btnAi) { btnAi.className = 'btn-disabled'; btnAi.disabled = true; btnAi.innerText = '⚠️ 離線無法使用'; } if(warnAi) warnAi.style.display = 'block'; } }
-        function saveOffline(payload) { try { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); queue.push(payload); localStorage.setItem('offline_queue', JSON.stringify(queue)); showModal('offline', '已暫存', '網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。', () => handleSuccessConfirm(true)); } catch (e) { showModal('warning', '儲存失敗', '手機儲存空間不足。', null); } }
-        function checkOfflineQueue() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); const syncBox = document.getElementById('offline-sync-box'); if (queue.length > 0 && navigator.onLine) { syncBox.style.display = 'block'; document.getElementById('offline-count').innerText = queue.length; } else { syncBox.style.display = 'none'; } }
-        async function syncOfflineData() { let queue = JSON.parse(localStorage.getItem('offline_queue') || "[]"); if (queue.length === 0) return; const btn = document.getElementById('btn-sync'); btn.disabled = true; btn.innerText = "⏳ 同步中 (補全地址)..."; let successCount = 0; let failCount = 0; let newQueue = []; for (let item of queue) { if (item.gps && (item.city.includes("離線") || item.city === "")) { try { let [lat, long] = item.gps.split(', '); let res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`); let data = await res.json(); item.city = `${(data.principalSubdivision || "").replace("Province", "").trim()} ${(data.locality || "").trim()}`; } catch(e) {} } try { await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify(item) }); successCount++; } catch (e) { failCount++; newQueue.push(item); } } localStorage.setItem('offline_queue', JSON.stringify(newQueue)); checkOfflineQueue(); btn.disabled = false; btn.innerText = "☁️ 立即上傳暫存資料"; if (failCount === 0) showModal('success', '同步完成', `成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`, null); else showModal('warning', '部分失敗', `成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`, null); }
-        function showModal(type, title, msg, onConfirm, onCancel) { const modal = document.getElementById('custom-modal'); const box = document.getElementById('modal-content-box'); const icon = document.getElementById('modal-icon'); const btnConfirm = document.getElementById('btn-modal-confirm'); const btnCancel = document.getElementById('btn-modal-cancel'); box.className = 'modal-content'; btnCancel.style.display = 'block'; btnConfirm.innerText = "確定"; document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerHTML = msg; if (type === 'warning') { box.classList.add('style-warning'); icon.innerText = "⚠️"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else if (type === 'success') { box.classList.add('style-success'); icon.innerText = "🎉"; btnCancel.style.display = 'none'; btnConfirm.innerText = "好，繼續下一筆"; } else if (type === 'alarm') { box.classList.add('style-alarm'); icon.innerText = "⏰"; btnCancel.style.display = 'none'; btnConfirm.innerText = "確定 (停止震動)"; } else if (type === 'offline') { box.classList.add('style-offline'); icon.innerText = "💾"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else { icon.innerText = "🤔"; } btnConfirm.onclick = () => { modal.style.display = 'none'; if (onConfirm) onConfirm(); }; btnCancel.onclick = () => { modal.style.display = 'none'; if (onCancel) onCancel(); }; modal.style.display = 'flex'; }
     </script>
 </body>
 </html>
