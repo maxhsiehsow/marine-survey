@@ -1,313 +1,418 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>荒野數位歸檔助手 V1.2 (Deep Search)</title>
-  <style>
-    :root { --primary: #587a30; --primary-dark: #3e5c20; --accent: #f57c00; --bg-light: #f4f7f4; --panel-bg: #ffffff; --border: #e0e0e0; --scan-line: #ff0000; }
-    body { margin: 0; padding: 0; font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-light); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-    
-    header { background: var(--primary); color: white; height: 50px; display: flex; align-items: center; padding: 0 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 100; justify-content: space-between; }
-    .brand { font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
-    
-    .main-container { display: flex; flex: 1; height: calc(100vh - 50px); }
-    .image-panel { flex: 2; background: #222; display: flex; flex-direction: column; position: relative; border-right: 1px solid #444; }
-    .toolbar { background: #333; padding: 10px; display: flex; gap: 10px; }
-    .toolbar input { flex: 1; background: #444; border: 1px solid #555; color: white; padding: 8px; border-radius: 4px; }
-    .toolbar button { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; }
-    .toolbar button:hover { background: var(--primary-dark); }
-    
-    .canvas-container { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background-image: radial-gradient(#333 1px, transparent 1px); background-size: 20px 20px; }
-    #main-image { max-width: 95%; max-height: 95%; object-fit: contain; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-
-    .scan-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; background: linear-gradient(to bottom, transparent 49%, rgba(0, 255, 0, 0.1) 50%, transparent 51%); z-index: 10; }
-    .scan-line { width: 100%; height: 2px; background: var(--scan-line); box-shadow: 0 0 10px var(--scan-line); position: absolute; top: 0; animation: scanMove 2s infinite linear; }
-    @keyframes scanMove { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-    
-    .ai-tags { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .tag { background: rgba(0, 0, 0, 0.7); color: #00e676; padding: 5px 10px; border-radius: 4px; font-size: 0.85rem; border: 1px solid #00e676; backdrop-filter: blur(4px); }
-
-    .form-panel { flex: 1; background: var(--panel-bg); padding: 20px; display: flex; flex-direction: column; overflow-y: auto; box-shadow: -2px 0 10px rgba(0,0,0,0.05); }
-    .panel-header { margin-bottom: 20px; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
-    .status-box { background: #e3f2fd; border-left: 5px solid #2196f3; padding: 15px; border-radius: 4px; margin-bottom: 20px; transition: all 0.3s; }
-    .status-box.success { background: #e8f5e9; border-color: #4caf50; }
-    .status-box.warning { background: #fff3e0; border-color: #ff9800; }
-    .status-box.error { background: #ffebee; border-color: #ef5350; }
-    .status-title { font-weight: bold; margin-bottom: 5px; display: block; }
-    .status-desc { font-size: 0.9rem; color: #555; margin: 0; }
-
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #444; font-size: 0.9rem; }
-    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; }
-    .form-group input:focus { border-color: var(--primary); outline: none; background: #fafafa; }
-    
-    .btn-group { margin-top: auto; display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid var(--border); }
-    .btn { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; font-weight: bold; transition: filter 0.2s; }
-    .btn-primary { background: var(--primary); color: white; flex: 2; }
-    .btn-danger { background: #ffebee; color: #d32f2f; border: 1px solid #ef5350; }
-    .btn:hover { filter: brightness(0.95); }
-    .btn:disabled { background: #ccc; cursor: not-allowed; color: #666; }
-
-    .loader { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; display: none; }
-    .spinner { width: 40px; height: 40px; border: 4px solid rgba(255,255,255,0.3); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
-    @keyframes spin { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
-  </style>
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
-</head>
-<body>
-
-<header>
-  <div class="brand"><span>🌿</span> 荒野瓶罐數位歸檔助手 <span style="font-size:0.8em; background:#ffffff33; padding:2px 6px; border-radius:4px;">V1.2</span></div>
-  <div class="user-info">已處理：<span id="counter">0</span> 筆</div>
-</header>
-
-<div class="main-container">
-  <div class="image-panel">
-    <div class="toolbar">
-      <input type="text" id="folder-id" placeholder="請輸入 Google Drive 資料夾 ID">
-      <button onclick="startProcess()">📂 載入下一張</button>
-    </div>
-    <div class="canvas-container">
-      <img id="main-image" src="" style="display:none;">
-      <div id="loader" class="loader"><div class="spinner"></div><div id="loader-text">讀取中...</div></div>
-      <div id="scan-overlay" class="scan-overlay"><div class="scan-line"></div></div>
-      <div id="ai-tags" class="ai-tags"></div>
-    </div>
-  </div>
-
-  <div class="form-panel">
-    <div class="panel-header">
-      <div class="panel-title">歸檔資料確認</div>
-      <div class="file-meta" id="file-meta">尚未載入檔案</div>
-    </div>
-    
-    <div id="status-box" class="status-box warning">
-      <span class="status-title">⏳ 等待操作</span>
-      <p class="status-desc">請輸入資料夾 ID 並點擊載入。</p>
-    </div>
-
-    <div class="form-group">
-      <label>1. 條碼 (Barcode)</label>
-      <input type="text" id="inp-barcode" placeholder="掃描結果...">
-    </div>
-    <div class="form-group">
-      <label>2. 來源國 (Country)</label>
-      <input type="text" list="country-list" id="inp-country" placeholder="選擇或輸入來源國">
-      <datalist id="country-list">
-        <option value="🇹🇼 台灣"><option value="🇨🇳 中國"><option value="🇻🇳 越南">
-        <option value="🇵🇭 菲律賓"><option value="🇯🇵 日本"><option value="🇰🇷 韓國">
-        <option value="🇲🇾 馬來西亞"><option value="🇮🇩 印尼"><option value="🇹🇭 泰國">
-      </datalist>
-    </div>
-    <div class="form-group">
-      <label>3. 品牌/備註</label>
-      <input type="text" id="inp-note" placeholder="如：可口可樂">
-    </div>
-    <div class="form-group">
-      <label>4. 歸檔人員</label>
-      <input type="text" id="inp-operator" placeholder="請輸入您的姓名">
-    </div>
-
-    <div class="btn-group">
-      <button class="btn btn-danger" onclick="skipImage()">跳過</button>
-      <button class="btn btn-primary" id="btn-submit" onclick="submitData()">✅ 確認並歸檔 (Enter)</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  let CURRENT_FILE = null;
-  let CURRENT_BASE64 = null;
-  let AI_METHOD = "None";
-
-  window.onload = () => {
-    if(localStorage.getItem('folder_id')) document.getElementById('folder-id').value = localStorage.getItem('folder_id');
-    if(localStorage.getItem('operator')) document.getElementById('inp-operator').value = localStorage.getItem('operator');
-  };
-
-  function startProcess() {
-    let folderId = document.getElementById('folder-id').value.trim();
-    if (folderId.includes("drive.google.com") || folderId.includes("http")) {
-        const match = folderId.match(/[-\w]{25,}/);
-        if (match) {
-            folderId = match[0];
-            document.getElementById('folder-id').value = folderId;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>荒野瓶罐調查員 - 手機專業版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- Lucide 圖示庫 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap');
+        
+        :root {
+            --safe-area-inset-bottom: env(safe-area-inset-bottom);
         }
-    }
-    if (!folderId) return alert("請輸入資料夾 ID");
-    localStorage.setItem('folder_id', folderId);
-    
-    resetUI();
-    showLoader("深度搜尋照片中...\n(若資料夾很大請稍候)");
-    
-    google.script.run
-      .withSuccessHandler(onImageLoaded)
-      .withFailureHandler(onFailure)
-      .getNextImage(folderId);
-  }
 
-  function onImageLoaded(res) {
-    if (res.status !== 'success') {
-      hideLoader();
-      updateStatus('error', '讀取失敗', res.message);
-      
-      let msg = res.message;
-      if (res.debugLog) {
-         msg += "\n\n📋 系統掃描紀錄：\n" + res.debugLog;
-      }
-      alert(msg);
-      return;
-    }
+        body { 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    CURRENT_FILE = res;
-    CURRENT_BASE64 = res.base64;
-    
-    const img = document.getElementById('main-image');
-    img.src = `data:${res.mimeType};base64,${res.base64}`;
-    img.style.display = 'block';
-    document.getElementById('file-meta').innerText = res.fileName;
-    hideLoader();
+        #reader { 
+            border: none !important; 
+            background: #0f172a;
+        }
 
-    img.onload = () => {
-      runAnalysis();
-    };
-  }
+        #reader video { 
+            object-fit: cover !important;
+        }
 
-  function runAnalysis() {
-    document.getElementById('scan-overlay').style.display = 'block';
-    updateStatus('warning', '🤖 分析中...', '正在掃描條碼與特徵...');
-    const html5QrCode = new Html5Qrcode("scan-overlay");
-    const imageFile = base64ToFile(CURRENT_BASE64, CURRENT_FILE.fileName);
-    html5QrCode.scanFile(imageFile, true)
-      .then(decodedText => {
-        document.getElementById('scan-overlay').style.display = 'none';
-        document.getElementById('inp-barcode').value = decodedText;
-        AI_METHOD = "Barcode_Client";
-        autoFillCountry(decodedText);
-        updateStatus('success', '✅ 掃碼成功', `讀取到條碼：${decodedText}`);
-        addTag("條碼識別");
-      })
-      .catch(err => {
-        AI_METHOD = "AI_Gemini";
-        callBackendAI();
-      });
-  }
+        /* 掃描線動畫 */
+        .scanning-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #10b981, transparent);
+            box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.5);
+            animation: scan 2.5s ease-in-out infinite;
+            z-index: 10;
+        }
 
-  function callBackendAI() {
-    updateStatus('warning', '🤖 AI 視覺辨識中...', '條碼不清，正在請求 Gemini 協助...');
-    google.script.run
-      .withSuccessHandler(onAiResult)
-      .withFailureHandler(onFailure)
-      .callGeminiAI(CURRENT_BASE64);
-  }
+        @keyframes scan {
+            0% { top: 10%; opacity: 0; }
+            50% { opacity: 1; }
+            100% { top: 90%; opacity: 0; }
+        }
 
-  function onAiResult(res) {
-    document.getElementById('scan-overlay').style.display = 'none';
-    if (res.status === 'success') {
-      const data = res.data;
-      document.getElementById('inp-country').value = data.country || "";
-      document.getElementById('inp-barcode').value = data.barcode || "";
-      document.getElementById('inp-note').value = data.brand || "";
-      if (data.keywords) data.keywords.forEach(k => addTag(k));
-      addTag("Gemini Vision");
-      updateStatus('success', '✅ AI 分析完成', "AI 已完成辨識，請人工確認。");
-    } else {
-      updateStatus('error', '⚠️ AI 辨識失敗', res.message);
-    }
-  }
+        /* 讀取動畫 */
+        .loading-spinner {
+            border: 3px solid rgba(16, 185, 129, 0.1);
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
 
-  function submitData() {
-    const operator = document.getElementById('inp-operator').value;
-    if (!operator) return alert("請輸入歸檔人員姓名");
-    localStorage.setItem('operator', operator);
-    const country = document.getElementById('inp-country').value;
-    if (!country) return alert("請填寫來源國");
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    const btn = document.getElementById('btn-submit');
-    btn.disabled = true;
-    btn.innerText = "💾 歸檔中...";
-    updateStatus('warning', '☁️ 雲端存檔中', '正在寫入 Google Sheet 並移動檔案...');
+        /* 手機按鈕活性回饋 */
+        .active-scale:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
 
-    const payload = {
-      folderId: document.getElementById('folder-id').value,
-      fileId: CURRENT_FILE.fileId,
-      fileName: CURRENT_FILE.fileName,
-      country: country,
-      barcode: document.getElementById('inp-barcode').value,
-      note: document.getElementById('inp-note').value,
-      operator: operator,
-      method: AI_METHOD
-    };
+    <!-- 頂部導覽列 -->
+    <header class="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50">
+        <div class="max-w-md mx-auto px-5 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-emerald-600 p-1.5 rounded-lg">
+                    <i data-lucide="scan-barcode" class="text-white w-5 h-5"></i>
+                </div>
+                <h1 class="text-lg font-bold tracking-tight text-slate-900">調查員助手</h1>
+            </div>
+            <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-full font-bold uppercase tracking-wider">Mobile Pro</span>
+        </div>
+    </header>
 
-    google.script.run
-      .withSuccessHandler(() => {
-        let count = parseInt(document.getElementById('counter').innerText);
-        document.getElementById('counter').innerText = count + 1;
-        btn.disabled = false;
-        btn.innerText = "✅ 確認並歸檔 (Enter)";
-        startProcess();
-      })
-      .withFailureHandler((err) => {
-        btn.disabled = false;
-        btn.innerText = "✅ 確認並歸檔 (Enter)";
-        alert("存檔失敗: " + err);
-      })
-      .saveAndArchive(payload);
-  }
+    <main class="max-w-md mx-auto w-full flex-1 p-4 space-y-6">
+        
+        <!-- 掃描器容器 -->
+        <div class="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center gap-2 text-slate-500">
+                    <i data-lucide="camera" class="w-4 h-4"></i>
+                    <span class="text-xs font-bold uppercase tracking-widest">Live Scanner</span>
+                </div>
+                <button id="toggleCamera" class="hidden text-[11px] font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full active-scale">
+                    切換鏡頭
+                </button>
+            </div>
+            
+            <div class="relative aspect-square bg-slate-900 overflow-hidden">
+                <!-- 未啟動時的佔位畫面 -->
+                <div id="cameraPlaceholder" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-8 text-center space-y-6 bg-slate-900 transition-all duration-500">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-emerald-500 blur-2xl opacity-20 animate-pulse"></div>
+                        <div class="relative w-24 h-24 bg-slate-800 rounded-3xl flex items-center justify-center border border-slate-700">
+                            <i data-lucide="aperture" class="w-12 h-12 text-slate-500"></i>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-white font-bold text-lg">相機已就緒</p>
+                        <p class="text-slate-500 text-sm leading-relaxed">請點擊下方按鈕開始掃描瓶罐條碼</p>
+                    </div>
+                </div>
 
-  function skipImage() {
-    if(confirm("確定跳過這張嗎？")) startProcess();
-  }
+                <!-- 掃描器主體 -->
+                <div id="reader" class="w-full h-full"></div>
+                
+                <!-- 掃描視覺引導層 -->
+                <div id="scanOverlay" class="absolute inset-0 pointer-events-none hidden z-10">
+                    <div class="absolute inset-0 border-[40px] border-black/40"></div>
+                    <div class="absolute inset-[40px] border-2 border-emerald-500/50 rounded-2xl shadow-[0_0_0_1px_rgba(16,185,129,0.3)]">
+                        <div class="scanning-line"></div>
+                        <div class="absolute -top-2 -left-2 w-6 h-6 border-t-4 border-l-4 border-emerald-500 rounded-tl-sm"></div>
+                        <div class="absolute -top-2 -right-2 w-6 h-6 border-t-4 border-r-4 border-emerald-500 rounded-tr-sm"></div>
+                        <div class="absolute -bottom-2 -left-2 w-6 h-6 border-b-4 border-l-4 border-emerald-500 rounded-bl-sm"></div>
+                        <div class="absolute -bottom-2 -right-2 w-6 h-6 border-b-4 border-r-4 border-emerald-500 rounded-br-sm"></div>
+                    </div>
+                </div>
+            </div>
 
-  function resetUI() {
-    document.getElementById('main-image').style.display = 'none';
-    document.getElementById('scan-overlay').style.display = 'none';
-    document.getElementById('ai-tags').innerHTML = '';
-    document.getElementById('inp-barcode').value = '';
-    document.getElementById('inp-country').value = '';
-    document.getElementById('inp-note').value = '';
-    document.getElementById('file-meta').innerText = '準備載入...';
-  }
+            <!-- 控制區 -->
+            <div class="p-5 bg-white space-y-5">
+                <button id="scannerControlBtn" onclick="handleScannerToggle()" class="w-full bg-emerald-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-emerald-200 active-scale transition-all flex items-center justify-center gap-3">
+                    <i id="controlIcon" data-lucide="zap" class="w-5 h-5 fill-current"></i>
+                    <span id="controlText">啟動相機掃描</span>
+                </button>
 
-  function showLoader(msg) {
-    document.getElementById('loader').style.display = 'block';
-    document.getElementById('loader-text').innerText = msg;
-  }
-  function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-  function updateStatus(type, title, desc) {
-    const box = document.getElementById('status-box');
-    box.className = `status-box ${type}`;
-    box.querySelector('.status-title').innerText = title;
-    box.querySelector('.status-desc').innerText = desc;
-  }
-  function addTag(text) {
-    const tag = document.createElement('div');
-    tag.className = 'tag'; tag.innerText = text;
-    document.getElementById('ai-tags').appendChild(tag);
-  }
-  function onFailure(err) {
-    hideLoader();
-    alert("系統錯誤: " + err);
-    updateStatus('error', '系統錯誤', err.message);
-  }
-  function base64ToFile(base64, filename) {
-    const byteString = atob(base64);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    return new File([ab], filename, {type: "image/jpeg"});
-  }
-  function autoFillCountry(code) {
-    const p = code.substring(0, 3);
-    const db = {'471':'🇹🇼 台灣','690':'🇨🇳 中國','691':'🇨🇳 中國','692':'🇨🇳 中國','490':'🇯🇵 日本','450':'🇯🇵 日本','880':'🇰🇷 韓國','893':'🇻🇳 越南','885':'🇹🇭 泰國','899':'🇮🇩 印尼','955':'🇲🇾 馬來西亞'};
-    if(db[p]) document.getElementById('inp-country').value = db[p];
-  }
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') submitData();
-  });
-</script>
+                <div class="flex items-center gap-3">
+                    <div class="h-px bg-slate-100 flex-1"></div>
+                    <span class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">或是</span>
+                    <div class="h-px bg-slate-100 flex-1"></div>
+                </div>
+
+                <div class="flex gap-2">
+                    <input type="tel" id="manualBarcode" placeholder="手動輸入條碼..." 
+                           class="flex-1 bg-slate-50 border-none rounded-2xl px-5 py-4 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-400">
+                    <button id="manualSubmit" class="bg-slate-900 text-white px-6 rounded-2xl text-sm font-bold active-scale">
+                        查詢
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果卡片 -->
+        <div id="resultCard" class="hidden animate-in slide-in-from-bottom-4 duration-500 pb-10">
+            <div class="bg-white rounded-3xl shadow-2xl shadow-emerald-900/10 border-2 border-emerald-500 overflow-hidden">
+                <div class="bg-emerald-500 px-6 py-4 text-white flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                        <h3 class="font-bold">調查資料回傳</h3>
+                    </div>
+                    <span id="barcodeDisplay" class="font-mono text-xs bg-black/20 px-3 py-1.5 rounded-full font-bold tracking-widest"></span>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="col-span-2 space-y-1">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">商品全名</label>
+                            <p id="resName" class="text-xl font-bold text-slate-800 leading-tight">讀取中...</p>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">品牌</label>
+                            <p id="resBrand" class="font-bold text-slate-600">讀取中...</p>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">製造產地</label>
+                            <p id="resCountry" class="font-bold text-slate-700">讀取中...</p>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">廠商代碼</label>
+                            <p id="resMfrCode" class="font-mono font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md inline-block">讀取中...</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-5 border-t border-slate-100">
+                        <div class="flex items-center gap-2 mb-2">
+                            <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">製造廠商辨識</label>
+                            <div id="sourceBadge" class="flex-1"></div>
+                        </div>
+                        <p id="resManufacturer" class="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            正在啟動 AI 調查...
+                        </p>
+                    </div>
+
+                    <button onclick="resetAndResume()" class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold active-scale flex items-center justify-center gap-2 transition-colors hover:bg-slate-200">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i> 繼續掃描下一件
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="statusMsg" class="hidden p-4 rounded-2xl text-center text-sm font-bold shadow-inner"></div>
+
+    </main>
+
+    <script>
+        const apiKey = ""; 
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'barcode-scanner-pro';
+
+        const countryCodes = {
+            "471": "台灣 🇹🇼", "489": "香港 🇭🇰", "888": "新加坡 🇸🇬", "885": "泰國 🇹🇭", "880": "韓國 🇰🇷",
+            "690": "中國 🇨🇳", "691": "中國", "692": "中國", "693": "中國", "694": "中國", "695": "中國",
+            "450": "日本 🇯🇵", "451": "日本", "452": "日本", "453": "日本", "454": "日本", "455": "日本", "456": "日本", "457": "日本", "458": "日本", "459": "日本",
+            "490": "日本", "491": "日本", "492": "日本", "493": "日本", "494": "日本", "495": "日本", "496": "日本", "497": "日本", "498": "日本", "499": "日本",
+            "000": "美國/加拿大 🇺🇸", "300": "法國 🇫🇷", "400": "德國 🇩🇪", "500": "英國 🇬🇧", "930": "澳洲 🇦🇺", "940": "紐西蘭 🇳🇿"
+        };
+
+        let html5QrCode;
+        const config = { fps: 20, qrbox: { width: 280, height: 180 }, aspectRatio: 1.0 };
+
+        window.onload = () => {
+            lucide.createIcons();
+            html5QrCode = new Html5Qrcode("reader");
+        };
+
+        function showMessage(text, type = 'info') {
+            const msg = document.getElementById('statusMsg');
+            msg.innerText = text;
+            msg.className = `p-4 rounded-2xl text-center text-sm font-bold ${type === 'error' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`;
+            msg.classList.remove('hidden');
+        }
+
+        async function handleScannerToggle() {
+            const btn = document.getElementById('scannerControlBtn');
+            const icon = document.getElementById('controlIcon');
+            const text = document.getElementById('controlText');
+            
+            btn.disabled = true;
+            btn.style.opacity = "0.7";
+
+            try {
+                const state = html5QrCode.getState();
+                
+                if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
+                    await stopScanner();
+                    text.innerText = "啟動相機掃描";
+                    icon.setAttribute('data-lucide', 'zap');
+                    btn.classList.replace('bg-rose-500', 'bg-emerald-600');
+                    btn.classList.replace('shadow-rose-100', 'shadow-emerald-200');
+                } else {
+                    const success = await startScanner();
+                    if (success) {
+                        text.innerText = "關閉掃描功能";
+                        icon.setAttribute('data-lucide', 'square');
+                        btn.classList.replace('bg-emerald-600', 'bg-rose-500');
+                        btn.classList.replace('shadow-emerald-200', 'shadow-rose-100');
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                lucide.createIcons();
+            }
+        }
+
+        async function startScanner() {
+            try {
+                document.getElementById('cameraPlaceholder').style.opacity = "0";
+                setTimeout(() => document.getElementById('cameraPlaceholder').classList.add('hidden'), 500);
+                document.getElementById('scanOverlay').classList.remove('hidden');
+                document.getElementById('toggleCamera').classList.remove('hidden');
+
+                await html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config, 
+                    onScanSuccess
+                );
+                return true;
+            } catch (err) {
+                showMessage("無法讀取相機，請檢查權限設定。", "error");
+                document.getElementById('cameraPlaceholder').classList.remove('hidden');
+                document.getElementById('cameraPlaceholder').style.opacity = "1";
+                return false;
+            }
+        }
+
+        async function stopScanner() {
+            try {
+                await html5QrCode.stop();
+                document.getElementById('cameraPlaceholder').classList.remove('hidden');
+                setTimeout(() => document.getElementById('cameraPlaceholder').style.opacity = "1"), 50;
+                document.getElementById('scanOverlay').classList.add('hidden');
+                document.getElementById('toggleCamera').classList.add('hidden');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function onScanSuccess(decodedText) {
+            if (html5QrCode.getState() === Html5QrcodeScannerState.SCANNING) {
+                html5QrCode.pause();
+                if (window.navigator.vibrate) window.navigator.vibrate(100); // 震動回饋
+            }
+            processBarcode(decodedText);
+        }
+
+        async function processBarcode(code) {
+            code = code.trim();
+            if (code.length < 8) {
+                showMessage("無效條碼", "error");
+                if (html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) html5QrCode.resume();
+                return;
+            }
+
+            document.getElementById('resultCard').classList.remove('hidden');
+            document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
+            
+            document.getElementById('barcodeDisplay').innerText = code;
+            document.getElementById('resName').innerHTML = '<div class="loading-spinner"></div>';
+            document.getElementById('resBrand').innerText = "...";
+            document.getElementById('resMfrCode').innerText = code.substring(3, 7);
+            
+            const prefix = code.substring(0, 3);
+            document.getElementById('resCountry').innerText = countryCodes[prefix] || "海外/未知 (" + prefix + ")";
+
+            try {
+                const offData = await fetchOFF(code);
+                if (offData && offData.status === 1) {
+                    updateUI(offData.product, "OFF 資料庫");
+                } else {
+                    await fetchAIInfo(code);
+                }
+            } catch (err) {
+                await fetchAIInfo(code);
+            }
+        }
+
+        async function fetchOFF(barcode) {
+            const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+            const resp = await fetch(url);
+            return await resp.json();
+        }
+
+        async function fetchAIInfo(barcode) {
+            document.getElementById('resManufacturer').innerHTML = '<div class="flex items-center gap-3"><div class="loading-spinner"></div> AI 正在聯網調查廠商資料...</div>';
+            
+            const systemPrompt = `你是一位專業的商品專家。
+            請根據條碼 ${barcode} 調查該商品的詳細名稱、品牌與製造商名稱。
+            如果數據庫沒有，請分析廠商代碼 ${barcode.substring(3,7)} 並聯網搜尋相關公司。
+            請回傳繁體中文 JSON: { "name": "...", "brand": "...", "manufacturer": "...", "country": "..." }`;
+
+            try {
+                const response = await callGemini(`查詢條碼：${barcode}`, systemPrompt);
+                const data = JSON.parse(response);
+                
+                document.getElementById('resName').innerText = data.name || "未知名稱";
+                document.getElementById('resBrand').innerText = data.brand || "未知品牌";
+                document.getElementById('resManufacturer').innerText = data.manufacturer || "暫無廠商紀錄";
+                document.getElementById('sourceBadge').innerHTML = '<span class="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">AI Deep Intelligence</span>';
+            } catch (err) {
+                document.getElementById('resName').innerText = "未找到資料";
+                document.getElementById('resManufacturer').innerText = "無法從公開網絡辨識此條碼。";
+            }
+        }
+
+        async function callGemini(query, systemPrompt) {
+            const payload = {
+                contents: [{ parts: [{ text: query }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                generationConfig: { responseMimeType: "application/json" },
+                tools: [{ "google_search": {} }]
+            };
+
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            return result.candidates[0].content.parts[0].text;
+        }
+
+        function updateUI(product, source) {
+            document.getElementById('resName').innerText = product.product_name || product.product_name_zh || "未知名稱";
+            document.getElementById('resBrand').innerText = product.brands || "未知品牌";
+            document.getElementById('resManufacturer').innerText = product.manufacturer_name || product.manufacturers || "正由 AI 深度解析中...";
+            
+            if (!product.brands && !product.manufacturers) {
+                fetchAIInfo(document.getElementById('barcodeDisplay').innerText);
+            } else {
+                document.getElementById('sourceBadge').innerHTML = `<span class="text-[9px] bg-blue-500 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-tighter">${source}</span>`;
+            }
+        }
+
+        function resetAndResume() {
+            document.getElementById('resultCard').classList.add('hidden');
+            document.getElementById('manualBarcode').value = "";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (html5QrCode && html5QrCode.getState() === Html5QrcodeScannerState.PAUSED) {
+                html5QrCode.resume();
+            }
+        }
+
+        document.getElementById('manualSubmit').onclick = () => {
+            const code = document.getElementById('manualBarcode').value;
+            if (code) processBarcode(code);
+        };
+
+        document.getElementById('toggleCamera').onclick = async () => {
+            await html5QrCode.stop();
+            await startScanner();
+        };
+
+    </script>
 </body>
 </html>
