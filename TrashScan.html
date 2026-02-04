@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V99 (Final Fix)</title>
+    <title>荒野瓶罐調查回報站 V99.3 (Anti-Freeze)</title>
     
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
@@ -121,6 +121,7 @@
     </style>
 </head>
 <body>
+
     <div id="map-modal">
         <div id="map-header">
             <div style="font-weight:bold; font-size:18px;">調查導航助理</div>
@@ -137,12 +138,15 @@
             </div>
         </div>
     </div>
+
     <div id="network-status" class="status-online">🟢 系統連線中</div>
+
     <div id="line-warning">
         <div class="arrow-icon">↗️</div>
         <h1>請點擊右上角<br>使用其他瀏覽器開啟</h1>
         <p>LINE 內建瀏覽器不支援相機與定位功能。<br>請切換至 Chrome (Android) 或 Safari (iOS)。</p>
     </div>
+
     <div id="custom-modal" class="modal-overlay">
         <div id="modal-content-box" class="modal-content">
             <span id="modal-icon" class="modal-icon">⚠️</span>
@@ -154,7 +158,9 @@
             </div>
         </div>
     </div>
+
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">系統載入中...</p></div>
+
     <div id="view-basic" class="container active-tab">
         <h1 class="app-title">荒野瓶罐調查回報站</h1>
         <div id="offline-sync-box">
@@ -214,6 +220,7 @@
         </div>
         <div class="footer-credit">網頁設計規劃：荒野保護協會 棲地守護部雁子<br>聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a></div>
     </div>
+
     <div id="view-record" class="container">
         <h2>📊 4. 記錄與成果</h2>
         <div class="card">
@@ -257,16 +264,22 @@
             <label>特殊瓶罐/熱點照 (最多6張)</label>
             <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
             <div class="img-grid-6">
+                <!-- 1~6 Photo Inputs -->
                 <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()"><img id="img-preview-hotspot1" src="" style="display:none"><span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div></div>
+                
                 <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot2').click()"><img id="img-preview-hotspot2" src="" style="display:none"><span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div></div>
+                
                 <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()"><img id="img-preview-hotspot3" src="" style="display:none"><span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div></div>
+                
                 <input type="file" id="file-hotspot4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot4')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot4').click()"><img id="img-preview-hotspot4" src="" style="display:none"><span id="icon-hotspot4" class="preview-icon">4</span><div class="preview-label">照片 4</div></div>
+                
                 <input type="file" id="file-hotspot5" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot5')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot5').click()"><img id="img-preview-hotspot5" src="" style="display:none"><span id="icon-hotspot5" class="preview-icon">5</span><div class="preview-label">照片 5</div></div>
+                
                 <input type="file" id="file-hotspot6" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot6')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot6').click()"><img id="img-preview-hotspot6" src="" style="display:none"><span id="icon-hotspot6" class="preview-icon">6</span><div class="preview-label">照片 6</div></div>
             </div>
@@ -317,7 +330,7 @@
 // ⚠️ 請確認 GAS 網址       
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
-        // === 輔助函式定義區 ===
+        // === 輔助函式定義區 (移至最前方) ===
         function updateNetworkStatus() {
             const bar = document.getElementById('network-status');
             const syncBox = document.getElementById('offline-sync-box');
@@ -337,6 +350,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHn
                 if (warnAi) warnAi.style.display = 'block';
             }
         }
+
         function getCountryFromCode(code) { return (code && code.length >= 3) ? (PREFIX_DB[code.substring(0, 3)] || "未知") : "未知"; }
         function checkTimerOnWake() { [10, 20].forEach(min => { let t = timers[min]; if (t.running && t.endTime && Date.now() >= t.endTime) { clearInterval(t.interval); t.running = false; document.getElementById(`timer-${min}`).classList.remove('running'); document.getElementById(`timer-${min}`).classList.add('done'); document.getElementById(`time-display-${min}`).innerText = "00:00"; showModal('alarm', '時間到！', '調查時間已結束，請上傳資料。', null); saveState(); } }); }
         function showModal(type, title, msg, onConfirm, onCancel) { const modal = document.getElementById('custom-modal'); const box = document.getElementById('modal-content-box'); const icon = document.getElementById('modal-icon'); const btnConfirm = document.getElementById('btn-modal-confirm'); const btnCancel = document.getElementById('btn-modal-cancel'); box.className = 'modal-content'; btnCancel.style.display = 'block'; btnConfirm.innerText = "確定"; document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerHTML = msg; if (type === 'warning') { box.classList.add('style-warning'); icon.innerText = "⚠️"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else if (type === 'success') { box.classList.add('style-success'); icon.innerText = "🎉"; btnCancel.style.display = 'none'; btnConfirm.innerText = "好，繼續下一筆"; } else if (type === 'alarm') { box.classList.add('style-alarm'); icon.innerText = "⏰"; btnCancel.style.display = 'none'; btnConfirm.innerText = "確定 (停止震動)"; } else if (type === 'offline') { box.classList.add('style-offline'); icon.innerText = "💾"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } else { icon.innerText = "🤔"; } btnConfirm.onclick = () => { modal.style.display = 'none'; if (onConfirm) onConfirm(); }; btnCancel.onclick = () => { modal.style.display = 'none'; if (onCancel) onCancel(); }; modal.style.display = 'flex'; }
@@ -415,7 +429,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHn
         async function syncOfflineData(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");if(queue.length===0)return;const btn=document.getElementById('btn-sync');btn.disabled=true;btn.innerText="⏳ 同步中 (補全地址)...";let successCount=0;let failCount=0;let newQueue=[];for(let item of queue){if(item.gps&&(item.city.includes("離線")||item.city==="")){try{let[lat,long]=item.gps.split(', ');let res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`);let data=await res.json();item.city=`${(data.principalSubdivision||"").replace("Province","").trim()} ${(data.locality||"").trim()}`;}catch(e){}}try{await fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify(item)});successCount++;}catch(e){failCount++;newQueue.push(item);}}localStorage.setItem('offline_queue',JSON.stringify(newQueue));checkOfflineQueue();btn.disabled=false;btn.innerText="☁️ 立即上傳暫存資料";if(failCount===0)showModal('success','同步完成',`成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`,null);else showModal('warning','部分失敗',`成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`,null);}
         function showModal(type,title,msg,onConfirm,onCancel){const modal=document.getElementById('custom-modal');const box=document.getElementById('modal-content-box');const icon=document.getElementById('modal-icon');const btnConfirm=document.getElementById('btn-modal-confirm');const btnCancel=document.getElementById('btn-modal-cancel');box.className='modal-content';btnCancel.style.display='block';btnConfirm.innerText="確定";document.getElementById('modal-title').innerText=title;document.getElementById('modal-msg').innerHTML=msg;if(type==='warning'){box.classList.add('style-warning');icon.innerText="⚠️";btnCancel.style.display='none';btnConfirm.innerText="我知道了";}else if(type==='success'){box.classList.add('style-success');icon.innerText="🎉";btnCancel.style.display='none';btnConfirm.innerText="好，繼續下一筆";}else if(type==='alarm'){box.classList.add('style-alarm');icon.innerText="⏰";btnCancel.style.display='none';btnConfirm.innerText="確定 (停止震動)";}else if(type==='offline'){box.classList.add('style-offline');icon.innerText="💾";btnCancel.style.display='none';btnConfirm.innerText="我知道了";}else{icon.innerText="🤔";}btnConfirm.onclick=()=>{modal.style.display='none';if(onConfirm)onConfirm();};btnCancel.onclick=()=>{modal.style.display='none';if(onCancel)onCancel();};modal.style.display='flex';}
 
-        // [V99.2] 智慧廠商比對邏輯 (Smart Manufacturer Match)
+        // [V99.3] 智慧廠商比對 + 5秒逾時機制
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
@@ -432,11 +446,15 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHn
                 
                 // 1. 智慧廠商比對 (12碼 ~ 6碼)
                 let manuData = null;
+                // [Debug] 如果還是比對不到，請按 F12 看這一行
+                console.log("Scanning:", txt, "Cache Size:", Object.keys(STATE.manufacturerCache).length);
+                
                 for (let i = 12; i >= 6; i--) {
                     const prefix = txt.substring(0, i);
                     if (STATE.manufacturerCache[prefix]) {
                         manuData = STATE.manufacturerCache[prefix];
-                        break; // 找到最長符合的，就停止
+                        console.log("Manu Hit:", prefix, manuData.name);
+                        break; 
                     }
                 }
                 
@@ -448,7 +466,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHn
                 let logSource = "";
                 let isHit = false;
 
-                // Case A: 命中商品庫 (最高優先)
+                // Case A: 命中商品庫
                 if (prodData) {
                     isHit = true;
                     logSource = "Local_Product";
@@ -516,12 +534,88 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHn
                         setTimeout(() => STATE.scanners.record.resume(), 500);
                     }, () => setTimeout(() => STATE.scanners.record.resume(), 500));
 
+                    // [Anti-Freeze] 呼叫 API 並加上逾時處理
                     fetchProductData(txt).then(data => {
                         apiDataBuffer = data;
                         updateApiAreaUI(data);
                     });
                 }
             }, () => {});
+        }
+        
+        // [V99.3] 增加 Timeout 機制防止卡住
+        async function fetchProductData(barcode) {
+            if (!navigator.onLine) {
+                updateApiAreaUI({ error: "offline" });
+                return null;
+            }
+            
+            // 設定 5 秒逾時
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            try {
+                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (res.status === 404) {
+                    updateApiAreaUI({ error: "not_found" });
+                    return { barcode: barcode, source: "API_Not_Found" };
+                }
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                
+                const data = await res.json();
+                
+                if (data.status === 1) {
+                    const p = data.product;
+                    return {
+                        barcode: barcode,
+                        name: p.product_name_zh || p.product_name || "未命名商品",
+                        brand: p.brands || "未知品牌",
+                        img_url: p.image_front_small_url || "",
+                        source: "Cloud_API"
+                    };
+                } else {
+                    updateApiAreaUI({ error: "not_found" });
+                    return { barcode: barcode, source: "API_Not_Found" };
+                }
+            } catch (err) {
+                console.error(err);
+                if (err.name === 'AbortError') {
+                    updateApiAreaUI({ error: "timeout" }); // 逾時顯示
+                } else {
+                    updateApiAreaUI({ error: "network_error" });
+                }
+                return null;
+            }
+        }
+        
+        // 更新 UI 顯示 (含 Timeout 處理)
+        function updateApiAreaUI(data) {
+            const area = document.getElementById('api-product-area');
+            if(!area) return;
+
+            if (data && data.source === "Cloud_API") {
+                area.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:15px; width:100%; text-align:left;">
+                        <div style="width:60px; height:60px; flex-shrink:0; background:#fff; border-radius:8px; border:1px solid #eee; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            ${data.img_url ? `<img src="${data.img_url}" style="width:100%; height:100%; object-fit:contain;" onerror="this.style.display='none'; this.parentNode.innerText='無圖';">` : '<span style="font-size:10px; color:#ccc;">無圖</span>'}
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-size:12px; color:#888; font-weight:bold;">${data.brand}</div>
+                            <div style="font-size:15px; color:#333; font-weight:bold; line-height:1.3; margin-top:2px;">${data.name}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (data && (data.error === "not_found" || data.source === "API_Not_Found")) {
+                area.innerHTML = `<div style="color:#757575; font-size:13px;">ℹ️ 資料庫比對不到 (將記錄條碼)</div>`;
+            } else if (data && data.error === "timeout") {
+                area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線逾時 (將記錄條碼)</div>`;
+            } else {
+                 area.innerHTML = `<div style="color:#d32f2f; font-size:13px;">⚠️ 連線錯誤 / 無法取得資訊</div>`;
+            }
         }
 
         // 停止 Record Scanner
