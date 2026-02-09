@@ -103,7 +103,7 @@
     <script>
         // --- 設定區 ---
         
-        // 【請將您的 Google Apps Script 網址填入下方】
+        // 【已填入您的 Google Apps Script 網址】
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9o_X9XjKpNxIx2xBeykcRk_gdMU144a-q6Ga2vZK5j4I2qxh0pBGlkWI6E5Ol-Q-OsQ/exec"; 
 
         let selectedFiles = [];
@@ -144,7 +144,7 @@
 
         // --- 2. 批次流程 ---
         els.startBtn.addEventListener('click', async () => {
-            if (GAS_WEB_APP_URL === "在此填入你的GAS_WEB_APP_URL" || !GAS_WEB_APP_URL) {
+            if (!GAS_WEB_APP_URL || GAS_WEB_APP_URL.includes("在此填入")) {
                 alert("請先在程式碼中填入 Google Apps Script 網址！");
                 return;
             }
@@ -218,7 +218,7 @@
                 contentArea.innerHTML = `
                     <div class="text-red-600 bg-red-50 p-3 rounded text-sm">
                         <strong>錯誤：</strong> ${error.message}<br>
-                        <span class="text-xs text-gray-500">請檢查 GAS 部署網址是否正確，或圖片是否過大。</span>
+                        <span class="text-xs text-gray-500">請檢查 GAS 後端授權是否完成。</span>
                     </div>`;
             }
         }
