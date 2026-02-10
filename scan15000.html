@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V116 (單兵作戰版)</title>
+    <title>AI 商品分析 V117 (分級辨識版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -18,8 +18,6 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .fade-in { animation: fadeIn 0.4s ease-out; }
-        
-        /* 拖曳樣式 */
         .drag-active {
             border-color: #3b82f6 !important;
             background-color: #eff6ff !important;
@@ -36,12 +34,12 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V116
+                AI 商品分析 V117
             </h1>
-            <p class="text-gray-500 text-sm">單獨分析功能 • 穩定模型優先 • 流量優化</p>
+            <p class="text-gray-500 text-sm">首圖快速辨識 • 深度重試機制 • 流量最佳化</p>
         </header>
 
-        <!-- Staging Area (待整理區) -->
+        <!-- Staging Area -->
         <div class="bg-white rounded-2xl shadow-md border border-gray-200 p-6 mb-8 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-2 h-full bg-orange-400"></div>
             
@@ -55,13 +53,11 @@
                 </div>
                 
                 <div class="flex gap-2 w-full md:w-auto">
-                    <!-- 新增空白分組按鈕 -->
                     <button onclick="addProductGroup()" class="flex-1 md:flex-none bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-4 py-2 rounded-lg transition flex items-center justify-center gap-2 border border-blue-200">
                         <span class="material-icons text-sm">add_circle_outline</span>
                         新增空白分組
                     </button>
 
-                    <!-- 批次匯入按鈕 -->
                     <label class="flex-1 md:flex-none bg-orange-100 hover:bg-orange-200 text-orange-700 text-sm font-bold px-4 py-2 rounded-lg cursor-pointer transition flex items-center justify-center gap-2 border border-orange-200">
                         <span class="material-icons text-sm">upload_file</span>
                         批次匯入照片
@@ -70,7 +66,6 @@
                 </div>
             </div>
 
-            <!-- 照片網格 -->
             <div id="stagingGrid" class="flex gap-3 overflow-x-auto pb-4 min-h-[120px] items-center p-2 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50"
                  ondragover="handleDragOver(event)" ondrop="handleDropToStaging(event)">
                 <div class="text-gray-400 text-sm mx-auto flex flex-col items-center pointer-events-none placeholder">
@@ -87,8 +82,8 @@
         <div class="mt-8 sticky bottom-6 z-10 pointer-events-none">
             <div class="max-w-4xl mx-auto flex justify-center">
                 <button id="analyzeAllBtn" onclick="analyzeAll()" class="pointer-events-auto hidden shadow-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-10 rounded-full transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
-                    <span class="material-icons">search</span>
-                    <span id="analyzeBtnText">開始批量分析 (0 組)</span>
+                    <span class="material-icons">flash_on</span>
+                    <span id="analyzeBtnText">開始批量速查 (僅第1張圖)</span>
                 </button>
             </div>
         </div>
@@ -100,7 +95,6 @@
         <div class="product-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in relative scroll-mt-32"
              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropToCard(event)">
             
-            <!-- Header -->
             <div class="bg-gray-50 p-3 border-b border-gray-100 flex justify-between items-center pointer-events-none">
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 product-title text-sm">
                     <span class="material-icons text-blue-500 text-base">liquor</span> 
@@ -111,14 +105,11 @@
                 </button>
             </div>
 
-            <!-- Body -->
             <div class="p-4 flex flex-col md:flex-row gap-4 items-start">
-                <!-- Drop Zone -->
                 <div class="preview-container flex gap-2 overflow-x-auto pb-2 flex-grow min-h-[100px] w-full items-center bg-gray-50 rounded-lg p-2 border border-dashed border-gray-200">
-                    <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (最多4張)</span>
+                    <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (第1張為主要識別圖)</span>
                 </div>
 
-                <!-- Action Panel -->
                 <div class="md:w-1/3 w-full flex flex-col justify-center border-l border-gray-100 md:pl-4 pl-0 md:border-t-0 border-t md:pt-0 pt-4">
                     <div class="status-indicator flex items-center gap-2 text-sm font-bold text-gray-400 mb-2">
                         <span class="material-icons text-base">schedule</span> 等待分析
@@ -126,27 +117,31 @@
                     
                     <input type="hidden" class="hidden-result-data">
                     
-                    <!-- 單獨分析按鈕 (V116 新增) -->
-                    <button onclick="analyzeSingle(this)" class="btn-analyze-single w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2 border border-blue-200">
-                        <span class="material-icons text-sm">play_arrow</span>
-                        單獨分析
+                    <!-- 快速分析按鈕 (只用第1張) -->
+                    <button onclick="analyzeSingle(this, false)" class="btn-analyze-lite w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2 border border-blue-200">
+                        <span class="material-icons text-sm">flash_on</span>
+                        快速分析 (第1張)
                     </button>
 
-                    <!-- 確認上傳按鈕 (分析後顯示) -->
-                    <button onclick="saveResult(this)" class="btn-save hidden w-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2">
+                    <!-- 確認上傳按鈕 -->
+                    <button onclick="saveResult(this)" class="btn-save hidden w-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2">
                         <span class="material-icons text-sm">cloud_upload</span>
                         確認並上傳
                     </button>
+
+                    <!-- 深度重試按鈕 (V117 新增) -->
+                    <button onclick="analyzeSingle(this, true)" class="btn-analyze-deep hidden w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg border border-indigo-100 transition flex items-center justify-center gap-2 mb-2">
+                        <span class="material-icons text-xs">travel_explore</span>
+                        不滿意？用全部照片重試
+                    </button>
                     
-                    <!-- 手動補照片 -->
-                     <label class="mt-2 text-xs text-center text-blue-400 cursor-pointer hover:text-blue-600 flex justify-center items-center gap-1">
+                     <label class="mt-1 text-xs text-center text-blue-400 cursor-pointer hover:text-blue-600 flex justify-center items-center gap-1">
                         <span class="material-icons text-xs">add</span> 手動補照片
                         <input type="file" class="hidden" accept="image/*" multiple onchange="handleManualAddFiles(this)">
                     </label>
                 </div>
             </div>
 
-            <!-- Report Section -->
             <div class="report-section hidden bg-slate-50 border-t border-gray-100 p-4">
                 <div class="report-content prose prose-sm max-w-none text-gray-700 bg-white p-4 rounded-lg border border-gray-200 shadow-sm"></div>
                 <div class="mt-3 flex gap-2 justify-end">
@@ -159,13 +154,14 @@
     </template>
 
     <script>
-        // 設定區
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9o_X9XjKpNxIx2xBeykcRk_gdMU144a-q6Ga2vZK5j4I2qxh0pBGlkWI6E5Ol-Q-OsQ/exec";
 
         let productCounter = 0;
         let stagingCounter = 0;
 
-        // --- 1. 待整理區邏輯 ---
+        window.addEventListener('load', () => {});
+
+        // --- 拖曳與上傳邏輯 (保持 V116 不變) ---
         async function handleStagingFiles(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
@@ -174,7 +170,6 @@
             for (const file of files) await addToStaging(file);
             input.value = '';
         }
-
         async function addToStaging(file) {
             stagingCounter++;
             const base64 = await getBase64(file);
@@ -195,23 +190,12 @@
             `;
             grid.appendChild(div);
         }
-
-        // --- 2. 拖曳核心邏輯 ---
         let draggedEl = null;
-        function handleDragStart(e) {
-            draggedEl = e.target;
-            e.target.classList.add('dragging');
-            e.dataTransfer.setData('text/plain', e.target.id);
-            e.dataTransfer.effectAllowed = 'move';
-        }
+        function handleDragStart(e) { draggedEl = e.target; e.target.classList.add('dragging'); e.dataTransfer.setData('text/plain', e.target.id); e.dataTransfer.effectAllowed = 'move'; }
         function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
-        function handleDragLeave(e) {
-            e.preventDefault();
-            if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-active');
-        }
+        function handleDragLeave(e) { e.preventDefault(); if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-active'); }
         async function handleDropToStaging(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('drag-active');
+            e.preventDefault(); e.currentTarget.classList.remove('drag-active');
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 const grid = document.getElementById('stagingGrid');
@@ -221,25 +205,16 @@
             if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
         }
         async function handleDropToCard(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('drag-active');
+            e.preventDefault(); e.currentTarget.classList.remove('drag-active');
             const card = e.currentTarget;
             const container = card.querySelector('.preview-container');
-            if (container.querySelectorAll('.img-item').length >= 4) {
-                alert("此瓶罐已滿 4 張照片！");
-                if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
-                return;
-            }
+            if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張！"); if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; } return; }
             if (container.querySelector('.placeholder-text')) container.innerHTML = '';
             
             const id = e.dataTransfer.getData('text/plain');
             if (id && document.getElementById(id)) {
                 const sourceEl = document.getElementById(id);
-                await addImageToCard(card, {
-                    base64: sourceEl.querySelector('.img-data').value,
-                    type: sourceEl.querySelector('.img-type').value,
-                    name: sourceEl.querySelector('.img-name').value
-                });
+                await addImageToCard(card, { base64: sourceEl.querySelector('.img-data').value, type: sourceEl.querySelector('.img-type').value, name: sourceEl.querySelector('.img-name').value });
                 sourceEl.remove();
             } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
@@ -252,8 +227,6 @@
             if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
             updateGlobalButton();
         }
-
-        // --- 卡片操作 ---
         function addProductGroup() {
             productCounter++;
             const template = document.getElementById('productTemplate');
@@ -266,12 +239,7 @@
             updateGlobalButton();
             return card;
         }
-        function removeProduct(btn) {
-            if (confirm("移除此商品分組？")) {
-                btn.closest('.product-card').remove();
-                updateGlobalButton();
-            }
-        }
+        function removeProduct(btn) { if (confirm("移除此分組？")) { btn.closest('.product-card').remove(); updateGlobalButton(); } }
         async function handleManualAddFiles(input) {
             const files = Array.from(input.files);
             const card = input.closest('.product-card');
@@ -282,8 +250,7 @@
                 const base64 = await getBase64(file);
                 await addImageToCard(card, { base64, type: file.type, name: file.name });
             }
-            input.value = '';
-            updateGlobalButton();
+            input.value = ''; updateGlobalButton();
         }
         async function addImageToCard(card, imgObj) {
             const container = card.querySelector('.preview-container');
@@ -303,9 +270,7 @@
         function removeImageFromCard(btn) {
             const container = btn.closest('.preview-container');
             btn.parentElement.remove();
-            if (container.children.length === 0) {
-                container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (最多4張)</span>`;
-            }
+            if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (最多4張)</span>`;
             updateGlobalButton();
         }
         function updateGlobalButton() {
@@ -313,24 +278,18 @@
             const hasImages = document.querySelectorAll('#productList .img-data').length > 0;
             const btn = document.getElementById('analyzeAllBtn');
             const btnText = document.getElementById('analyzeBtnText');
-            if (count > 0 && hasImages) {
-                btn.classList.remove('hidden');
-                btnText.textContent = `開始批量分析 (${count} 組)`;
-            } else {
-                btn.classList.add('hidden');
-            }
+            if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量速查 (${count} 組)`; } else { btn.classList.add('hidden'); }
         }
 
-        // --- 3. 分析邏輯 (V116) ---
+        // --- 3. 分析邏輯 (V117 分級辨識核心) ---
 
-        // 單獨分析功能 (V116 新增)
-        async function analyzeSingle(btn) {
+        // 單獨分析功能 (參數 useAllImages 控制是否用多圖)
+        async function analyzeSingle(btn, useAllImages) {
             const card = btn.closest('.product-card');
-            // 調用共用函式，且不傳回錯誤給上層 (因為是單獨觸發)
-            await processCardAnalysis(card, btn);
+            await processCardAnalysis(card, btn, useAllImages);
         }
 
-        // 批量分析
+        // 批量分析 (預設都用 False: 只用第一張圖，求快且省流量)
         async function analyzeAll() {
             const cards = Array.from(document.querySelectorAll('.product-card'));
             const btn = document.getElementById('analyzeAllBtn');
@@ -338,7 +297,6 @@
             
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
-            
             let abortBatch = false;
 
             for (let i = 0; i < cards.length; i++) {
@@ -348,46 +306,51 @@
                 const imgElements = card.querySelectorAll('.img-data');
                 if (imgElements.length === 0) continue;
 
-                // 呼叫分析
-                const result = await processCardAnalysis(card, null); 
+                // 批量強制使用單圖模式 (useAllImages = false)
+                const result = await processCardAnalysis(card, null, false); 
                 
                 if (result === 'quota_exceeded_abort') {
                     abortBatch = true;
-                    alert("⚠️ 配額耗盡，批量分析已停止。請稍後再試，或使用單獨分析功能。");
+                    alert("⚠️ 配額耗盡，批量分析已停止。");
                     break;
                 }
 
-                // V116: 批量時的緩衝增加到 15 秒
+                // 批量時的緩衝 (維持 15 秒)
                 if (i < cards.length - 1) {
                     btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 緩衝休息中 (剩 ${cards.length - 1 - i} 組)...`;
                     await new Promise(r => setTimeout(r, 15000)); 
                 }
             }
-
             btn.disabled = false;
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
             btn.innerHTML = originalBtnText;
-            document.getElementById('analyzeBtnText').textContent = "批量分析完成";
+            document.getElementById('analyzeBtnText').textContent = "批量速查完成";
         }
 
-        // 核心分析函式 (共用)
-        async function processCardAnalysis(card, triggerBtn) {
+        // 核心分析函式 (增加 useAllImages 參數)
+        async function processCardAnalysis(card, triggerBtn, useAllImages) {
             const imgElements = card.querySelectorAll('.img-data');
-            if (imgElements.length === 0) {
-                if (triggerBtn) alert("請先加入照片！");
-                return 'no_images';
-            }
+            if (imgElements.length === 0) { if (triggerBtn) alert("請先加入照片！"); return 'no_images'; }
 
-            const imagesPayload = [];
-            imgElements.forEach(el => {
+            // V117: 決定要送幾張圖
+            let imagesPayload = [];
+            if (useAllImages) {
+                // 送全部
+                imgElements.forEach(el => {
+                    const base64 = el.value.split(',')[1];
+                    imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value });
+                });
+            } else {
+                // 只送第一張 (Lite Mode)
+                const el = imgElements[0];
                 const base64 = el.value.split(',')[1];
                 imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value });
-            });
+            }
 
-            // UI 鎖定 (針對單獨按鈕)
+            // UI 鎖定
             if (triggerBtn) {
                 triggerBtn.disabled = true;
-                triggerBtn.innerHTML = `<span class="loader w-3 h-3 border-t-blue-700"></span> 分析中`;
+                triggerBtn.innerHTML = `<span class="loader w-3 h-3 border-t-blue-700"></span> ${useAllImages ? '深度分析中' : '快速分析中'}`;
             }
 
             let attempts = 0;
@@ -397,17 +360,16 @@
             while (!success && attempts < maxAttempts) {
                 try {
                     const status = card.querySelector('.status-indicator');
-                    status.innerHTML = `<span class="loader w-4 h-4 border-t-blue-600 border-blue-200"></span> 分析中...` + (attempts > 0 ? ` (重試 ${attempts})` : "");
+                    status.innerHTML = `<span class="loader w-4 h-4 border-t-blue-600 border-blue-200"></span> ${useAllImages ? '深度分析中 (多圖)' : '快速分析中 (首圖)'}` + (attempts > 0 ? ` (重試 ${attempts})` : "");
                     status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-blue-600 mb-2";
                     
-                    if (!triggerBtn) card.scrollIntoView({ behavior: 'smooth', block: 'center' }); // 只有批量時才自動捲動
+                    if (!triggerBtn) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
                     const response = await fetch(GAS_WEB_APP_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify({ mode: "analyze", images: imagesPayload })
                     });
-                    
                     const resJson = await response.json();
 
                     if (resJson.status === 'success') {
@@ -415,11 +377,17 @@
                         const reportContent = card.querySelector('.report-content');
                         reportSection.classList.remove('hidden');
                         reportContent.innerHTML = marked.parse(resJson.data.fullReport);
+                        
                         status.innerHTML = `<span class="material-icons text-green-500">check_circle</span> 待確認`;
                         status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-green-600 mb-2";
+                        
                         card.dataset.status = 'done';
+                        
+                        // 顯示按鈕群
                         card.querySelector('.btn-save').classList.remove('hidden');
-                        card.querySelector('.btn-analyze-single').classList.add('hidden'); // 成功後隱藏單獨分析按鈕
+                        card.querySelector('.btn-analyze-lite').classList.add('hidden'); // 隱藏快速按鈕
+                        card.querySelector('.btn-analyze-deep').classList.remove('hidden'); // 顯示深度重試按鈕
+                        
                         card.querySelector('.hidden-result-data').value = JSON.stringify(resJson.data);
                         if (resJson.data.productName && resJson.data.productName !== "未知") {
                             const searchBtn = card.querySelector('.btn-search-product');
@@ -427,11 +395,15 @@
                             searchBtn.classList.remove('hidden');
                         }
                         success = true;
-                        if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">play_arrow</span> 單獨分析`; }
+                        
+                        // 恢復按鈕狀態
+                        if (triggerBtn) { 
+                            triggerBtn.disabled = false; 
+                            // 如果是深度按鈕觸發的，文字改回重試
+                            if (useAllImages) triggerBtn.innerHTML = `<span class="material-icons text-xs">travel_explore</span> 不滿意？用全部照片重試`;
+                        }
                         return 'success';
-                    } else {
-                        throw new Error(resJson.message);
-                    }
+                    } else { throw new Error(resJson.message); }
                 } catch (err) {
                     const errMsg = err.message || "";
                     if (errMsg.includes("Quota exceeded") || errMsg.includes("429") || errMsg.includes("rate limit")) {
@@ -440,7 +412,7 @@
                         if (attempts >= maxAttempts) {
                             status.innerHTML = `<span class="material-icons text-red-500">error</span> 配額耗盡`;
                             status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2";
-                            if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">play_arrow</span> 重試`; }
+                            if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">refresh</span> 重試`; }
                             return 'quota_exceeded_abort';
                         }
                         status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-orange-500 mb-2";
@@ -455,14 +427,13 @@
                         status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2";
                         card.querySelector('.report-section').classList.remove('hidden');
                         card.querySelector('.report-content').innerHTML = `<span class="text-red-500">分析失敗：${errMsg}</span>`;
-                        if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">play_arrow</span> 重試`; }
+                        if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">refresh</span> 重試`; }
                         return 'error';
                     }
                 }
             }
         }
 
-        // 存檔邏輯
         async function saveResult(btn) {
             const card = btn.closest('.product-card');
             const dataStr = card.querySelector('.hidden-result-data').value;
@@ -472,7 +443,6 @@
             btn.disabled = true;
             btn.innerHTML = `<span class="loader !w-3 !h-3 !border-t-white mr-1"></span>`;
             btn.classList.add('opacity-75');
-
             try {
                 const response = await fetch(GAS_WEB_APP_URL, {
                     method: 'POST',
