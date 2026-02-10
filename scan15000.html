@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V124 (燈箱比對版)</title>
+    <title>AI 商品分析 V125 (拖曳修正版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -30,7 +30,7 @@
         .toast { background: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; font-size: 14px; border-left: 4px solid #3b82f6; animation: slideIn 0.3s ease-out; max-width: 300px; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Lightbox Styles (Enhanced) */
+        /* Lightbox Styles */
         #lightbox {
             display: none;
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -49,10 +49,10 @@
             background: rgba(255,255,255,0.2); border-radius: 50%;
             width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
         }
-        /* V124: 資訊浮層 */
+        /* V125: 資訊浮層樣式 */
         #lightbox-info {
             position: absolute; bottom: 0; left: 0; width: 100%;
-            background: rgba(0, 0, 0, 0.7); color: white;
+            background: rgba(0, 0, 0, 0.85); color: white;
             padding: 20px; text-align: center;
             border-top: 1px solid rgba(255,255,255,0.2);
             z-index: 101; display: none;
@@ -61,14 +61,12 @@
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 pb-32">
 
-    <!-- Lightbox Overlay -->
+    <!-- Lightbox -->
     <div id="lightbox" onclick="closeLightbox()">
         <div id="lightbox-close" onclick="closeLightbox()">&times;</div>
         <img id="lightbox-img" src="" onclick="event.stopPropagation()">
-        <!-- V124: 比對資訊區 -->
-        <div id="lightbox-info" onclick="event.stopPropagation()">
-            <!-- JS will inject content here -->
-        </div>
+        <!-- 資訊浮層 -->
+        <div id="lightbox-info" onclick="event.stopPropagation()"></div>
     </div>
 
     <div class="max-w-6xl mx-auto p-4 md:p-8">
@@ -76,9 +74,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V124
+                AI 商品分析 V125
             </h1>
-            <p class="text-gray-500 text-sm">燈箱比對資訊 • 拖曳自動清理 • 廠商碼修正</p>
+            <p class="text-gray-500 text-sm">拖曳自動消失 • 廠商識別優化 • 燈箱比對</p>
         </header>
 
         <!-- Staging Area -->
@@ -91,7 +89,7 @@
                         <span class="material-icons text-orange-500">grid_view</span> 
                         待整理照片區
                     </h2>
-                    <p class="text-xs text-gray-500">先將所有照片上傳至此，再分配到下方分組。</p>
+                    <p class="text-xs text-gray-500">照片拖入下方分組後會自動移除。</p>
                 </div>
                 
                 <div class="flex gap-2 w-full md:w-auto">
@@ -211,7 +209,7 @@
 
         window.addEventListener('load', () => {});
 
-        // --- Lightbox Logic (V124 Updated) ---
+        // --- Lightbox Logic (V125: Enhanced Info Overlay) ---
         function openLightbox(src, imgEl) {
             const lightbox = document.getElementById('lightbox');
             const img = document.getElementById('lightbox-img');
@@ -221,19 +219,23 @@
             lightbox.style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
-            // 嘗試尋找父層卡片，讀取 AI 資訊
+            // 尋找父層卡片，讀取 AI 資訊
             const card = imgEl.closest('.product-card');
             if (card) {
                 const dataVal = card.querySelector('.hidden-result-data').value;
                 if (dataVal) {
                     try {
                         const data = JSON.parse(dataVal);
-                        // 只顯示最重要的名稱和條碼
+                        // V125: 顯示商品名稱與條碼，方便核對
                         infoBox.innerHTML = `
-                            <div class="font-bold text-lg text-white mb-1">${data.productName}</div>
-                            <div class="flex justify-center gap-4 text-sm">
-                                <span class="text-yellow-300 font-mono text-xl bg-black/50 px-2 rounded">條碼: ${data.barcode}</span>
-                                <span class="text-gray-300">廠商碼: ${data.manufacturerCode}</span>
+                            <div class="font-bold text-lg text-white mb-2">${data.productName || '尚未辨識'}</div>
+                            <div class="flex justify-center gap-4 text-sm flex-wrap">
+                                <span class="text-yellow-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-yellow-500/50">
+                                    條碼: ${data.barcode || 'N/A'}
+                                </span>
+                                <span class="text-cyan-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-cyan-500/50">
+                                    廠商碼: ${data.manufacturerCode || 'N/A'}
+                                </span>
                             </div>
                         `;
                         infoBox.style.display = 'block';
@@ -288,8 +290,7 @@
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         const MAX_SIZE = 800; 
-                        let width = img.width;
-                        let height = img.height;
+                        let width = img.width; let height = img.height;
                         if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
                         else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
                         canvas.width = width; canvas.height = height;
@@ -304,7 +305,7 @@
             });
         }
 
-        // --- 拖曳與上傳邏輯 ---
+        // --- Staging ---
         async function handleStagingFiles(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
@@ -322,7 +323,7 @@
             div.className = 'w-24 h-24 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-white shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition';
             div.draggable = true;
             div.ondragstart = handleDragStart;
-            // V124: 傳遞 this 給 openLightbox
+            // V125: onclick with this
             div.innerHTML = `
                 <img src="${base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)">
                 <button onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
@@ -334,10 +335,18 @@
             `;
             grid.appendChild(div);
         }
+
+        // --- Drag & Drop (V125 Fix: Remove from Staging) ---
         let draggedEl = null;
-        function handleDragStart(e) { draggedEl = e.target; e.target.classList.add('dragging'); e.dataTransfer.setData('text/plain', e.target.id); e.dataTransfer.effectAllowed = 'move'; }
+        function handleDragStart(e) { 
+            draggedEl = e.target; 
+            e.target.classList.add('dragging'); 
+            e.dataTransfer.setData('text/plain', e.target.id); 
+            e.dataTransfer.effectAllowed = 'move'; 
+        }
         function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
         function handleDragLeave(e) { e.preventDefault(); if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-active'); }
+        
         async function handleDropToStaging(e) {
             e.preventDefault(); e.currentTarget.classList.remove('drag-active');
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -348,6 +357,7 @@
             }
             if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
         }
+
         async function handleDropToCard(e) {
             e.preventDefault(); e.currentTarget.classList.remove('drag-active');
             const card = e.currentTarget;
@@ -357,10 +367,16 @@
             
             const id = e.dataTransfer.getData('text/plain');
             if (id && document.getElementById(id)) {
-                // V124: 修正拖曳邏輯 - 從 Staging 移除
+                // V125: Fix - Find source -> Copy -> Remove Source
                 const sourceEl = document.getElementById(id);
-                await addImageToCard(card, { base64: sourceEl.querySelector('.img-data').value, type: sourceEl.querySelector('.img-type').value, name: sourceEl.querySelector('.img-name').value });
-                sourceEl.remove(); // 確保移除
+                if (sourceEl) {
+                    await addImageToCard(card, { 
+                        base64: sourceEl.querySelector('.img-data').value, 
+                        type: sourceEl.querySelector('.img-type').value, 
+                        name: sourceEl.querySelector('.img-name').value 
+                    });
+                    sourceEl.remove(); // 確實移除來源照片
+                }
             } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 for (const file of files) {
@@ -372,6 +388,8 @@
             if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
             updateGlobalButton();
         }
+
+        // --- Card Ops ---
         function addProductGroup() {
             productCounter++;
             const template = document.getElementById('productTemplate');
@@ -401,7 +419,7 @@
             const container = card.querySelector('.preview-container');
             const div = document.createElement('div');
             div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
-            // V124: 傳遞 this 給 openLightbox
+            // V125: onclick with this
             div.innerHTML = `
                 <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)">
                 <button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
@@ -427,7 +445,7 @@
             if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量分析 (前2張)`; } else { btn.classList.add('hidden'); }
         }
 
-        // --- 分析與存檔邏輯 (維持不變) ---
+        // --- Analysis Logic ---
         async function analyzeSingle(btn, useAllImages) {
             const card = btn.closest('.product-card');
             await processCardAnalysis(card, btn, useAllImages);
