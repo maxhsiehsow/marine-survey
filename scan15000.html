@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V121 (極速版)</title>
+    <title>AI 商品分析 V122 (黃金雙圖版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -45,9 +45,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V121
+                AI 商品分析 V122
             </h1>
-            <p class="text-gray-500 text-sm">後端並行處理 • 極限壓縮 • 高速通關</p>
+            <p class="text-gray-500 text-sm">全瓶+條碼雙重驗證 • 智慧分級辨識</p>
         </header>
 
         <!-- Staging Area -->
@@ -94,7 +94,7 @@
             <div class="max-w-4xl mx-auto flex justify-center">
                 <button id="analyzeAllBtn" onclick="analyzeAll()" class="pointer-events-auto hidden shadow-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-10 rounded-full transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
                     <span class="material-icons">flash_on</span>
-                    <span id="analyzeBtnText">開始批量速查 (僅第1張圖)</span>
+                    <span id="analyzeBtnText">開始批量分析 (前2張)</span>
                 </button>
             </div>
         </div>
@@ -121,7 +121,11 @@
 
             <div class="p-4 flex flex-col md:flex-row gap-4 items-start">
                 <div class="preview-container flex gap-2 overflow-x-auto pb-2 flex-grow min-h-[100px] w-full items-center bg-gray-50 rounded-lg p-2 border border-dashed border-gray-200">
-                    <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (第1張為主要識別圖)</span>
+                    <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">
+                        請拖曳照片至此<br>
+                        <span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>
+                        (最多4張)
+                    </span>
                 </div>
 
                 <div class="md:w-1/3 w-full flex flex-col justify-center border-l border-gray-100 md:pl-4 pl-0 md:border-t-0 border-t md:pt-0 pt-4">
@@ -131,9 +135,10 @@
                     
                     <input type="hidden" class="hidden-result-data">
                     
+                    <!-- V122: 按鈕文字調整 -->
                     <button onclick="analyzeSingle(this, false)" class="btn-analyze-lite w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2 border border-blue-200">
-                        <span class="material-icons text-sm">flash_on</span>
-                        快速分析 (第1張)
+                        <span class="material-icons text-sm">play_arrow</span>
+                        開始分析 (基本2張)
                     </button>
 
                     <button onclick="saveResult(this)" class="btn-save hidden w-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2">
@@ -141,9 +146,10 @@
                         確認並上傳
                     </button>
 
+                    <!-- V122: 深度按鈕 (條件觸發) -->
                     <button onclick="analyzeSingle(this, true)" class="btn-analyze-deep hidden w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg border border-indigo-100 transition flex items-center justify-center gap-2 mb-2">
                         <span class="material-icons text-xs">travel_explore</span>
-                        不滿意？用全部照片重試
+                        不滿意？深度辨識 (所有照片)
                     </button>
                     
                      <label class="mt-1 text-xs text-center text-blue-400 cursor-pointer hover:text-blue-600 flex justify-center items-center gap-1">
@@ -169,7 +175,7 @@
     </template>
 
     <script>
-        // 您的 GAS 網址
+        // 您的 GAS 網址 (維持不變)
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9o_X9XjKpNxIx2xBeykcRk_gdMU144a-q6Ga2vZK5j4I2qxh0pBGlkWI6E5Ol-Q-OsQ/exec";
 
         let productCounter = 0;
@@ -343,7 +349,7 @@
         function removeImageFromCard(btn) {
             const container = btn.closest('.preview-container');
             btn.parentElement.remove();
-            if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (最多4張)</span>`;
+            if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">請拖曳照片至此<br><span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>(最多4張)</span>`;
             updateGlobalButton();
         }
         function updateGlobalButton() {
@@ -351,10 +357,10 @@
             const hasImages = document.querySelectorAll('#productList .img-data').length > 0;
             const btn = document.getElementById('analyzeAllBtn');
             const btnText = document.getElementById('analyzeBtnText');
-            if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量速查 (${count} 組)`; } else { btn.classList.add('hidden'); }
+            if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量分析 (前2張)`; } else { btn.classList.add('hidden'); }
         }
 
-        // --- 分析邏輯 (V121: 縮短間隔) ---
+        // --- 分析邏輯 (V122: 黃金雙圖策略) ---
 
         async function analyzeSingle(btn, useAllImages) {
             const card = btn.closest('.product-card');
@@ -377,7 +383,7 @@
                 const imgElements = card.querySelectorAll('.img-data');
                 if (imgElements.length === 0) continue;
 
-                // 批量預設用快速模式 (只送一張)
+                // 批量預設用標準模式 (false = 使用前2張)
                 const result = await processCardAnalysis(card, null, false); 
                 
                 if (result === 'quota_exceeded_abort') {
@@ -386,7 +392,6 @@
                     break;
                 }
 
-                // V121: 因為後端解鎖，這裡的間隔可以縮短到 1 秒
                 if (i < cards.length - 1) {
                     btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 處理中 (剩 ${cards.length - 1 - i} 組)...`;
                     await new Promise(r => setTimeout(r, 1000)); 
@@ -395,24 +400,30 @@
             btn.disabled = false;
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
             btn.innerHTML = originalBtnText;
-            document.getElementById('analyzeBtnText').textContent = "批量速查完成";
+            document.getElementById('analyzeBtnText').textContent = "批量分析完成";
         }
 
         async function processCardAnalysis(card, triggerBtn, useAllImages) {
             const imgElements = card.querySelectorAll('.img-data');
             if (imgElements.length === 0) { if (triggerBtn) alert("請先加入照片！"); return 'no_images'; }
 
+            // V122 核心修改：資料準備策略
             let imagesPayload = [];
-            if (useAllImages) {
-                imgElements.forEach(el => {
-                    const base64 = el.value.split(',')[1];
-                    imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value });
-                });
-            } else {
-                const el = imgElements[0];
+            const elementsArray = Array.from(imgElements);
+            
+            // 決定要抓取的圖片來源
+            // useAllImages = true (深度): 抓全部 (最多4張)
+            // useAllImages = false (標準): 抓前2張 (全瓶+條碼)
+            const targetElements = useAllImages ? elementsArray : elementsArray.slice(0, 2);
+
+            targetElements.forEach(el => {
                 const base64 = el.value.split(',')[1];
-                imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value });
-            }
+                imagesPayload.push({ 
+                    mimeType: el.parentElement.querySelector('.img-type').value, 
+                    data: base64, 
+                    filename: el.parentElement.querySelector('.img-name').value 
+                });
+            });
 
             if (triggerBtn) {
                 triggerBtn.disabled = true;
@@ -428,7 +439,8 @@
             let success = false;
             const maxAttempts = 3; 
 
-            showToast(useAllImages ? "開始深度分析..." : "開始快速分析...");
+            // V122: 提示文字微調
+            showToast(useAllImages ? "深度分析中 (所有照片)..." : "標準分析中 (前2張)...");
 
             while (!success && attempts < maxAttempts) {
                 try {
@@ -456,12 +468,19 @@
                         status.innerHTML = `<span class="material-icons text-green-500">check_circle</span> 分析成功 (模型: ${resJson.data.model})`;
                         status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-green-600 mb-2";
                         
-                        showToast(`分析成功！使用模型: ${resJson.data.model}`, "success");
+                        showToast(`分析成功！`, "success");
 
                         card.dataset.status = 'done';
                         card.querySelector('.btn-save').classList.remove('hidden');
-                        card.querySelector('.btn-analyze-lite').classList.add('hidden'); 
-                        card.querySelector('.btn-analyze-deep').classList.remove('hidden'); 
+                        card.querySelector('.btn-analyze-lite').classList.add('hidden'); // 隱藏標準按鈕
+                        
+                        // V122: 只有當照片總數 > 2 時，才顯示深度重試按鈕
+                        if (imgElements.length > 2) {
+                            card.querySelector('.btn-analyze-deep').classList.remove('hidden');
+                        } else {
+                            card.querySelector('.btn-analyze-deep').classList.add('hidden');
+                        }
+                        
                         card.querySelector('.hidden-result-data').value = JSON.stringify(resJson.data);
                         
                         if (resJson.data.productName && resJson.data.productName !== "未知") {
@@ -473,7 +492,8 @@
                         
                         if (triggerBtn) { 
                             triggerBtn.disabled = false; 
-                            if (useAllImages) triggerBtn.innerHTML = `<span class="material-icons text-xs">travel_explore</span> 不滿意？用全部照片重試`;
+                            // 重置文字
+                            if (useAllImages) triggerBtn.innerHTML = `<span class="material-icons text-xs">travel_explore</span> 不滿意？深度辨識 (使用所有照片)`;
                         }
                         return 'success';
                     } else {
