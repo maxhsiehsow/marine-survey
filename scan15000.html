@@ -74,13 +74,8 @@
             </div>
         </div>
 
-        <!-- Product List Container -->
-        <div id="productList" class="space-y-6 mb-8 grid grid-cols-1 gap-6">
-            <!-- Dynamic Product Cards will be added here -->
-        </div>
-
-        <!-- New Product Drop Zone -->
-        <div id="newProductZone" class="border-4 border-dashed border-blue-200 rounded-2xl bg-white/50 hover:bg-white transition-all duration-200 relative group cursor-pointer"
+        <!-- New Product Drop Zone (Moved to Top) -->
+        <div id="newProductZone" class="border-4 border-dashed border-blue-200 rounded-2xl bg-white/50 hover:bg-white transition-all duration-200 relative group cursor-pointer mb-8"
              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropToNew(event)">
             
             <label class="flex flex-col items-center justify-center py-12 w-full h-full cursor-pointer">
@@ -93,6 +88,11 @@
                 <!-- Main Input Trigger (Hidden) -->
                 <button onclick="addProductGroup()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></button>
             </label>
+        </div>
+
+        <!-- Product List Container -->
+        <div id="productList" class="space-y-6 mb-8 grid grid-cols-1 gap-6">
+            <!-- Dynamic Product Cards will be added here -->
         </div>
 
         <!-- Global Analyze Button -->
