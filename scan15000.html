@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V125 (拖曳修正版)</title>
+    <title>AI 商品分析 V126 (拖曳完美修正版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -49,7 +49,6 @@
             background: rgba(255,255,255,0.2); border-radius: 50%;
             width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
         }
-        /* V125: 資訊浮層樣式 */
         #lightbox-info {
             position: absolute; bottom: 0; left: 0; width: 100%;
             background: rgba(0, 0, 0, 0.85); color: white;
@@ -65,7 +64,6 @@
     <div id="lightbox" onclick="closeLightbox()">
         <div id="lightbox-close" onclick="closeLightbox()">&times;</div>
         <img id="lightbox-img" src="" onclick="event.stopPropagation()">
-        <!-- 資訊浮層 -->
         <div id="lightbox-info" onclick="event.stopPropagation()"></div>
     </div>
 
@@ -74,7 +72,7 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V125
+                AI 商品分析 V126
             </h1>
             <p class="text-gray-500 text-sm">拖曳自動消失 • 廠商識別優化 • 燈箱比對</p>
         </header>
@@ -209,24 +207,21 @@
 
         window.addEventListener('load', () => {});
 
-        // --- Lightbox Logic (V125: Enhanced Info Overlay) ---
+        // --- Lightbox Logic ---
         function openLightbox(src, imgEl) {
             const lightbox = document.getElementById('lightbox');
             const img = document.getElementById('lightbox-img');
             const infoBox = document.getElementById('lightbox-info');
-            
             img.src = src;
             lightbox.style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
-            // 尋找父層卡片，讀取 AI 資訊
             const card = imgEl.closest('.product-card');
             if (card) {
                 const dataVal = card.querySelector('.hidden-result-data').value;
                 if (dataVal) {
                     try {
                         const data = JSON.parse(dataVal);
-                        // V125: 顯示商品名稱與條碼，方便核對
                         infoBox.innerHTML = `
                             <div class="font-bold text-lg text-white mb-2">${data.productName || '尚未辨識'}</div>
                             <div class="flex justify-center gap-4 text-sm flex-wrap">
@@ -240,22 +235,14 @@
                         `;
                         infoBox.style.display = 'block';
                     } catch(e) { infoBox.style.display = 'none'; }
-                } else {
-                    infoBox.style.display = 'none';
-                }
-            } else {
-                infoBox.style.display = 'none';
-            }
+                } else { infoBox.style.display = 'none'; }
+            } else { infoBox.style.display = 'none'; }
         }
-
         function closeLightbox() {
             document.getElementById('lightbox').style.display = 'none';
             document.body.style.overflow = 'auto';
         }
-
-        document.addEventListener('keydown', function(event) {
-            if (event.key === "Escape") closeLightbox();
-        });
+        document.addEventListener('keydown', function(event) { if (event.key === "Escape") closeLightbox(); });
 
         // --- Toast System ---
         function showToast(message, type = 'info') {
@@ -279,7 +266,7 @@
             btn.textContent = debugArea.classList.contains('hidden') ? '顯示詳細日誌' : '隱藏詳細日誌';
         }
 
-        // --- 極限壓縮 ---
+        // --- Compression ---
         function getCompressedBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -323,9 +310,9 @@
             div.className = 'w-24 h-24 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-white shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition';
             div.draggable = true;
             div.ondragstart = handleDragStart;
-            // V125: onclick with this
+            // V126: Add draggable="false" to img to prevent native drag, use div drag
             div.innerHTML = `
-                <img src="${base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)">
+                <img src="${base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false">
                 <button onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
                     <span class="material-icons text-xs block">close</span>
                 </button>
@@ -336,12 +323,13 @@
             grid.appendChild(div);
         }
 
-        // --- Drag & Drop (V125 Fix: Remove from Staging) ---
+        // --- Drag & Drop (V126 Fixed) ---
         let draggedEl = null;
         function handleDragStart(e) { 
-            draggedEl = e.target; 
-            e.target.classList.add('dragging'); 
-            e.dataTransfer.setData('text/plain', e.target.id); 
+            // V126: 確保抓到的是外層 DIV (因為 img 不能 drag 了，所以 e.target 應該就是 div，但以防萬一用 currentTarget)
+            draggedEl = e.currentTarget; 
+            e.currentTarget.classList.add('dragging'); 
+            e.dataTransfer.setData('text/plain', e.currentTarget.id); 
             e.dataTransfer.effectAllowed = 'move'; 
         }
         function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
@@ -366,8 +354,8 @@
             if (container.querySelector('.placeholder-text')) container.innerHTML = '';
             
             const id = e.dataTransfer.getData('text/plain');
+            // V126: 明確尋找 ID
             if (id && document.getElementById(id)) {
-                // V125: Fix - Find source -> Copy -> Remove Source
                 const sourceEl = document.getElementById(id);
                 if (sourceEl) {
                     await addImageToCard(card, { 
@@ -375,7 +363,13 @@
                         type: sourceEl.querySelector('.img-type').value, 
                         name: sourceEl.querySelector('.img-name').value 
                     });
-                    sourceEl.remove(); // 確實移除來源照片
+                    sourceEl.remove(); // 移除來源
+                    
+                    // V126: 檢查是否空了，補回 placeholder
+                    const grid = document.getElementById('stagingGrid');
+                    if (grid && grid.children.length === 0) {
+                        grid.innerHTML = `<div class="text-gray-400 text-sm mx-auto flex flex-col items-center pointer-events-none placeholder"><span class="material-icons text-3xl mb-1">move_to_inbox</span><span>暫無照片，請點擊匯入</span></div>`;
+                    }
                 }
             } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
@@ -419,9 +413,9 @@
             const container = card.querySelector('.preview-container');
             const div = document.createElement('div');
             div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
-            // V125: onclick with this
+            // V126: onclick lightbox, draggable false
             div.innerHTML = `
-                <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)">
+                <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false">
                 <button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
                     <span class="material-icons text-xs block">close</span>
                 </button>
