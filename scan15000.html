@@ -36,7 +36,7 @@
                 <span class="material-icons text-4xl">inventory</span>
                 AI 商品分析 V110
             </h1>
-            <p class="text-gray-500 text-sm">自動分組流水線 • 拖曳上傳 • 快速建立</p>
+            <p class="text-gray-500 text-sm">自動分組流水線 • 拖曳上傳 • 智慧速率控制</p>
         </header>
 
         <!-- Product List Container (Existing Cards) -->
@@ -186,11 +186,6 @@
 
             // 加入列表 (放在新增區塊的上方)
             document.getElementById('productList').appendChild(card);
-            
-            // 滾動到這個新卡片
-            // card.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
-            // 老王建議：為了讓使用者能繼續上傳下一個，其實不滾動比較好，或者只滾動一點點
-            
             updateGlobalButton();
         }
 
@@ -214,16 +209,20 @@
             }
         }
 
-        // --- 批量分析邏輯 ---
+        // --- 批量分析邏輯 (V110 修正：加入速率限制冷卻) ---
 
         async function analyzeAll() {
-            const cards = document.querySelectorAll('.product-card');
+            const cards = Array.from(document.querySelectorAll('.product-card')); // 轉為陣列以便使用 index
             const btn = document.getElementById('analyzeAllBtn');
+            const originalBtnText = btn.innerHTML;
             
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
-            for (const card of cards) {
+            // 使用 for 迴圈配合 await 才能實現暫停
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+
                 // 跳過已完成或已存檔的
                 if (card.dataset.status === 'done' || card.dataset.status === 'saved') continue;
 
@@ -295,11 +294,18 @@
                     reportSection.classList.remove('hidden');
                     reportContent.innerHTML = `<span class="text-red-500">分析失敗：${err.message}</span>`;
                 }
+
+                // 速率限制保護：如果這不是最後一張卡片，則強制休息 5 秒
+                if (i < cards.length - 1) {
+                    btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 緩衝冷卻中 (剩 ${cards.length - 1 - i} 組)...`;
+                    await new Promise(r => setTimeout(r, 5000)); // 休息 5000 毫秒 = 5 秒
+                }
             }
 
             btn.disabled = false;
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
-            btn.innerHTML = `<span class="material-icons">search</span> <span>分析完成</span>`;
+            btn.innerHTML = originalBtnText;
+            document.getElementById('analyzeBtnText').textContent = "批量分析完成";
         }
 
         // --- 存檔邏輯 (單筆) ---
