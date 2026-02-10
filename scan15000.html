@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V128 (最終穩定版)</title>
+    <title>AI 商品分析 V131 (智慧緩衝版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -51,9 +51,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V128
+                AI 商品分析 V131
             </h1>
-            <p class="text-gray-500 text-sm">資料庫比對 • 拖曳自動清理 • 燈箱檢視</p>
+            <p class="text-gray-500 text-sm">資料庫優先 • 智慧冷卻 • 穩定通關</p>
         </header>
 
         <!-- Staging Area -->
@@ -118,6 +118,7 @@
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 product-title text-sm">
                     <span class="material-icons text-blue-500 text-base">liquor</span> 
                     <span class="title-text">瓶罐商品</span>
+                    <!-- 海漂標章 -->
                     <span class="known-badge hidden bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-green-200">
                         <span class="material-icons text-xs">verified</span> 常見海漂
                     </span>
@@ -203,7 +204,7 @@
                 if (dataVal) {
                     try {
                         const data = JSON.parse(dataVal);
-                        // V128: 顯示比對資訊
+                        // V131: 顯示比對資訊
                         infoBox.innerHTML = `
                             <div class="font-bold text-lg text-white mb-2 flex items-center justify-center gap-2">
                                 ${data.productName || '尚未辨識'}
@@ -234,6 +235,7 @@
             let icon = 'info'; let color = '#3b82f6';
             if (type === 'success') { icon = 'check_circle'; color = '#22c55e'; }
             if (type === 'error') { icon = 'error'; color = '#ef4444'; }
+            if (type === 'warning') { icon = 'schedule'; color = '#f59e0b'; }
             toast.style.borderLeftColor = color;
             toast.innerHTML = `<span class="material-icons" style="color:${color}">${icon}</span><span>${message}</span>`;
             container.appendChild(toast);
@@ -385,7 +387,6 @@
             const container = card.querySelector('.preview-container');
             const div = document.createElement('div');
             div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
-            // V126: onclick lightbox, draggable false
             div.innerHTML = `
                 <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false">
                 <button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
@@ -454,6 +455,12 @@
                     if (!triggerBtn) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     const response = await fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ mode: "analyze", images: imagesPayload }) });
                     const resJson = await response.json();
+                    
+                    // V131: Handle Quota Status from Backend
+                    if (resJson.status === 'quota') {
+                        throw new Error("Quota exceeded");
+                    }
+
                     if (resJson.debugLog) debugArea.textContent = resJson.debugLog;
                     if (resJson.status === 'success') {
                         const reportContent = card.querySelector('.report-content');
@@ -478,8 +485,8 @@
                     if (errMsg.includes("Quota exceeded") || errMsg.includes("429")) {
                         attempts++; status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-orange-500 mb-2";
                         if (attempts >= maxAttempts) { status.innerHTML = `<span class="material-icons text-red-500">error</span> 配額耗盡`; status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2"; showToast("API 配額耗盡", "error"); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">refresh</span> 重試`; } return 'quota_exceeded_abort'; }
-                        showToast(`API 塞車，啟動冷卻 (第${attempts}次)`, "error");
-                        for (let s = 45; s > 0; s--) { status.innerHTML = `<span class="loader !border-t-orange-500"></span> API 塞車，冷卻 ${s}s...`; await new Promise(r => setTimeout(r, 1000)); }
+                        showToast(`API 塞車，啟動冷卻 (第${attempts}次)`, "warning");
+                        for (let s = 60; s > 0; s--) { status.innerHTML = `<span class="loader !border-t-orange-500"></span> API 塞車，冷卻 ${s}s...`; await new Promise(r => setTimeout(r, 1000)); }
                     } else { console.error(err); const status = card.querySelector('.status-indicator'); status.innerHTML = `<span class="material-icons text-red-500">error</span> 失敗`; status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2"; card.querySelector('.report-content').innerHTML = `<span class="text-red-500">分析失敗：${errMsg}</span>`; showToast("分析失敗，請看日誌", "error"); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">refresh</span> 重試`; } return 'error'; }
                 }
             }
