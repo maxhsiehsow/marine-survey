@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V122 (黃金雙圖版)</title>
+    <title>AI 商品分析 V123 (細節檢視版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -36,18 +36,69 @@
             font-size: 14px; border-left: 4px solid #3b82f6; animation: slideIn 0.3s ease-out; max-width: 300px;
         }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Lightbox Styles */
+        #lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.2s;
+        }
+        #lightbox img {
+            max-width: 95%;
+            max-height: 85vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            object-fit: contain;
+        }
+        #lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+            z-index: 101;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        #lightbox-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 pb-32">
+
+    <!-- Lightbox Overlay -->
+    <div id="lightbox" onclick="closeLightbox()">
+        <div id="lightbox-close" onclick="closeLightbox()">&times;</div>
+        <img id="lightbox-img" src="" onclick="event.stopPropagation()"> <!-- 點圖片不關閉 -->
+        <p class="text-white mt-4 text-sm bg-black/50 px-4 py-2 rounded-full">點擊背景關閉</p>
+    </div>
 
     <div class="max-w-6xl mx-auto p-4 md:p-8">
         
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V122
+                AI 商品分析 V123
             </h1>
-            <p class="text-gray-500 text-sm">全瓶+條碼雙重驗證 • 智慧分級辨識</p>
+            <p class="text-gray-500 text-sm">點圖放大檢視 • 全瓶+條碼雙重驗證</p>
         </header>
 
         <!-- Staging Area -->
@@ -135,7 +186,6 @@
                     
                     <input type="hidden" class="hidden-result-data">
                     
-                    <!-- V122: 按鈕文字調整 -->
                     <button onclick="analyzeSingle(this, false)" class="btn-analyze-lite w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2 border border-blue-200">
                         <span class="material-icons text-sm">play_arrow</span>
                         開始分析 (基本2張)
@@ -146,7 +196,6 @@
                         確認並上傳
                     </button>
 
-                    <!-- V122: 深度按鈕 (條件觸發) -->
                     <button onclick="analyzeSingle(this, true)" class="btn-analyze-deep hidden w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg border border-indigo-100 transition flex items-center justify-center gap-2 mb-2">
                         <span class="material-icons text-xs">travel_explore</span>
                         不滿意？深度辨識 (所有照片)
@@ -175,13 +224,34 @@
     </template>
 
     <script>
-        // 您的 GAS 網址 (維持不變)
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9o_X9XjKpNxIx2xBeykcRk_gdMU144a-q6Ga2vZK5j4I2qxh0pBGlkWI6E5Ol-Q-OsQ/exec";
 
         let productCounter = 0;
         let stagingCounter = 0;
 
         window.addEventListener('load', () => {});
+
+        // --- Lightbox Logic (V123 New) ---
+        function openLightbox(src) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightbox-img');
+            img.src = src;
+            lightbox.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // 防止背景滾動
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // 支援按 ESC 關閉
+        document.addEventListener('keydown', function(event) {
+            if (event.key === "Escape") {
+                closeLightbox();
+            }
+        });
 
         // --- Toast System ---
         function showToast(message, type = 'info') {
@@ -249,6 +319,7 @@
             for (const file of files) await addToStaging(file);
             input.value = '';
         }
+        
         async function addToStaging(file) {
             stagingCounter++;
             const base64 = await getCompressedBase64(file); 
@@ -258,8 +329,9 @@
             div.className = 'w-24 h-24 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-white shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition';
             div.draggable = true;
             div.ondragstart = handleDragStart;
+            // V123: 增加 onclick 事件，開啟 Lightbox
             div.innerHTML = `
-                <img src="${base64}" class="w-full h-full object-cover pointer-events-none">
+                <img src="${base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src)">
                 <button onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
                     <span class="material-icons text-xs block">close</span>
                 </button>
@@ -269,6 +341,7 @@
             `;
             grid.appendChild(div);
         }
+        
         let draggedEl = null;
         function handleDragStart(e) { draggedEl = e.target; e.target.classList.add('dragging'); e.dataTransfer.setData('text/plain', e.target.id); e.dataTransfer.effectAllowed = 'move'; }
         function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
@@ -331,12 +404,14 @@
             }
             input.value = ''; updateGlobalButton();
         }
+        
         async function addImageToCard(card, imgObj) {
             const container = card.querySelector('.preview-container');
             const div = document.createElement('div');
             div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
+            // V123: 增加 onclick 事件，開啟 Lightbox
             div.innerHTML = `
-                <img src="${imgObj.base64}" class="w-full h-full object-cover">
+                <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src)">
                 <button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
                     <span class="material-icons text-xs block">close</span>
                 </button>
@@ -346,10 +421,11 @@
             `;
             container.appendChild(div);
         }
+        
         function removeImageFromCard(btn) {
             const container = btn.closest('.preview-container');
             btn.parentElement.remove();
-            if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">請拖曳照片至此<br><span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>(最多4張)</span>`;
+            if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (最多4張)</span>`;
             updateGlobalButton();
         }
         function updateGlobalButton() {
