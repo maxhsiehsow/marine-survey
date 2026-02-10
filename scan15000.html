@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V112 (智慧防卡彈+倒序版)</title>
+    <title>AI 商品分析 V113 (智慧防卡彈+聰明堆疊版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -18,20 +18,13 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .fade-in { animation: fadeIn 0.4s ease-out; }
-        
-        /* 拖曳目標樣式 */
         .drag-active {
             border-color: #3b82f6 !important;
             background-color: #eff6ff !important;
             transform: scale(1.01);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
-        /* 被拖曳物件樣式 */
-        .dragging {
-            opacity: 0.5;
-            transform: scale(0.9);
-        }
+        .dragging { opacity: 0.5; transform: scale(0.9); }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 pb-32">
@@ -41,9 +34,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V112
+                AI 商品分析 V113
             </h1>
-            <p class="text-gray-500 text-sm">自動重試機制 • 智慧流量控制 • 最新分組置頂</p>
+            <p class="text-gray-500 text-sm">熔斷保護機制 • 智慧堆疊上傳 • 穩定優先</p>
         </header>
 
         <!-- Staging Area -->
@@ -64,7 +57,6 @@
                 </label>
             </div>
 
-            <!-- Staging Grid -->
             <div id="stagingGrid" class="flex gap-3 overflow-x-auto pb-4 min-h-[120px] items-center p-2 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50"
                  ondragover="handleDragOver(event)" ondrop="handleDropToStaging(event)">
                 <div class="text-gray-400 text-sm mx-auto flex flex-col items-center pointer-events-none">
@@ -74,7 +66,7 @@
             </div>
         </div>
 
-        <!-- New Product Drop Zone (Moved to Top) -->
+        <!-- New Product Drop Zone (Smart Append) -->
         <div id="newProductZone" class="border-4 border-dashed border-blue-200 rounded-2xl bg-white/50 hover:bg-white transition-all duration-200 relative group cursor-pointer mb-8"
              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropToNew(event)">
             
@@ -82,18 +74,16 @@
                 <div class="bg-blue-100 p-4 rounded-full mb-3 group-hover:scale-110 transition-transform duration-200">
                     <span class="material-icons text-blue-500 text-4xl">add_circle_outline</span>
                 </div>
-                <h3 class="text-xl font-bold text-blue-600 mb-1">新增一個空瓶罐分組</h3>
-                <p class="text-gray-400 text-sm">點擊新增，或將上方照片直接拖曳至此 (最新分組將置頂)</p>
+                <h3 class="text-xl font-bold text-blue-600 mb-1">建立/加入 瓶罐分組</h3>
+                <p class="text-gray-400 text-sm">將照片拖曳至此 (若上方分組未滿，會自動加入該分組)</p>
                 
-                <!-- Main Input Trigger (Hidden) -->
-                <button onclick="addProductGroup()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"></button>
+                <!-- Main Input Trigger -->
+                <input type="file" class="hidden" accept="image/*" multiple onchange="handleNewProductFiles(this)">
             </label>
         </div>
 
         <!-- Product List Container -->
-        <div id="productList" class="space-y-6 mb-8 grid grid-cols-1 gap-6">
-            <!-- Dynamic Product Cards will be added here -->
-        </div>
+        <div id="productList" class="space-y-6 mb-8 grid grid-cols-1 gap-6"></div>
 
         <!-- Global Analyze Button -->
         <div class="mt-8 sticky bottom-6 z-10 pointer-events-none">
@@ -112,7 +102,6 @@
         <div class="product-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in relative scroll-mt-4"
              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropToCard(event)">
             
-            <!-- Header -->
             <div class="bg-gray-50 p-3 border-b border-gray-100 flex justify-between items-center pointer-events-none">
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 product-title text-sm">
                     <span class="material-icons text-blue-500 text-base">liquor</span> 
@@ -123,15 +112,11 @@
                 </button>
             </div>
 
-            <!-- Photos & Status -->
             <div class="p-4 flex flex-col md:flex-row gap-4 items-start">
-                
-                <!-- Droppable Area -->
                 <div class="preview-container flex gap-2 overflow-x-auto pb-2 flex-grow min-h-[100px] w-full items-center bg-gray-50 rounded-lg p-2 border border-dashed border-gray-200">
                     <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text">拖曳照片至此 (最多4張)</span>
                 </div>
 
-                <!-- Status & Action Area -->
                 <div class="md:w-1/3 w-full flex flex-col justify-center border-l border-gray-100 md:pl-4 pl-0 md:border-t-0 border-t md:pt-0 pt-4">
                     <div class="status-indicator flex items-center gap-2 text-sm font-bold text-gray-400 mb-2">
                         <span class="material-icons text-base">schedule</span> 等待分析
@@ -141,7 +126,6 @@
                         <span class="material-icons text-sm">cloud_upload</span>
                         確認並上傳
                     </button>
-                    <!-- Manual Add Button inside card -->
                      <label class="mt-2 text-xs text-center text-blue-400 cursor-pointer hover:text-blue-600 flex justify-center items-center gap-1">
                         <span class="material-icons text-xs">add</span> 手動補照片
                         <input type="file" class="hidden" accept="image/*" multiple onchange="handleManualAddFiles(this)">
@@ -149,7 +133,6 @@
                 </div>
             </div>
 
-            <!-- Report Section -->
             <div class="report-section hidden bg-slate-50 border-t border-gray-100 p-4">
                 <div class="report-content prose prose-sm max-w-none text-gray-700 bg-white p-4 rounded-lg border border-gray-200 shadow-sm"></div>
                 <div class="mt-3 flex gap-2 justify-end">
@@ -167,22 +150,15 @@
         let productCounter = 0;
         let stagingCounter = 0;
 
-        // 初始化
-        window.addEventListener('load', () => {
-        });
+        window.addEventListener('load', () => {});
 
-        // --- 1. 待整理區 (Staging Area) 邏輯 ---
-
+        // --- 1. 待整理區邏輯 ---
         async function handleStagingFiles(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
-            
             const grid = document.getElementById('stagingGrid');
             if (grid.querySelector('span')) grid.innerHTML = ''; 
-
-            for (const file of files) {
-                await addToStaging(file);
-            }
+            for (const file of files) await addToStaging(file);
             input.value = '';
         }
 
@@ -190,13 +166,11 @@
             stagingCounter++;
             const base64 = await getBase64(file);
             const grid = document.getElementById('stagingGrid');
-            
             const div = document.createElement('div');
             div.id = `stage-img-${stagingCounter}`;
             div.className = 'w-24 h-24 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-white shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition';
             div.draggable = true;
             div.ondragstart = handleDragStart;
-            
             div.innerHTML = `
                 <img src="${base64}" class="w-full h-full object-cover pointer-events-none">
                 <button onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
@@ -209,7 +183,7 @@
             grid.appendChild(div);
         }
 
-        // --- 2. 拖曳核心邏輯 ---
+        // --- 2. 拖曳與新增邏輯 (修正版：Smart Append) ---
 
         let draggedEl = null;
 
@@ -219,28 +193,66 @@
             e.dataTransfer.setData('text/plain', e.target.id);
             e.dataTransfer.effectAllowed = 'move';
         }
-
         function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
-        
         function handleDragLeave(e) {
             e.preventDefault();
-            if (!e.currentTarget.contains(e.relatedTarget)) {
-                e.currentTarget.classList.remove('drag-active');
+            if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-active');
+        }
+
+        // 核心：取得或建立「目前正在編輯」的卡片
+        function getOrCreateActiveCard() {
+            const list = document.getElementById('productList');
+            const topCard = list.firstElementChild; // 取得最上面的卡片
+
+            // 判斷條件：卡片存在 + 尚未分析完成 + 照片少於 4 張
+            if (topCard && !topCard.dataset.status && topCard.querySelector('.preview-container').querySelectorAll('.img-item').length < 4) {
+                return topCard; // 回傳這張舊卡片
+            } else {
+                return addProductGroup(); // 建立一張新卡片並回傳
             }
+        }
+
+        async function handleNewProductFiles(input) {
+            const files = Array.from(input.files);
+            if (files.length === 0) return;
+            const card = getOrCreateActiveCard(); // 使用智慧堆疊
+            const container = card.querySelector('.preview-container');
+            if (container.querySelector('.placeholder-text')) container.innerHTML = '';
+
+            for (const file of files) {
+                if (container.querySelectorAll('.img-item').length >= 4) break;
+                const base64 = await getBase64(file);
+                await addImageToCard(card, { base64, type: file.type, name: file.name });
+            }
+            input.value = '';
+            updateGlobalButton();
+        }
+
+        async function handleDropToNew(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-active');
+            
+            const card = getOrCreateActiveCard(); // 使用智慧堆疊
+            
+            // 模擬事件傳給 handleDropToCard
+            const mockEvent = {
+                preventDefault: () => {},
+                currentTarget: card,
+                dataTransfer: e.dataTransfer
+            };
+            await handleDropToCard(mockEvent);
         }
 
         async function handleDropToStaging(e) {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-active');
-            
             if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 const grid = document.getElementById('stagingGrid');
                 if (grid.querySelector('span')) grid.innerHTML = '';
                 for (const file of files) await addToStaging(file);
             }
-            if (draggedEl) draggedEl.classList.remove('dragging');
-            draggedEl = null;
+            if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
         }
 
         async function handleDropToCard(e) {
@@ -251,10 +263,10 @@
 
             if (container.querySelectorAll('.img-item').length >= 4) {
                 alert("此瓶罐已滿 4 張照片！");
-                if (draggedEl) draggedEl.classList.remove('dragging');
-                draggedEl = null;
+                if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
                 return;
             }
+            if (container.querySelector('.placeholder-text')) container.innerHTML = '';
 
             const id = e.dataTransfer.getData('text/plain');
             if (id && document.getElementById(id)) {
@@ -273,40 +285,21 @@
                     await addImageToCard(card, { base64, type: file.type, name: file.name });
                 }
             }
-
-            if (draggedEl) draggedEl.classList.remove('dragging');
-            draggedEl = null;
+            if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
             updateGlobalButton();
         }
 
-        async function handleDropToNew(e) {
-            e.preventDefault();
-            e.currentTarget.classList.remove('drag-active');
-            const card = addProductGroup();
-            const mockEvent = {
-                preventDefault: () => {},
-                currentTarget: card,
-                dataTransfer: e.dataTransfer
-            };
-            await handleDropToCard(mockEvent);
-        }
-
         // --- 卡片操作 ---
-
         function addProductGroup() {
             productCounter++;
             const template = document.getElementById('productTemplate');
             const clone = template.content.cloneNode(true);
             const card = clone.querySelector('.product-card');
-            
             card.id = `product-${productCounter}`;
             card.querySelector('.title-text').textContent = `瓶罐商品 #${productCounter}`;
-            
-            // 關鍵修改：使用 prepend 將新卡片加到最上方
-            document.getElementById('productList').prepend(card);
-            
+            document.getElementById('productList').prepend(card); // 倒序排列：最新的在最上面
             updateGlobalButton();
-            return card; 
+            return card;
         }
 
         function removeProduct(btn) {
@@ -320,11 +313,9 @@
             const files = Array.from(input.files);
             const card = input.closest('.product-card');
             const container = card.querySelector('.preview-container');
-            
+            if (container.querySelector('.placeholder-text')) container.innerHTML = '';
             for (const file of files) {
-                if (container.querySelectorAll('.img-item').length >= 4) {
-                    alert("已滿 4 張"); break;
-                }
+                if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張"); break; }
                 const base64 = await getBase64(file);
                 await addImageToCard(card, { base64, type: file.type, name: file.name });
             }
@@ -334,10 +325,6 @@
 
         async function addImageToCard(card, imgObj) {
             const container = card.querySelector('.preview-container');
-            if (container.querySelector('.placeholder-text')) {
-                container.innerHTML = ''; 
-            }
-            
             const div = document.createElement('div');
             div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
             div.innerHTML = `
@@ -366,7 +353,6 @@
             const hasImages = document.querySelectorAll('#productList .img-data').length > 0;
             const btn = document.getElementById('analyzeAllBtn');
             const btnText = document.getElementById('analyzeBtnText');
-            
             if (count > 0 && hasImages) {
                 btn.classList.remove('hidden');
                 btnText.textContent = `開始批量分析 (${count} 組)`;
@@ -375,7 +361,7 @@
             }
         }
 
-        // --- 批量分析邏輯 (V112 智慧防卡彈核心) ---
+        // --- 3. 批量分析邏輯 (V113 熔斷保護核心) ---
 
         async function analyzeAll() {
             const cards = Array.from(document.querySelectorAll('.product-card'));
@@ -385,14 +371,16 @@
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             
+            let abortBatch = false; // 熔斷旗標
+
             for (let i = 0; i < cards.length; i++) {
+                if (abortBatch) break; // 若已熔斷，停止後續處理
+
                 const card = cards[i];
                 if (card.dataset.status === 'done' || card.dataset.status === 'saved') continue;
-
                 const imgElements = card.querySelectorAll('.img-data');
                 if (imgElements.length === 0) continue;
 
-                // 準備 Payload
                 const imagesPayload = [];
                 imgElements.forEach(el => {
                     const base64 = el.value.split(',')[1];
@@ -401,21 +389,19 @@
                     imagesPayload.push({ mimeType: type, data: base64, filename: name });
                 });
 
-                // --- 智慧重試迴圈 (Smart Retry Loop) ---
+                // --- 智慧重試迴圈 ---
                 let attempts = 0;
                 let success = false;
-                const maxAttempts = 3;
+                const maxAttempts = 2; // 減少重試次數，避免過度等待
 
                 while (!success && attempts < maxAttempts) {
                     try {
-                        // UI 更新
                         const status = card.querySelector('.status-indicator');
-                        status.innerHTML = `<span class="loader w-4 h-4 border-t-blue-600 border-blue-200"></span> 分析中...` + (attempts > 0 ? ` (重試第 ${attempts} 次)` : "");
+                        status.innerHTML = `<span class="loader w-4 h-4 border-t-blue-600 border-blue-200"></span> 分析中...` + (attempts > 0 ? ` (重試 ${attempts})` : "");
                         status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-blue-600 mb-2";
                         
                         card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                        // 呼叫 API
                         const response = await fetch(GAS_WEB_APP_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -425,15 +411,13 @@
                         const resJson = await response.json();
 
                         if (resJson.status === 'success') {
-                            // 成功！
+                            // 成功
                             const reportSection = card.querySelector('.report-section');
                             const reportContent = card.querySelector('.report-content');
                             reportSection.classList.remove('hidden');
                             reportContent.innerHTML = marked.parse(resJson.data.fullReport);
-                            
                             status.innerHTML = `<span class="material-icons text-green-500">check_circle</span> 待確認`;
                             status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-green-600 mb-2";
-                            
                             card.dataset.status = 'done';
                             card.querySelector('.btn-save').classList.remove('hidden');
                             card.querySelector('.hidden-result-data').value = JSON.stringify(resJson.data);
@@ -443,7 +427,7 @@
                                 searchBtn.href = `https://www.google.com/search?q=${encodeURIComponent(resJson.data.productName)}`;
                                 searchBtn.classList.remove('hidden');
                             }
-                            success = true; // 標記成功，跳出 while
+                            success = true; 
 
                         } else {
                             throw new Error(resJson.message);
@@ -451,23 +435,30 @@
 
                     } catch (err) {
                         const errMsg = err.message || "";
-                        // 偵測是否為配額錯誤 (429 or Quota exceeded)
+                        // 檢查配額錯誤
                         if (errMsg.includes("Quota exceeded") || errMsg.includes("429") || errMsg.includes("rate limit")) {
-                            console.warn("觸發 Rate Limit，啟動冷卻...");
                             attempts++;
-                            
                             const status = card.querySelector('.status-indicator');
-                            status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-orange-500 mb-2";
                             
-                            // 倒數計時 60 秒
+                            // 若已經是最後一次嘗試，則觸發熔斷
+                            if (attempts >= maxAttempts) {
+                                console.error("Quota Exceeded persistently. Aborting batch.");
+                                status.innerHTML = `<span class="material-icons text-red-500">error</span> 配額耗盡 (停止)`;
+                                status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2";
+                                alert("⚠️ 系統偵測到 Google API 配額已耗盡，且重試無效。\n為避免無效等待，已自動停止後續分析。\n請稍候 2~5 分鐘後再試。");
+                                abortBatch = true;
+                                break;
+                            }
+
+                            // 否則，啟動冷卻倒數
+                            status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-orange-500 mb-2";
                             for (let s = 60; s > 0; s--) {
-                                status.innerHTML = `<span class="loader !border-t-orange-500"></span> API 塞車中，冷卻倒數 ${s} 秒...`;
-                                btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 強制冷卻中 (${s}s)...`;
+                                status.innerHTML = `<span class="loader !border-t-orange-500"></span> 塞車冷卻中 ${s}s...`;
+                                btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 強制冷卻 (${s}s)...`;
                                 await new Promise(r => setTimeout(r, 1000));
                             }
-                            // 冷卻結束，迴圈會繼續執行下一次 try
                         } else {
-                            // 其他錯誤 (如圖片太大、格式錯誤)，直接報錯不重試
+                            // 非配額錯誤 (如 500, 400)，直接失敗，但不熔斷
                             console.error(err);
                             const status = card.querySelector('.status-indicator');
                             status.innerHTML = `<span class="material-icons text-red-500">error</span> 失敗`;
@@ -476,32 +467,29 @@
                             const reportContent = card.querySelector('.report-content');
                             reportSection.classList.remove('hidden');
                             reportContent.innerHTML = `<span class="text-red-500">分析失敗：${errMsg}</span>`;
-                            break; // 跳出 while
+                            break; 
                         }
                     }
                 } // End While
 
-                // 正常緩衝 (如果還有下一張，且剛才是一次就成功，稍微休息 10 秒)
-                if (success && i < cards.length - 1) {
+                // 正常緩衝 (如果成功且還有下一張)
+                if (success && !abortBatch && i < cards.length - 1) {
                     btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 緩衝休息中 (剩 ${cards.length - 1 - i} 組)...`;
-                    await new Promise(r => setTimeout(r, 10000)); // V112: 增加到 10 秒
+                    await new Promise(r => setTimeout(r, 12000)); // V113: 安全起見加到 12 秒
                 }
             }
 
             btn.disabled = false;
             btn.classList.remove('opacity-75', 'cursor-not-allowed');
-            btn.innerHTML = originalBtnText;
-            document.getElementById('analyzeBtnText').textContent = "批量分析完成";
+            btn.innerHTML = abortBatch ? `<span class="material-icons">warning</span> 分析已中斷` : originalBtnText;
+            document.getElementById('analyzeBtnText').textContent = abortBatch ? "請稍後再試" : "批量分析完成";
         }
-
-        // --- 存檔邏輯 (維持不變) ---
 
         async function saveResult(btn) {
             const card = btn.closest('.product-card');
             const dataStr = card.querySelector('.hidden-result-data').value;
             if (!dataStr) return;
             const data = JSON.parse(dataStr);
-            
             const originalContent = btn.innerHTML;
             btn.disabled = true;
             btn.innerHTML = `<span class="loader !w-3 !h-3 !border-t-white mr-1"></span>`;
@@ -513,18 +501,14 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ mode: "save", data: data })
                 });
-
                 const resJson = await response.json();
-                
                 if (resJson.status === 'success') {
                     btn.innerHTML = `<span class="material-icons text-sm">cloud_done</span> 已存檔`;
                     btn.className = "btn-save w-full bg-gray-100 text-gray-400 text-sm font-bold px-3 py-2 rounded-lg cursor-default flex items-center justify-center gap-2 border border-gray-200";
                     card.dataset.status = 'saved';
                     const status = card.querySelector('.status-indicator');
                     status.innerHTML = `<span class="material-icons text-green-600">cloud_done</span> 已上傳至 Sheet`;
-                } else {
-                    throw new Error("存檔失敗");
-                }
+                } else { throw new Error("存檔失敗"); }
             } catch (err) {
                 alert("上傳失敗：" + err.message);
                 btn.disabled = false;
