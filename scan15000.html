@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V119 (智慧壓縮版)</title>
+    <title>AI 商品分析 V120 (極限瘦身版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -59,9 +59,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V119
+                AI 商品分析 V120
             </h1>
-            <p class="text-gray-500 text-sm">移植 V99 壓縮技術 • 流量節省 90% • 極速通關</p>
+            <p class="text-gray-500 text-sm">極限流量壓縮 • 仿 V99 參數 • 穩定通關</p>
         </header>
 
         <!-- Staging Area -->
@@ -142,6 +142,7 @@
                     <div class="status-indicator flex items-center gap-2 text-sm font-bold text-gray-400 mb-2">
                         <span class="material-icons text-base">schedule</span> 等待分析
                     </div>
+                    
                     <input type="hidden" class="hidden-result-data">
                     
                     <button onclick="analyzeSingle(this, false)" class="btn-analyze-lite w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2 border border-blue-200">
@@ -214,8 +215,7 @@
             btn.textContent = debugArea.classList.contains('hidden') ? '顯示詳細日誌' : '隱藏詳細日誌';
         }
 
-        // --- 核心：智慧壓縮函式 (V119 Key Feature) ---
-        // 這段邏輯移植自 TrashScanV99，能大幅減少圖片體積
+        // --- V120 核心：極限壓縮函式 (仿 V99 參數) ---
         function getCompressedBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -225,8 +225,8 @@
                     img.src = event.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        // 設置最大邊長 1024px (V99 是 800，這邊稍微放寬一點點以利辨識文字)
-                        const MAX_SIZE = 1024; 
+                        // V120: 將最大邊長從 1024 降為 800 (與 V99 相同)
+                        const MAX_SIZE = 800; 
                         let width = img.width;
                         let height = img.height;
 
@@ -247,8 +247,12 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
 
-                        // 使用 JPEG 格式，品質 0.7 (V99 是 0.6)
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        // V120: 品質降為 0.5 (極限瘦身)
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                        
+                        // Debug: 檢查壓縮後大小 (選用)
+                        // console.log("原始大小:", file.size, "壓縮後約:", Math.round((dataUrl.length * 3) / 4));
+                        
                         resolve(dataUrl);
                     };
                     img.onerror = (e) => reject(e);
@@ -257,7 +261,7 @@
             });
         }
 
-        // --- (以下邏輯不變，僅將 getBase64 替換為 getCompressedBase64) ---
+        // --- (以下邏輯維持不變) ---
 
         async function handleStagingFiles(input) {
             const files = Array.from(input.files);
@@ -269,7 +273,7 @@
         }
         async function addToStaging(file) {
             stagingCounter++;
-            const base64 = await getCompressedBase64(file); // V119 Change
+            const base64 = await getCompressedBase64(file); // 使用 V120 壓縮
             const grid = document.getElementById('stagingGrid');
             const div = document.createElement('div');
             div.id = `stage-img-${stagingCounter}`;
@@ -307,7 +311,6 @@
             const container = card.querySelector('.preview-container');
             if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張！"); if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; } return; }
             if (container.querySelector('.placeholder-text')) container.innerHTML = '';
-            
             const id = e.dataTransfer.getData('text/plain');
             if (id && document.getElementById(id)) {
                 const sourceEl = document.getElementById(id);
@@ -317,7 +320,7 @@
                 const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
                 for (const file of files) {
                     if (container.querySelectorAll('.img-item').length >= 4) break;
-                    const base64 = await getCompressedBase64(file); // V119 Change
+                    const base64 = await getCompressedBase64(file); // 使用 V120 壓縮
                     await addImageToCard(card, { base64, type: file.type, name: file.name });
                 }
             }
@@ -344,7 +347,7 @@
             if (container.querySelector('.placeholder-text')) container.innerHTML = '';
             for (const file of files) {
                 if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張"); break; }
-                const base64 = await getCompressedBase64(file); // V119 Change
+                const base64 = await getCompressedBase64(file); // 使用 V120 壓縮
                 await addImageToCard(card, { base64, type: file.type, name: file.name });
             }
             input.value = ''; updateGlobalButton();
@@ -399,7 +402,6 @@
                 const imgElements = card.querySelectorAll('.img-data');
                 if (imgElements.length === 0) continue;
 
-                // 批量預設用快速模式 (只送一張)
                 const result = await processCardAnalysis(card, null, false); 
                 
                 if (result === 'quota_exceeded_abort') {
@@ -430,6 +432,7 @@
                     imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value });
                 });
             } else {
+                // 快速模式：只送第一張
                 const el = imgElements[0];
                 const base64 = el.value.split(',')[1];
                 imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value });
