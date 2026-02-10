@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V127 (資料庫整合版)</title>
+    <title>AI 商品分析 V128 (最終穩定版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -39,6 +39,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 pb-32">
 
+    <!-- Lightbox -->
     <div id="lightbox" onclick="closeLightbox()">
         <div id="lightbox-close" onclick="closeLightbox()">&times;</div>
         <img id="lightbox-img" src="" onclick="event.stopPropagation()">
@@ -50,9 +51,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V127
+                AI 商品分析 V128
             </h1>
-            <p class="text-gray-500 text-sm">資料庫優先比對 • 常見海漂標示 • 智慧校正</p>
+            <p class="text-gray-500 text-sm">資料庫比對 • 拖曳自動清理 • 燈箱檢視</p>
         </header>
 
         <!-- Staging Area -->
@@ -91,8 +92,10 @@
             </div>
         </div>
 
+        <!-- Product List Container -->
         <div id="productList" class="space-y-6 mb-8 grid grid-cols-1 gap-6"></div>
 
+        <!-- Global Analyze Button -->
         <div class="mt-8 sticky bottom-6 z-10 pointer-events-none">
             <div class="max-w-4xl mx-auto flex justify-center">
                 <button id="analyzeAllBtn" onclick="analyzeAll()" class="pointer-events-auto hidden shadow-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-10 rounded-full transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
@@ -115,7 +118,6 @@
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 product-title text-sm">
                     <span class="material-icons text-blue-500 text-base">liquor</span> 
                     <span class="title-text">瓶罐商品</span>
-                    <!-- V127: Known Badge Placeholder -->
                     <span class="known-badge hidden bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-green-200">
                         <span class="material-icons text-xs">verified</span> 常見海漂
                     </span>
@@ -179,6 +181,7 @@
     </template>
 
     <script>
+        // 【已自動填入您的 GAS 部署網址】
         const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9o_X9XjKpNxIx2xBeykcRk_gdMU144a-q6Ga2vZK5j4I2qxh0pBGlkWI6E5Ol-Q-OsQ/exec";
 
         let productCounter = 0;
@@ -186,20 +189,26 @@
 
         window.addEventListener('load', () => {});
 
-        // --- Lightbox ---
+        // --- Lightbox Logic ---
         function openLightbox(src, imgEl) {
             const lightbox = document.getElementById('lightbox');
             const img = document.getElementById('lightbox-img');
             const infoBox = document.getElementById('lightbox-info');
             img.src = src; lightbox.style.display = 'flex'; document.body.style.overflow = 'hidden';
+            
+            // 讀取卡片資料
             const card = imgEl.closest('.product-card');
             if (card) {
                 const dataVal = card.querySelector('.hidden-result-data').value;
                 if (dataVal) {
                     try {
                         const data = JSON.parse(dataVal);
+                        // V128: 顯示比對資訊
                         infoBox.innerHTML = `
-                            <div class="font-bold text-lg text-white mb-2">${data.productName || '尚未辨識'}</div>
+                            <div class="font-bold text-lg text-white mb-2 flex items-center justify-center gap-2">
+                                ${data.productName || '尚未辨識'}
+                                ${data.isKnown ? '<span class="material-icons text-green-400 text-base" title="常見海漂">verified</span>' : ''}
+                            </div>
                             <div class="flex justify-center gap-4 text-sm flex-wrap">
                                 <span class="text-yellow-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-yellow-500/50">
                                     條碼: ${data.barcode || 'N/A'}
@@ -217,6 +226,7 @@
         function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = 'auto'; }
         document.addEventListener('keydown', function(event) { if (event.key === "Escape") closeLightbox(); });
 
+        // --- Toast System ---
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -230,6 +240,7 @@
             setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
+        // --- Debug ---
         function toggleDebug(btn) {
             const card = btn.closest('.product-card');
             const debugArea = card.querySelector('.debug-info');
@@ -237,6 +248,7 @@
             btn.textContent = debugArea.classList.contains('hidden') ? '顯示詳細日誌' : '隱藏詳細日誌';
         }
 
+        // --- Compression (Key: 800px / 0.5q) ---
         function getCompressedBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -262,6 +274,7 @@
             });
         }
 
+        // --- Staging Logic ---
         async function handleStagingFiles(input) {
             const files = Array.from(input.files);
             if (files.length === 0) return;
@@ -291,6 +304,7 @@
             grid.appendChild(div);
         }
 
+        // --- Drag & Drop ---
         let draggedEl = null;
         function handleDragStart(e) { draggedEl = e.currentTarget; e.currentTarget.classList.add('dragging'); e.dataTransfer.setData('text/plain', e.currentTarget.id); e.dataTransfer.effectAllowed = 'move'; }
         function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
@@ -341,6 +355,7 @@
             updateGlobalButton();
         }
 
+        // --- Card Ops ---
         function addProductGroup() {
             productCounter++;
             const template = document.getElementById('productTemplate');
@@ -370,6 +385,7 @@
             const container = card.querySelector('.preview-container');
             const div = document.createElement('div');
             div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
+            // V126: onclick lightbox, draggable false
             div.innerHTML = `
                 <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false">
                 <button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
@@ -395,6 +411,7 @@
             if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量分析 (前2張)`; } else { btn.classList.add('hidden'); }
         }
 
+        // --- Analysis Logic ---
         async function analyzeSingle(btn, useAllImages) {
             const card = btn.closest('.product-card');
             await processCardAnalysis(card, btn, useAllImages);
@@ -444,12 +461,7 @@
                         status.innerHTML = `<span class="material-icons text-green-500">check_circle</span> 分析成功 (模型: ${resJson.data.model})`;
                         status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-green-600 mb-2";
                         showToast(`分析成功！`, "success");
-                        
-                        // V127: 顯示海漂標章
-                        if (resJson.data.isKnown) {
-                            card.querySelector('.known-badge').classList.remove('hidden');
-                        }
-
+                        if (resJson.data.isKnown) card.querySelector('.known-badge').classList.remove('hidden');
                         card.dataset.status = 'done';
                         card.querySelector('.btn-save').classList.remove('hidden');
                         card.querySelector('.btn-analyze-lite').classList.add('hidden'); 
