@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 商品分析 V131 (智慧緩衝版)</title>
+    <title>AI 商品分析 V133 (全面診斷版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -30,11 +30,25 @@
         .toast { background: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; font-size: 14px; border-left: 4px solid #3b82f6; animation: slideIn 0.3s ease-out; max-width: 300px; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Lightbox Styles */
+        /* Lightbox */
         #lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 100; justify-content: center; align-items: center; flex-direction: column; backdrop-filter: blur(5px); animation: fadeIn 0.2s; }
         #lightbox img { max-width: 98%; max-height: 80vh; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; margin-bottom: 20px; }
         #lightbox-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 32px; cursor: pointer; z-index: 102; background: rgba(255,255,255,0.2); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; }
         #lightbox-info { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0, 0, 0, 0.85); color: white; padding: 20px; text-align: center; border-top: 1px solid rgba(255,255,255,0.2); z-index: 101; display: none; }
+
+        /* V133: Debug Console */
+        #debug-console {
+            background-color: #1e1e1e; color: #00ff00; font-family: monospace; font-size: 12px;
+            padding: 15px; border-radius: 8px; margin-top: 20px; margin-bottom: 80px;
+            max-height: 300px; overflow-y: auto; display: none;
+            border: 1px solid #333; box-shadow: inset 0 0 10px #000;
+        }
+        #debug-console h3 { color: #fff; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .log-section { margin-bottom: 15px; }
+        .log-label { color: #aaa; display: block; margin-bottom: 2px; }
+        .log-value { white-space: pre-wrap; word-break: break-all; }
+        .log-error { color: #ff4444; }
+        .log-warn { color: #ffbb00; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen font-sans text-slate-800 pb-32">
@@ -51,9 +65,9 @@
         <header class="text-center mb-6">
             <h1 class="text-3xl font-bold text-blue-800 mb-2 flex items-center justify-center gap-2">
                 <span class="material-icons text-4xl">inventory</span>
-                AI 商品分析 V131
+                AI 商品分析 V133
             </h1>
-            <p class="text-gray-500 text-sm">資料庫優先 • 智慧冷卻 • 穩定通關</p>
+            <p class="text-gray-500 text-sm">系統診斷模式 • 權限透明化</p>
         </header>
 
         <!-- Staging Area -->
@@ -92,10 +106,15 @@
             </div>
         </div>
 
-        <!-- Product List Container -->
+        <!-- Product List -->
         <div id="productList" class="space-y-6 mb-8 grid grid-cols-1 gap-6"></div>
 
-        <!-- Global Analyze Button -->
+        <!-- V133: Diagnostic Panel -->
+        <div id="debug-console">
+            <h3>🛠️ API 診斷面板 (Debug Console)</h3>
+            <div id="debug-content"></div>
+        </div>
+
         <div class="mt-8 sticky bottom-6 z-10 pointer-events-none">
             <div class="max-w-4xl mx-auto flex justify-center">
                 <button id="analyzeAllBtn" onclick="analyzeAll()" class="pointer-events-auto hidden shadow-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 px-10 rounded-full transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
@@ -113,12 +132,10 @@
     <template id="productTemplate">
         <div class="product-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden fade-in relative scroll-mt-32"
              ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDropToCard(event)">
-            
             <div class="bg-gray-50 p-3 border-b border-gray-100 flex justify-between items-center pointer-events-none">
                 <h3 class="font-bold text-gray-700 flex items-center gap-2 product-title text-sm">
                     <span class="material-icons text-blue-500 text-base">liquor</span> 
                     <span class="title-text">瓶罐商品</span>
-                    <!-- 海漂標章 -->
                     <span class="known-badge hidden bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full flex items-center gap-1 border border-green-200">
                         <span class="material-icons text-xs">verified</span> 常見海漂
                     </span>
@@ -127,52 +144,33 @@
                     <span class="material-icons text-base">close</span>
                 </button>
             </div>
-
             <div class="p-4 flex flex-col md:flex-row gap-4 items-start">
                 <div class="preview-container flex gap-2 overflow-x-auto pb-2 flex-grow min-h-[100px] w-full items-center bg-gray-50 rounded-lg p-2 border border-dashed border-gray-200">
-                    <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">
-                        請拖曳照片至此<br>
-                        <span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>
-                        (最多4張)
-                    </span>
+                    <span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">請拖曳照片至此<br><span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>(最多4張)</span>
                 </div>
-
                 <div class="md:w-1/3 w-full flex flex-col justify-center border-l border-gray-100 md:pl-4 pl-0 md:border-t-0 border-t md:pt-0 pt-4">
                     <div class="status-indicator flex items-center gap-2 text-sm font-bold text-gray-400 mb-2">
                         <span class="material-icons text-base">schedule</span> 等待分析
                     </div>
-                    
                     <input type="hidden" class="hidden-result-data">
-                    
                     <button onclick="analyzeSingle(this, false)" class="btn-analyze-lite w-full bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2 border border-blue-200">
-                        <span class="material-icons text-sm">play_arrow</span>
-                        開始分析 (基本2張)
+                        <span class="material-icons text-sm">play_arrow</span> 開始分析 (基本2張)
                     </button>
-
                     <button onclick="saveResult(this)" class="btn-save hidden w-full bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-3 py-2 rounded-lg shadow-sm transition flex items-center justify-center gap-2 mb-2">
-                        <span class="material-icons text-sm">cloud_upload</span>
-                        確認並上傳
+                        <span class="material-icons text-sm">cloud_upload</span> 確認並上傳
                     </button>
-
                     <button onclick="analyzeSingle(this, true)" class="btn-analyze-deep hidden w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold px-3 py-2 rounded-lg border border-indigo-100 transition flex items-center justify-center gap-2 mb-2">
-                        <span class="material-icons text-xs">travel_explore</span>
-                        不滿意？深度辨識 (所有照片)
+                        <span class="material-icons text-xs">travel_explore</span> 不滿意？深度辨識
                     </button>
-                    
                      <label class="mt-1 text-xs text-center text-blue-400 cursor-pointer hover:text-blue-600 flex justify-center items-center gap-1">
                         <span class="material-icons text-xs">add</span> 手動補照片
                         <input type="file" class="hidden" accept="image/*" multiple onchange="handleManualAddFiles(this)">
                     </label>
                 </div>
             </div>
-
             <div class="report-section hidden bg-slate-50 border-t border-gray-100 p-4">
                 <div class="report-content prose prose-sm max-w-none text-gray-700 bg-white p-4 rounded-lg border border-gray-200 shadow-sm"></div>
-                <div class="debug-info hidden mt-2 p-2 bg-gray-800 text-green-400 text-xs font-mono rounded overflow-x-auto whitespace-pre-wrap"></div>
-                <div class="mt-3 flex flex-wrap gap-2 justify-end">
-                    <button onclick="toggleDebug(this)" class="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1 mr-auto">
-                        <span class="material-icons text-[14px]">bug_report</span> 顯示詳細日誌
-                    </button>
+                <div class="mt-3 flex gap-2 justify-end">
                     <a href="#" target="_blank" class="btn-search-product hidden text-xs bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded-full hover:bg-gray-50 transition flex items-center gap-1">
                         <span class="material-icons text-[14px]">search</span> 搜商品
                     </a>
@@ -182,259 +180,49 @@
     </template>
 
     <script>
-        // 【已自動填入您的 GAS 部署網址】
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9o_X9XjKpNxIx2xBeykcRk_gdMU144a-q6Ga2vZK5j4I2qxh0pBGlkWI6E5Ol-Q-OsQ/exec";
+        // 【重要：請替換為您 V133 的 GAS 網址】
+        const GAS_WEB_APP_URL = "在此填入您的GAS_WEB_APP_URL";
 
         let productCounter = 0;
         let stagingCounter = 0;
 
         window.addEventListener('load', () => {});
 
-        // --- Lightbox Logic ---
-        function openLightbox(src, imgEl) {
-            const lightbox = document.getElementById('lightbox');
-            const img = document.getElementById('lightbox-img');
-            const infoBox = document.getElementById('lightbox-info');
-            img.src = src; lightbox.style.display = 'flex'; document.body.style.overflow = 'hidden';
+        // --- V133 Debug Helper ---
+        function renderDebugInfo(debugInfo) {
+            const consoleEl = document.getElementById('debug-console');
+            const contentEl = document.getElementById('debug-content');
             
-            // 讀取卡片資料
-            const card = imgEl.closest('.product-card');
-            if (card) {
-                const dataVal = card.querySelector('.hidden-result-data').value;
-                if (dataVal) {
-                    try {
-                        const data = JSON.parse(dataVal);
-                        // V131: 顯示比對資訊
-                        infoBox.innerHTML = `
-                            <div class="font-bold text-lg text-white mb-2 flex items-center justify-center gap-2">
-                                ${data.productName || '尚未辨識'}
-                                ${data.isKnown ? '<span class="material-icons text-green-400 text-base" title="常見海漂">verified</span>' : ''}
-                            </div>
-                            <div class="flex justify-center gap-4 text-sm flex-wrap">
-                                <span class="text-yellow-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-yellow-500/50">
-                                    條碼: ${data.barcode || 'N/A'}
-                                </span>
-                                <span class="text-cyan-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-cyan-500/50">
-                                    廠商碼: ${data.manufacturerCode || 'N/A'}
-                                </span>
-                            </div>
-                        `;
-                        infoBox.style.display = 'block';
-                    } catch(e) { infoBox.style.display = 'none'; }
-                } else { infoBox.style.display = 'none'; }
-            } else { infoBox.style.display = 'none'; }
-        }
-        function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = 'auto'; }
-        document.addEventListener('keydown', function(event) { if (event.key === "Escape") closeLightbox(); });
+            if (!debugInfo) return;
 
-        // --- Toast System ---
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            let icon = 'info'; let color = '#3b82f6';
-            if (type === 'success') { icon = 'check_circle'; color = '#22c55e'; }
-            if (type === 'error') { icon = 'error'; color = '#ef4444'; }
-            if (type === 'warning') { icon = 'schedule'; color = '#f59e0b'; }
-            toast.style.borderLeftColor = color;
-            toast.innerHTML = `<span class="material-icons" style="color:${color}">${icon}</span><span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100%)'; setTimeout(() => toast.remove(), 300); }, 4000);
-        }
-
-        // --- Debug ---
-        function toggleDebug(btn) {
-            const card = btn.closest('.product-card');
-            const debugArea = card.querySelector('.debug-info');
-            debugArea.classList.toggle('hidden');
-            btn.textContent = debugArea.classList.contains('hidden') ? '顯示詳細日誌' : '隱藏詳細日誌';
-        }
-
-        // --- Compression (Key: 800px / 0.5q) ---
-        function getCompressedBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_SIZE = 800; 
-                        let width = img.width; let height = img.height;
-                        if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
-                        else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        const dataUrl = canvas.toDataURL('image/jpeg', 0.5);
-                        resolve(dataUrl);
-                    };
-                    img.onerror = (e) => reject(e);
-                };
-                reader.onerror = (e) => reject(e);
-            });
-        }
-
-        // --- Staging Logic ---
-        async function handleStagingFiles(input) {
-            const files = Array.from(input.files);
-            if (files.length === 0) return;
-            const grid = document.getElementById('stagingGrid');
-            if (grid.querySelector('.placeholder')) grid.innerHTML = ''; 
-            for (const file of files) await addToStaging(file);
-            input.value = '';
-        }
-        async function addToStaging(file) {
-            stagingCounter++;
-            const base64 = await getCompressedBase64(file); 
-            const grid = document.getElementById('stagingGrid');
-            const div = document.createElement('div');
-            div.id = `stage-img-${stagingCounter}`;
-            div.className = 'w-24 h-24 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-white shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition';
-            div.draggable = true;
-            div.ondragstart = handleDragStart;
-            div.innerHTML = `
-                <img src="${base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false">
-                <button onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
-                    <span class="material-icons text-xs block">close</span>
-                </button>
-                <input type="hidden" class="img-data" value="${base64}">
-                <input type="hidden" class="img-type" value="${file.type}">
-                <input type="hidden" class="img-name" value="${file.name}">
-            `;
-            grid.appendChild(div);
-        }
-
-        // --- Drag & Drop ---
-        let draggedEl = null;
-        function handleDragStart(e) { draggedEl = e.currentTarget; e.currentTarget.classList.add('dragging'); e.dataTransfer.setData('text/plain', e.currentTarget.id); e.dataTransfer.effectAllowed = 'move'; }
-        function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
-        function handleDragLeave(e) { e.preventDefault(); if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-active'); }
-        
-        async function handleDropToStaging(e) {
-            e.preventDefault(); e.currentTarget.classList.remove('drag-active');
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                const grid = document.getElementById('stagingGrid');
-                if (grid.querySelector('.placeholder')) grid.innerHTML = '';
-                for (const file of files) await addToStaging(file);
-            }
-            if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
-        }
-
-        async function handleDropToCard(e) {
-            e.preventDefault(); e.currentTarget.classList.remove('drag-active');
-            const card = e.currentTarget;
-            const container = card.querySelector('.preview-container');
-            if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張！"); if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; } return; }
-            if (container.querySelector('.placeholder-text')) container.innerHTML = '';
+            let html = '';
             
-            const id = e.dataTransfer.getData('text/plain');
-            if (id && document.getElementById(id)) {
-                const sourceEl = document.getElementById(id);
-                if (sourceEl) {
-                    await addImageToCard(card, { 
-                        base64: sourceEl.querySelector('.img-data').value, 
-                        type: sourceEl.querySelector('.img-type').value, 
-                        name: sourceEl.querySelector('.img-name').value 
-                    });
-                    sourceEl.remove();
-                    const grid = document.getElementById('stagingGrid');
-                    if (grid && grid.children.length === 0) {
-                        grid.innerHTML = `<div class="text-gray-400 text-sm mx-auto flex flex-col items-center pointer-events-none placeholder"><span class="material-icons text-3xl mb-1">move_to_inbox</span><span>暫無照片，請點擊匯入</span></div>`;
-                    }
-                }
-            } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-                for (const file of files) {
-                    if (container.querySelectorAll('.img-item').length >= 4) break;
-                    const base64 = await getCompressedBase64(file); 
-                    await addImageToCard(card, { base64, type: file.type, name: file.name });
-                }
+            // 1. Account Models
+            if (debugInfo.accountModels) {
+                html += `<div class="log-section"><span class="log-label">📋 您的帳號可用模型列表 (Account Models):</span><div class="log-value text-blue-400">${debugInfo.accountModels.join('\n')}</div></div>`;
             }
-            if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; }
-            updateGlobalButton();
+
+            // 2. Try History
+            if (debugInfo.history) {
+                html += `<div class="log-section"><span class="log-label">🔄 嘗試紀錄 (Try History):</span>`;
+                debugInfo.history.forEach(h => {
+                    const statusClass = h.code === 200 ? 'text-green-400' : 'log-error';
+                    html += `<div class="log-value ${statusClass}">[${h.model}] Code: ${h.code} -> ${h.response}</div>`;
+                });
+                html += `</div>`;
+            }
+
+            // 3. Raw Logs
+            if (debugInfo.logs) {
+                html += `<div class="log-section"><span class="log-label">📝 詳細執行日誌:</span><div class="log-value">${debugInfo.logs.join('\n')}</div></div>`;
+            }
+
+            contentEl.innerHTML = html;
+            consoleEl.style.display = 'block';
+            consoleEl.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // --- Card Ops ---
-        function addProductGroup() {
-            productCounter++;
-            const template = document.getElementById('productTemplate');
-            const clone = template.content.cloneNode(true);
-            const card = clone.querySelector('.product-card');
-            card.id = `product-${productCounter}`;
-            card.querySelector('.title-text').textContent = `瓶罐商品 #${productCounter}`;
-            document.getElementById('productList').prepend(card); 
-            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            updateGlobalButton();
-            return card;
-        }
-        function removeProduct(btn) { if (confirm("移除此分組？")) { btn.closest('.product-card').remove(); updateGlobalButton(); } }
-        async function handleManualAddFiles(input) {
-            const files = Array.from(input.files);
-            const card = input.closest('.product-card');
-            const container = card.querySelector('.preview-container');
-            if (container.querySelector('.placeholder-text')) container.innerHTML = '';
-            for (const file of files) {
-                if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張"); break; }
-                const base64 = await getCompressedBase64(file); 
-                await addImageToCard(card, { base64, type: file.type, name: file.name });
-            }
-            input.value = ''; updateGlobalButton();
-        }
-        async function addImageToCard(card, imgObj) {
-            const container = card.querySelector('.preview-container');
-            const div = document.createElement('div');
-            div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100';
-            div.innerHTML = `
-                <img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false">
-                <button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10">
-                    <span class="material-icons text-xs block">close</span>
-                </button>
-                <input type="hidden" class="img-data" value="${imgObj.base64}">
-                <input type="hidden" class="img-type" value="${imgObj.type}">
-                <input type="hidden" class="img-name" value="${imgObj.name}">
-            `;
-            container.appendChild(div);
-        }
-        function removeImageFromCard(btn) {
-            const container = btn.closest('.preview-container');
-            btn.parentElement.remove();
-            if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">請拖曳照片至此<br><span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>(最多4張)</span>`;
-            updateGlobalButton();
-        }
-        function updateGlobalButton() {
-            const count = document.querySelectorAll('.product-card').length;
-            const hasImages = document.querySelectorAll('#productList .img-data').length > 0;
-            const btn = document.getElementById('analyzeAllBtn');
-            const btnText = document.getElementById('analyzeBtnText');
-            if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量分析 (前2張)`; } else { btn.classList.add('hidden'); }
-        }
-
-        // --- Analysis Logic ---
-        async function analyzeSingle(btn, useAllImages) {
-            const card = btn.closest('.product-card');
-            await processCardAnalysis(card, btn, useAllImages);
-        }
-        async function analyzeAll() {
-            const cards = Array.from(document.querySelectorAll('.product-card'));
-            const btn = document.getElementById('analyzeAllBtn');
-            const originalBtnText = btn.innerHTML;
-            btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed');
-            let abortBatch = false;
-            for (let i = 0; i < cards.length; i++) {
-                if (abortBatch) break;
-                const card = cards[i];
-                if (card.dataset.status === 'done' || card.dataset.status === 'saved') continue;
-                const imgElements = card.querySelectorAll('.img-data');
-                if (imgElements.length === 0) continue;
-                const result = await processCardAnalysis(card, null, false); 
-                if (result === 'quota_exceeded_abort') { abortBatch = true; showToast("⚠️ 配額耗盡，批量已停止", "error"); break; }
-                if (i < cards.length - 1) { btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 處理中 (剩 ${cards.length - 1 - i} 組)...`; await new Promise(r => setTimeout(r, 1000)); }
-            }
-            btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); btn.innerHTML = originalBtnText; document.getElementById('analyzeBtnText').textContent = "批量分析完成";
-        }
+        // --- Analysis Logic (V133 Diagnostic) ---
         async function processCardAnalysis(card, triggerBtn, useAllImages) {
             const imgElements = card.querySelectorAll('.img-data');
             if (imgElements.length === 0) { if (triggerBtn) alert("請先加入照片！"); return 'no_images'; }
@@ -442,68 +230,101 @@
             const elementsArray = Array.from(imgElements);
             const targetElements = useAllImages ? elementsArray : elementsArray.slice(0, 2);
             targetElements.forEach(el => { const base64 = el.value.split(',')[1]; imagesPayload.push({ mimeType: el.parentElement.querySelector('.img-type').value, data: base64, filename: el.parentElement.querySelector('.img-name').value }); });
+            
             if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.innerHTML = `<span class="loader w-3 h-3 border-t-blue-700"></span> 分析中`; }
+            
             const status = card.querySelector('.status-indicator');
-            const debugArea = card.querySelector('.debug-info');
-            debugArea.innerHTML = ''; card.querySelector('.report-section').classList.remove('hidden'); 
             let attempts = 0; let success = false; const maxAttempts = 3; 
-            showToast(useAllImages ? "深度分析中 (所有照片)..." : "標準分析中 (前2張)...");
-            while (!success && attempts < maxAttempts) {
-                try {
-                    status.innerHTML = `<span class="loader w-4 h-4 border-t-blue-600 border-blue-200"></span> 連線 AI 中...` + (attempts > 0 ? ` (重試 ${attempts})` : "");
-                    status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-blue-600 mb-2";
-                    if (!triggerBtn) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    const response = await fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ mode: "analyze", images: imagesPayload }) });
-                    const resJson = await response.json();
-                    
-                    // V131: Handle Quota Status from Backend
-                    if (resJson.status === 'quota') {
-                        throw new Error("Quota exceeded");
-                    }
+            
+            showToast(useAllImages ? "深度分析中..." : "標準分析中...");
 
-                    if (resJson.debugLog) debugArea.textContent = resJson.debugLog;
-                    if (resJson.status === 'success') {
-                        const reportContent = card.querySelector('.report-content');
-                        reportContent.innerHTML = marked.parse(resJson.data.fullReport);
-                        status.innerHTML = `<span class="material-icons text-green-500">check_circle</span> 分析成功 (模型: ${resJson.data.model})`;
-                        status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-green-600 mb-2";
-                        showToast(`分析成功！`, "success");
-                        if (resJson.data.isKnown) card.querySelector('.known-badge').classList.remove('hidden');
-                        card.dataset.status = 'done';
-                        card.querySelector('.btn-save').classList.remove('hidden');
-                        card.querySelector('.btn-analyze-lite').classList.add('hidden'); 
-                        if (imgElements.length > 2) card.querySelector('.btn-analyze-deep').classList.remove('hidden');
-                        else card.querySelector('.btn-analyze-deep').classList.add('hidden');
-                        card.querySelector('.hidden-result-data').value = JSON.stringify(resJson.data);
-                        if (resJson.data.productName && resJson.data.productName !== "未知") { const searchBtn = card.querySelector('.btn-search-product'); searchBtn.href = `https://www.google.com/search?q=${encodeURIComponent(resJson.data.productName)}`; searchBtn.classList.remove('hidden'); }
-                        success = true;
-                        if (triggerBtn) { triggerBtn.disabled = false; if (useAllImages) triggerBtn.innerHTML = `<span class="material-icons text-xs">travel_explore</span> 不滿意？深度辨識 (使用所有照片)`; }
-                        return 'success';
-                    } else { throw new Error(resJson.message); }
-                } catch (err) {
-                    const errMsg = err.message || "";
-                    if (errMsg.includes("Quota exceeded") || errMsg.includes("429")) {
-                        attempts++; status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-orange-500 mb-2";
-                        if (attempts >= maxAttempts) { status.innerHTML = `<span class="material-icons text-red-500">error</span> 配額耗盡`; status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2"; showToast("API 配額耗盡", "error"); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">refresh</span> 重試`; } return 'quota_exceeded_abort'; }
-                        showToast(`API 塞車，啟動冷卻 (第${attempts}次)`, "warning");
-                        for (let s = 60; s > 0; s--) { status.innerHTML = `<span class="loader !border-t-orange-500"></span> API 塞車，冷卻 ${s}s...`; await new Promise(r => setTimeout(r, 1000)); }
-                    } else { console.error(err); const status = card.querySelector('.status-indicator'); status.innerHTML = `<span class="material-icons text-red-500">error</span> 失敗`; status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2"; card.querySelector('.report-content').innerHTML = `<span class="text-red-500">分析失敗：${errMsg}</span>`; showToast("分析失敗，請看日誌", "error"); if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `<span class="material-icons text-sm">refresh</span> 重試`; } return 'error'; }
+            // V133: 只需要試一次，因為後端會自己輪詢
+            try {
+                status.innerHTML = `<span class="loader w-4 h-4 border-t-blue-600 border-blue-200"></span> 連線 Google API...`;
+                status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-blue-600 mb-2";
+                
+                if (!triggerBtn) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                const response = await fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ mode: "analyze", images: imagesPayload }) });
+                const resJson = await response.json();
+
+                // V133: 顯示診斷資訊
+                if (resJson.debugInfo) {
+                    renderDebugInfo(resJson.debugInfo);
                 }
+
+                if (resJson.status === 'success') {
+                    // ... (Success handling same as before) ...
+                    const reportSection = card.querySelector('.report-section');
+                    const reportContent = card.querySelector('.report-content');
+                    reportSection.classList.remove('hidden');
+                    reportContent.innerHTML = marked.parse(resJson.data.fullReport);
+                    status.innerHTML = `<span class="material-icons text-green-500">check_circle</span> 分析成功 (${resJson.data.model})`;
+                    status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-green-600 mb-2";
+                    showToast(`分析成功！`, "success");
+                    if (resJson.data.isKnown) card.querySelector('.known-badge').classList.remove('hidden');
+                    card.dataset.status = 'done';
+                    card.querySelector('.btn-save').classList.remove('hidden');
+                    card.querySelector('.btn-analyze-lite').classList.add('hidden'); 
+                    if (imgElements.length > 2) card.querySelector('.btn-analyze-deep').classList.remove('hidden');
+                    else card.querySelector('.btn-analyze-deep').classList.add('hidden');
+                    card.querySelector('.hidden-result-data').value = JSON.stringify(resJson.data);
+                    if (resJson.data.productName && resJson.data.productName !== "未知") { const searchBtn = card.querySelector('.btn-search-product'); searchBtn.href = `https://www.google.com/search?q=${encodeURIComponent(resJson.data.productName)}`; searchBtn.classList.remove('hidden'); }
+                    
+                    if (triggerBtn) { triggerBtn.disabled = false; if (useAllImages) triggerBtn.innerHTML = `<span class="material-icons text-xs">travel_explore</span> 不滿意？深度辨識`; }
+                    return 'success';
+
+                } else if (resJson.status === 'quota') {
+                    // Quota Handling
+                    status.innerHTML = `<span class="material-icons text-red-500">error</span> 配額耗盡 (429)`;
+                    status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2";
+                    showToast("API 配額耗盡，請看下方診斷面板", "error");
+                    if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `重試`; }
+                    return 'quota_exceeded_abort';
+
+                } else {
+                    // Other Errors
+                    throw new Error(resJson.message);
+                }
+
+            } catch (err) {
+                console.error(err);
+                const status = card.querySelector('.status-indicator');
+                status.innerHTML = `<span class="material-icons text-red-500">error</span> 失敗`;
+                status.className = "status-indicator flex items-center gap-2 text-sm font-bold text-red-600 mb-2";
+                const reportSection = card.querySelector('.report-section');
+                const reportContent = card.querySelector('.report-content');
+                reportSection.classList.remove('hidden');
+                reportContent.innerHTML = `<span class="text-red-500">分析失敗：${err.message}</span>`;
+                showToast("分析失敗，請看診斷面板", "error");
+                if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.innerHTML = `重試`; }
+                return 'error';
             }
         }
-        async function saveResult(btn) {
-            const card = btn.closest('.product-card');
-            const dataStr = card.querySelector('.hidden-result-data').value;
-            if (!dataStr) return;
-            const data = JSON.parse(dataStr);
-            const originalContent = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = `<span class="loader !w-3 !h-3 !border-t-white mr-1"></span>`; btn.classList.add('opacity-75');
-            try {
-                const response = await fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ mode: "save", data: data }) });
-                const resJson = await response.json();
-                if (resJson.status === 'success') { btn.innerHTML = `<span class="material-icons text-sm">cloud_done</span> 已存檔`; btn.className = "btn-save w-full bg-gray-100 text-gray-400 text-sm font-bold px-3 py-2 rounded-lg cursor-default flex items-center justify-center gap-2 border border-gray-200"; card.dataset.status = 'saved'; const status = card.querySelector('.status-indicator'); status.innerHTML = `<span class="material-icons text-green-600">cloud_done</span> 已上傳至 Sheet`; showToast("存檔成功", "success"); } else { throw new Error("存檔失敗"); }
-            } catch (err) { alert("上傳失敗：" + err.message); btn.disabled = false; btn.innerHTML = originalContent; btn.classList.remove('opacity-75'); }
-        }
+
+        // --- Standard Functions (Lightbox, Toast, DragDrop, Save) ---
+        function openLightbox(src, imgEl) { const lightbox = document.getElementById('lightbox'); const img = document.getElementById('lightbox-img'); const infoBox = document.getElementById('lightbox-info'); img.src = src; lightbox.style.display = 'flex'; document.body.style.overflow = 'hidden'; const card = imgEl.closest('.product-card'); if (card) { const dataVal = card.querySelector('.hidden-result-data').value; if (dataVal) { try { const data = JSON.parse(dataVal); infoBox.innerHTML = `<div class="font-bold text-lg text-white mb-2 flex items-center justify-center gap-2">${data.productName || '尚未辨識'} ${data.isKnown ? '<span class="material-icons text-green-400 text-base">verified</span>' : ''}</div><div class="flex justify-center gap-4 text-sm flex-wrap"><span class="text-yellow-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-yellow-500/50">條碼: ${data.barcode || 'N/A'}</span><span class="text-cyan-300 font-mono bg-gray-800/80 px-3 py-1 rounded border border-cyan-500/50">廠商碼: ${data.manufacturerCode || 'N/A'}</span></div>`; infoBox.style.display = 'block'; } catch(e) { infoBox.style.display = 'none'; } } else { infoBox.style.display = 'none'; } } else { infoBox.style.display = 'none'; } }
+        function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = 'auto'; }
+        document.addEventListener('keydown', function(event) { if (event.key === "Escape") closeLightbox(); });
+        function toggleDebug(btn) { const card = btn.closest('.product-card'); const debugArea = card.querySelector('.debug-info'); debugArea.classList.toggle('hidden'); btn.textContent = debugArea.classList.contains('hidden') ? '顯示詳細日誌' : '隱藏詳細日誌'; }
+        function getCompressedBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = (event) => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_SIZE = 800; let width = img.width; let height = img.height; if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const dataUrl = canvas.toDataURL('image/jpeg', 0.5); resolve(dataUrl); }; img.onerror = (e) => reject(e); }; reader.onerror = (e) => reject(e); }); }
+        async function handleStagingFiles(input) { const files = Array.from(input.files); if (files.length === 0) return; const grid = document.getElementById('stagingGrid'); if (grid.querySelector('.placeholder')) grid.innerHTML = ''; for (const file of files) await addToStaging(file); input.value = ''; }
+        async function addToStaging(file) { stagingCounter++; const base64 = await getCompressedBase64(file); const grid = document.getElementById('stagingGrid'); const div = document.createElement('div'); div.id = `stage-img-${stagingCounter}`; div.className = 'w-24 h-24 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-white shadow-sm cursor-grab active:cursor-grabbing hover:scale-105 transition'; div.draggable = true; div.ondragstart = handleDragStart; div.innerHTML = `<img src="${base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false"><button onclick="this.parentElement.remove()" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10"><span class="material-icons text-xs block">close</span></button><input type="hidden" class="img-data" value="${base64}"><input type="hidden" class="img-type" value="${file.type}"><input type="hidden" class="img-name" value="${file.name}">`; grid.appendChild(div); }
+        let draggedEl = null;
+        function handleDragStart(e) { draggedEl = e.currentTarget; e.currentTarget.classList.add('dragging'); e.dataTransfer.setData('text/plain', e.currentTarget.id); e.dataTransfer.effectAllowed = 'move'; }
+        function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-active'); }
+        function handleDragLeave(e) { e.preventDefault(); if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-active'); }
+        async function handleDropToStaging(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-active'); if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')); const grid = document.getElementById('stagingGrid'); if (grid.querySelector('.placeholder')) grid.innerHTML = ''; for (const file of files) await addToStaging(file); } if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; } }
+        async function handleDropToCard(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-active'); const card = e.currentTarget; const container = card.querySelector('.preview-container'); if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張！"); if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; } return; } if (container.querySelector('.placeholder-text')) container.innerHTML = ''; const id = e.dataTransfer.getData('text/plain'); if (id && document.getElementById(id)) { const sourceEl = document.getElementById(id); if (sourceEl) { await addImageToCard(card, { base64: sourceEl.querySelector('.img-data').value, type: sourceEl.querySelector('.img-type').value, name: sourceEl.querySelector('.img-name').value }); sourceEl.remove(); const grid = document.getElementById('stagingGrid'); if (grid && grid.children.length === 0) { grid.innerHTML = `<div class="text-gray-400 text-sm mx-auto flex flex-col items-center pointer-events-none placeholder"><span class="material-icons text-3xl mb-1">move_to_inbox</span><span>暫無照片，請點擊匯入</span></div>`; } } } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) { const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')); for (const file of files) { if (container.querySelectorAll('.img-item').length >= 4) break; const base64 = await getCompressedBase64(file); await addImageToCard(card, { base64, type: file.type, name: file.name }); } } if (draggedEl) { draggedEl.classList.remove('dragging'); draggedEl = null; } updateGlobalButton(); }
+        function addProductGroup() { productCounter++; const template = document.getElementById('productTemplate'); const clone = template.content.cloneNode(true); const card = clone.querySelector('.product-card'); card.id = `product-${productCounter}`; card.querySelector('.title-text').textContent = `瓶罐商品 #${productCounter}`; document.getElementById('productList').prepend(card); card.scrollIntoView({ behavior: 'smooth', block: 'center' }); updateGlobalButton(); return card; }
+        function removeProduct(btn) { if (confirm("移除此分組？")) { btn.closest('.product-card').remove(); updateGlobalButton(); } }
+        async function handleManualAddFiles(input) { const files = Array.from(input.files); const card = input.closest('.product-card'); const container = card.querySelector('.preview-container'); if (container.querySelector('.placeholder-text')) container.innerHTML = ''; for (const file of files) { if (container.querySelectorAll('.img-item').length >= 4) { alert("已滿 4 張"); break; } const base64 = await getCompressedBase64(file); await addImageToCard(card, { base64, type: file.type, name: file.name }); } input.value = ''; updateGlobalButton(); }
+        async function addImageToCard(card, imgObj) { const container = card.querySelector('.preview-container'); const div = document.createElement('div'); div.className = 'img-item w-20 h-20 rounded-lg overflow-hidden border border-gray-200 relative flex-shrink-0 group bg-gray-100'; div.innerHTML = `<img src="${imgObj.base64}" class="w-full h-full object-cover cursor-zoom-in" onclick="openLightbox(this.src, this)" draggable="false"><button onclick="removeImageFromCard(this)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition shadow-sm z-10"><span class="material-icons text-xs block">close</span></button><input type="hidden" class="img-data" value="${imgObj.base64}"><input type="hidden" class="img-type" value="${imgObj.type}"><input type="hidden" class="img-name" value="${imgObj.name}">`; container.appendChild(div); }
+        function removeImageFromCard(btn) { const container = btn.closest('.preview-container'); btn.parentElement.remove(); if (container.children.length === 0) container.innerHTML = `<span class="text-xs text-gray-400 mx-auto pointer-events-none placeholder-text text-center leading-5">請拖曳照片至此<br><span class="text-blue-500 font-bold">1.全瓶照 2.條碼近拍</span><br>(最多4張)</span>`; updateGlobalButton(); }
+        function updateGlobalButton() { const count = document.querySelectorAll('.product-card').length; const hasImages = document.querySelectorAll('#productList .img-data').length > 0; const btn = document.getElementById('analyzeAllBtn'); const btnText = document.getElementById('analyzeBtnText'); if (count > 0 && hasImages) { btn.classList.remove('hidden'); btnText.textContent = `開始批量分析 (前2張)`; } else { btn.classList.add('hidden'); } }
+        async function analyzeSingle(btn, useAllImages) { const card = btn.closest('.product-card'); await processCardAnalysis(card, btn, useAllImages); }
+        async function analyzeAll() { const cards = Array.from(document.querySelectorAll('.product-card')); const btn = document.getElementById('analyzeAllBtn'); const originalBtnText = btn.innerHTML; btn.disabled = true; btn.classList.add('opacity-75', 'cursor-not-allowed'); let abortBatch = false; for (let i = 0; i < cards.length; i++) { if (abortBatch) break; const card = cards[i]; if (card.dataset.status === 'done' || card.dataset.status === 'saved') continue; const imgElements = card.querySelectorAll('.img-data'); if (imgElements.length === 0) continue; const result = await processCardAnalysis(card, null, false); if (result === 'quota_exceeded_abort') { abortBatch = true; showToast("⚠️ 配額耗盡，批量已停止", "error"); break; } if (i < cards.length - 1) { btn.innerHTML = `<span class="loader !w-4 !h-4 !border-t-white mr-2"></span> 處理中 (剩 ${cards.length - 1 - i} 組)...`; await new Promise(r => setTimeout(r, 1000)); } } btn.disabled = false; btn.classList.remove('opacity-75', 'cursor-not-allowed'); btn.innerHTML = originalBtnText; document.getElementById('analyzeBtnText').textContent = "批量分析完成"; }
+        async function saveResult(btn) { const card = btn.closest('.product-card'); const dataStr = card.querySelector('.hidden-result-data').value; if (!dataStr) return; const data = JSON.parse(dataStr); const originalContent = btn.innerHTML; btn.disabled = true; btn.innerHTML = `<span class="loader !w-3 !h-3 !border-t-white mr-1"></span>`; btn.classList.add('opacity-75'); try { const response = await fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ mode: "save", data: data }) }); const resJson = await response.json(); if (resJson.status === 'success') { btn.innerHTML = `<span class="material-icons text-sm">cloud_done</span> 已存檔`; btn.className = "btn-save w-full bg-gray-100 text-gray-400 text-sm font-bold px-3 py-2 rounded-lg cursor-default flex items-center justify-center gap-2 border border-gray-200"; card.dataset.status = 'saved'; const status = card.querySelector('.status-indicator'); status.innerHTML = `<span class="material-icons text-green-600">cloud_done</span> 已上傳至 Sheet`; showToast("存檔成功", "success"); } else { throw new Error("存檔失敗"); } } catch (err) { alert("上傳失敗：" + err.message); btn.disabled = false; btn.innerHTML = originalContent; btn.classList.remove('opacity-75'); } }
     </script>
 </body>
 </html>
