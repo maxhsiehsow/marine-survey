@@ -22,13 +22,15 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        html, body {
-            overscroll-behavior-y: contain;
-        }
         /* V98: 荒野綠主題色 */
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
         
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 90px; padding-top: 40px; color: var(--text); -webkit-font-smoothing: antialiased; }
+        /* 預防 PWA/手機瀏覽器意外下拉重新整理 */
+        html, body {
+            overscroll-behavior-y: contain;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background: var(--bg); margin: 0; padding-bottom: 90px; padding-top: 40px; color: var(--text); -webkit-font-smoothing: antialiased; 
+        }
         
         #network-status { position: fixed; top: 0; left: 0; width: 100%; height: 35px; line-height: 35px; text-align: center; color: white; font-size: 13px; font-weight: bold; z-index: 9000; transition: background 0.3s; }
         .status-online { background: #689f38; }
@@ -158,6 +160,7 @@
         </div>
     </div>
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">系統載入中...</p></div>
+    
     <div id="view-basic" class="container active-tab">
         <h1 class="app-title">荒野瓶罐調查回報站</h1>
         <div id="offline-sync-box">
@@ -187,14 +190,7 @@
             <input type="text" id="inp_city" readonly placeholder="縣市鄉鎮或樣點名稱">
             <label>調查樣點</label>
             <input type="text" id="inp_point" readonly class="locked-field" placeholder="僅限從地圖選擇代號">
-            <label>📸 現場照片上傳</label>
-            <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-preview-box">
-                <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
-                <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
-                <div class="preview-item" onclick="document.getElementById('file-env').click()"><img id="img-preview-env" src="" style="display:none"><span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div></div>
-                <div class="preview-item" onclick="document.getElementById('file-group').click()"><img id="img-preview-group" src="" style="display:none"><span id="icon-group" class="preview-icon">👥</span><div class="preview-label">合照</div></div>
-            </div>
+            
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
                 <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
                 <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報。</p>
@@ -217,6 +213,7 @@
         </div>
         <div class="footer-credit">網頁設計規劃：荒野保護協會 棲地守護部雁子<br>聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a></div>
     </div>
+
     <div id="view-record" class="container">
         <h2>📊 4. 記錄與成果</h2>
         <div class="card">
@@ -226,7 +223,9 @@
             </div>
             <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼記錄</button>
             <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
+            <!-- 老王新增：手動輸入按鈕 -->
             <button id="btn-manual-barcode" onclick="manualInputBarcode()" class="btn-outline" style="margin-top:10px;">⌨️ 掃不到？手動輸入條碼</button>
+            
             <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
             <label>🔍 條碼前 3 碼查詢記錄</label>
@@ -256,24 +255,48 @@
                 <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
             </div>
         </div>
+
+        <!-- 成果上傳區塊 (照片整合至此處) -->
         <h2>🚀 5. 成果上傳</h2>
         <div class="card">
-            <label>特殊瓶罐/熱點照 (最多6張)</label>
-            <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-grid-6">
-                <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()"><img id="img-preview-hotspot1" src="" style="display:none"><span id="icon-hotspot1" class="preview-icon">1</span><div class="preview-label">照片 1</div></div>
-                <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot2').click()"><img id="img-preview-hotspot2" src="" style="display:none"><span id="icon-hotspot2" class="preview-icon">2</span><div class="preview-label">照片 2</div></div>
-                <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()"><img id="img-preview-hotspot3" src="" style="display:none"><span id="icon-hotspot3" class="preview-icon">3</span><div class="preview-label">照片 3</div></div>
-                <input type="file" id="file-hotspot4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot4')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot4').click()"><img id="img-preview-hotspot4" src="" style="display:none"><span id="icon-hotspot4" class="preview-icon">4</span><div class="preview-label">照片 4</div></div>
-                <input type="file" id="file-hotspot5" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot5')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot5').click()"><img id="img-preview-hotspot5" src="" style="display:none"><span id="icon-hotspot5" class="preview-icon">5</span><div class="preview-label">照片 5</div></div>
-                <input type="file" id="file-hotspot6" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot6')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot6').click()"><img id="img-preview-hotspot6" src="" style="display:none"><span id="icon-hotspot6" class="preview-icon">6</span><div class="preview-label">照片 6</div></div>
+            <!-- 現場照片 -->
+            <label>📸 現場照片</label>
+            <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
+            <div class="img-preview-box" style="margin-bottom: 20px;">
+                <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
+                <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
+                <div class="preview-item" onclick="document.getElementById('file-env').click()"><img id="img-preview-env" src="" style="display:none"><span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-group').click()"><img id="img-preview-group" src="" style="display:none"><span id="icon-group" class="preview-icon">👥</span><div class="preview-label">合照</div></div>
             </div>
+
+            <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
+
+            <!-- 熱點照 (最多2張) -->
+            <label>🔥 熱點照 (最多 2 張)</label>
+            <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
+            <div class="img-preview-box" style="margin-bottom: 20px;">
+                <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
+                <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
+                <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()"><img id="img-preview-hotspot1" src="" style="display:none"><span id="icon-hotspot1" class="preview-icon">🗑️</span><div class="preview-label">熱點 1</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-hotspot2').click()"><img id="img-preview-hotspot2" src="" style="display:none"><span id="icon-hotspot2" class="preview-icon">🗑️</span><div class="preview-label">熱點 2</div></div>
+            </div>
+
+            <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
+
+            <!-- 特殊瓶罐 (最多4張) -->
+            <label>🏺 特殊瓶罐 (最多 4 張)</label>
+            <div id="photo-warning-special" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
+            <div class="img-preview-box">
+                <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
+                <input type="file" id="file-hotspot4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot4')">
+                <input type="file" id="file-hotspot5" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot5')">
+                <input type="file" id="file-hotspot6" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot6')">
+                <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()"><img id="img-preview-hotspot3" src="" style="display:none"><span id="icon-hotspot3" class="preview-icon">🍾</span><div class="preview-label">瓶罐 1</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-hotspot4').click()"><img id="img-preview-hotspot4" src="" style="display:none"><span id="icon-hotspot4" class="preview-icon">🍾</span><div class="preview-label">瓶罐 2</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-hotspot5').click()"><img id="img-preview-hotspot5" src="" style="display:none"><span id="icon-hotspot5" class="preview-icon">🍾</span><div class="preview-label">瓶罐 3</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-hotspot6').click()"><img id="img-preview-hotspot6" src="" style="display:none"><span id="icon-hotspot6" class="preview-icon">🍾</span><div class="preview-label">瓶罐 4</div></div>
+            </div>
+            
             <label style="margin-top:15px;">其他記錄</label>
             <textarea id="inp_note" rows="3" placeholder="請填寫任何值得記錄的觀察..." onchange="saveState()"></textarea>
             <button id="btn-upload" onclick="uploadData()" class="btn-upload" style="margin-top:20px;">🚀 上傳資料至雲端</button>
@@ -312,7 +335,8 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, isProcessing: false };
+        // 老王修正：增加 isProcessing 防止相機連點
+        const STATE = { isProcessing: false, count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null };
         const timers = { 10: { total: 600, endTime: null, interval: null, running: false }, 20: { total: 1200, endTime: null, interval: null, running: false } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
@@ -366,22 +390,23 @@
         function loadProductDB() { if (!navigator.onLine) return; fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { if(data.status === "success") { STATE.productCache = data.products; STATE.manufacturerCache = data.manufacturers; console.log("DB Loaded. P:", Object.keys(STATE.productCache).length, "M:", Object.keys(STATE.manufacturerCache).length); } }).catch(e => console.error("DB Load Error:", e)); }
         function loadSurveyPoints(){if(!navigator.onLine)return;fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:"getPoints"})}).then(res=>res.json()).then(data=>{if(data.status==="success"){STATE.surveyPoints=data.points;}}).catch(e=>console.error(e));}
         function selectPoint(p){STATE.selectedPoint=p;document.querySelectorAll('.point-item').forEach(el=>el.classList.remove('selected'));const btn=document.getElementById('btn-nav-go');btn.innerText=`✅ 確認選擇：${p.name}`;btn.disabled=false;}
+        
+        // 老王修正：Google Maps iOS/Android 相容 URL
         function navigateToSelected(){
-            if(!STATE.selectedPoint) return;
-            const p = STATE.selectedPoint;
-            document.getElementById('inp_gps').value = `${p.lat}, ${p.lng}`;
-            document.getElementById('inp_city').value = p.name;
-            document.getElementById('inp_point').value = p.id;
-            STATE.currentCity = p.name;
+            if(!STATE.selectedPoint)return;
+            const p=STATE.selectedPoint;
+            document.getElementById('inp_gps').value=`${p.lat}, ${p.lng}`;
+            document.getElementById('inp_city').value=p.name;
+            document.getElementById('inp_point').value=p.id;
+            STATE.currentCity=p.name;
             saveState();
             closeMap();
-            
             if(confirm(`已填入樣點：${p.name}\n\n是否開啟 Google Maps 導航前往？`)){
-                // 修正後的 URL 格式：支援 iOS/Android 喚起 App
                 const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
                 window.open(mapUrl, '_blank');
             }
         }
+        
         function runGPS(){document.getElementById('inp_gps').value="定位中...";document.getElementById('inp_point').value="";if(!navigator.geolocation){alert("您的裝置不支援 GPS");return;}navigator.geolocation.getCurrentPosition(p=>{const gpsText=`${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;document.getElementById('inp_gps').value=gpsText;if(navigator.onLine){fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&localityLanguage=zh`).then(r=>r.json()).then(d=>{let city=(d.principalSubdivision||"").replace("Province","").trim();let town=(d.locality||"").trim();STATE.currentCity=`${city} ${town}`;document.getElementById('inp_city').value=STATE.currentCity;saveState();}).catch(e=>{STATE.currentCity="定位成功(無地址)";document.getElementById('inp_city').value=STATE.currentCity;saveState();});}else{STATE.currentCity="離線座標";document.getElementById('inp_city').value="⚠️ 離線模式 (等待連線後自動補全)";saveState();}},()=>{alert("定位失敗");document.getElementById('inp_gps').value="";});}
         function openMap(){document.getElementById('map-modal').style.display='flex';if(!STATE.map){STATE.map=L.map('map-container').setView([23.9,121],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(STATE.map);}document.getElementById('map-list').innerHTML='<div style="text-align:center; padding:10px; color:#666;">📡 正在取得您的位置...</div>';navigator.geolocation.getCurrentPosition(p=>{const userLat=p.coords.latitude;const userLng=p.coords.longitude;STATE.map.setView([userLat,userLng],13);if(STATE.userMarker)STATE.map.removeLayer(STATE.userMarker);STATE.userMarker=L.marker([userLat,userLng]).addTo(STATE.map).bindPopup("您的位置").openPopup();findNearestPoints(userLat,userLng);},()=>{alert("無法取得位置");});}
         function closeMap(){document.getElementById('map-modal').style.display='none';}
@@ -434,9 +459,21 @@
         function saveOffline(payload){try{let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");queue.push(payload);localStorage.setItem('offline_queue',JSON.stringify(queue));showModal('offline','已暫存','網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。',()=>handleSuccessConfirm(true));}catch(e){showModal('warning','儲存失敗','手機儲存空間不足。',null);}}
         function checkOfflineQueue(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");const syncBox=document.getElementById('offline-sync-box');if(queue.length>0&&navigator.onLine){syncBox.style.display='block';document.getElementById('offline-count').innerText=queue.length;}else{syncBox.style.display='none';}}
         async function syncOfflineData(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");if(queue.length===0)return;const btn=document.getElementById('btn-sync');btn.disabled=true;btn.innerText="⏳ 同步中 (補全地址)...";let successCount=0;let failCount=0;let newQueue=[];for(let item of queue){if(item.gps&&(item.city.includes("離線")||item.city==="")){try{let[lat,long]=item.gps.split(', ');let res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`);let data=await res.json();item.city=`${(data.principalSubdivision||"").replace("Province","").trim()} ${(data.locality||"").trim()}`;}catch(e){}}try{await fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify(item)});successCount++;}catch(e){failCount++;newQueue.push(item);}}localStorage.setItem('offline_queue',JSON.stringify(newQueue));checkOfflineQueue();btn.disabled=false;btn.innerText="☁️ 立即上傳暫存資料";if(failCount===0)showModal('success','同步完成',`成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`,null);else showModal('warning','部分失敗',`成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`,null);}
-        function showModal(type,title,msg,onConfirm,onCancel){const modal=document.getElementById('custom-modal');const box=document.getElementById('modal-content-box');const icon=document.getElementById('modal-icon');const btnConfirm=document.getElementById('btn-modal-confirm');const btnCancel=document.getElementById('btn-modal-cancel');box.className='modal-content';btnCancel.style.display='block';btnConfirm.innerText="確定";document.getElementById('modal-title').innerText=title;document.getElementById('modal-msg').innerHTML=msg;if(type==='warning'){box.classList.add('style-warning');icon.innerText="⚠️";btnCancel.style.display='none';btnConfirm.innerText="我知道了";}else if(type==='success'){box.classList.add('style-success');icon.innerText="🎉";btnCancel.style.display='none';btnConfirm.innerText="好，繼續下一筆";}else if(type==='alarm'){box.classList.add('style-alarm');icon.innerText="⏰";btnCancel.style.display='none';btnConfirm.innerText="確定 (停止震動)";}else if(type==='offline'){box.classList.add('style-offline');icon.innerText="💾";btnCancel.style.display='none';btnConfirm.innerText="我知道了";}else{icon.innerText="🤔";}btnConfirm.onclick=()=>{modal.style.display='none';if(onConfirm)onConfirm();};btnCancel.onclick=()=>{modal.style.display='none';if(onCancel)onCancel();};modal.style.display='flex';}
 
-        // [V99.4] 統一卡片式 UI 顯示
+        // 老王新增：手動輸入條碼功能
+        function manualInputBarcode() {
+            const code = prompt("請輸入完整條碼數字：");
+            if (code && code.length >= 8) {
+                const country = getCountryFromCode(code);
+                showModal('confirm', '手動輸入結果', `條碼：${code}<br>歸屬地：<span style="color:var(--primary); font-weight:bold;">${country}</span>`, () => {
+                    addRecord(country, 1, { barcode: code, source: "Manual_Input" });
+                });
+            } else if (code) {
+                alert("條碼長度不正確 (通常需大於8碼)");
+            }
+        }
+
+        // 統一卡片式 UI 顯示
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
@@ -445,14 +482,13 @@
             
             STATE.scanners.record = new Html5Qrcode("reader-record");
             
+            // 老王修正：加上 isProcessing 防止相機回呼連點
             STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-            if (!txt || txt.trim() === "" || STATE.isProcessing) return; // 正在處理中就跳過
-            
-            STATE.isProcessing = true; // 鎖定
-            STATE.scanners.record.pause();
-            
+                if (!txt || txt.trim() === "" || STATE.isProcessing) return;
                 
-                // 1. 智慧廠商比對 (12碼 ~ 6碼)
+                STATE.isProcessing = true; // 上鎖
+                STATE.scanners.record.pause();
+                
                 let manuData = null;
                 for (let i = 12; i >= 6; i--) {
                     const prefix = txt.substring(0, i);
@@ -470,7 +506,6 @@
                 let logSource = "";
                 let isHit = false;
 
-                // Case A: 命中商品庫
                 if (prodData) {
                     isHit = true;
                     logSource = "Local_Product";
@@ -478,9 +513,7 @@
                     displayBrand = prodData.manufacturer || (manuData ? manuData.name : ""); 
                     displayName = prodData.name;
                     displayImg = prodData.img_url;
-                }
-                // Case B: 僅命中廠商庫
-                else if (manuData) {
+                } else if (manuData) {
                     isHit = true;
                     logSource = "Local_Manufacturer";
                     displayBrand = manuData.name;
@@ -488,13 +521,11 @@
                 }
 
                 if (isHit) {
-                    // [UI Update] 統一卡片樣式：綠底白框，字體放大
                     const modalHtml = `
                         <div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
                             <div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">✨ 本地資料庫命中</div>
                             <div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div>
                             <div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div>
-                            
                             <div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:left;">
                                 <div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div>
                                 <div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${displayName}</div>
@@ -502,28 +533,20 @@
                         </div>
                     `;
                     showModal('confirm', '掃描成功', modalHtml, () => {
-                        addRecord(displayCountry, 1, {
-                            barcode: txt,
-                            name: displayName,
-                            brand: displayBrand,
-                            origin: displayCountry,
-                            img_url: displayImg,
-                            source: logSource
-                        });
-                        STATE.isProcessing = false; // 解除鎖定
-                        setTimeout(() => STATE.scanners.record.resume(), 500);                        
-                       }, () => {
-                        STATE.isProcessing = false; // 解除鎖定
+                        addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource });
+                        STATE.isProcessing = false; // 解鎖
+                        setTimeout(() => STATE.scanners.record.resume(), 500);
+                    }, () => { 
+                        STATE.isProcessing = false; // 解鎖
                         setTimeout(() => STATE.scanners.record.resume(), 500);
                     });
+
                 } else {
-                    // 本地無資料 -> 查 API (預設顯示卡片結構，等待 API 填入)
                     const modalHtml = `
                         <div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
                             <div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">☁️ 雲端查詢中</div>
                             <div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div>
                             <div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div>
-                            
                             <div id="api-product-area" style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; min-height:80px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
                                 <div class="spinner" style="width:25px; height:25px; border-width:3px;"></div>
                                 <div style="font-size:13px; color:#587a30; margin-top:8px;">正在比對全球資料庫...</div>
@@ -533,27 +556,22 @@
                     
                     let apiDataBuffer = null;
                     showModal('confirm', '掃描成功', modalHtml, () => {
-                        if (apiDataBuffer) {
-                            addRecord(displayCountry, 1, apiDataBuffer);
-                        } else {
-                            addRecord(displayCountry, 1, { barcode: txt, source: "API_Pending_Or_Fail" });
-                        }
+                        if (apiDataBuffer) { addRecord(displayCountry, 1, apiDataBuffer); } 
+                        else { addRecord(displayCountry, 1, { barcode: txt, source: "API_Pending_Or_Fail" }); }
+                        STATE.isProcessing = false; // 解鎖
                         setTimeout(() => STATE.scanners.record.resume(), 500);
-                    }, () => setTimeout(() => STATE.scanners.record.resume(), 500));
-
-                    fetchProductData(txt).then(data => {
-                        apiDataBuffer = data;
-                        updateApiAreaUI(data);
+                    }, () => { 
+                        STATE.isProcessing = false; // 解鎖
+                        setTimeout(() => STATE.scanners.record.resume(), 500);
                     });
+
+                    fetchProductData(txt).then(data => { apiDataBuffer = data; updateApiAreaUI(data); });
                 }
             }, () => {});
         }
         
         async function fetchProductData(barcode) {
-            if (!navigator.onLine) {
-                updateApiAreaUI({ error: "offline" });
-                return null;
-            }
+            if (!navigator.onLine) { updateApiAreaUI({ error: "offline" }); return null; }
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -561,23 +579,13 @@
                 const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, { signal: controller.signal });
                 clearTimeout(timeoutId);
 
-                if (res.status === 404) {
-                    updateApiAreaUI({ error: "not_found" });
-                    return { barcode: barcode, source: "API_Not_Found" };
-                }
+                if (res.status === 404) { updateApiAreaUI({ error: "not_found" }); return { barcode: barcode, source: "API_Not_Found" }; }
                 if (!res.ok) throw new Error("HTTP " + res.status);
                 
                 const data = await res.json();
-                
                 if (data.status === 1) {
                     const p = data.product;
-                    return {
-                        barcode: barcode,
-                        name: p.product_name_zh || p.product_name || "未命名商品",
-                        brand: p.brands || "未知品牌",
-                        img_url: p.image_front_small_url || "",
-                        source: "Cloud_API"
-                    };
+                    return { barcode: barcode, name: p.product_name_zh || p.product_name || "未命名商品", brand: p.brands || "未知品牌", img_url: p.image_front_small_url || "", source: "Cloud_API" };
                 } else {
                     updateApiAreaUI({ error: "not_found" });
                     return { barcode: barcode, source: "API_Not_Found" };
@@ -588,13 +596,11 @@
             }
         }
         
-        // [UI Update] API 回傳後更新卡片內容
         function updateApiAreaUI(data) {
             const area = document.getElementById('api-product-area');
             if(!area) return;
 
             if (data && data.source === "Cloud_API") {
-                // 成功找到：顯示標準卡片樣式
                 area.innerHTML = `
                     <div style="text-align:left; width:100%;">
                         <div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${data.brand}</div>
@@ -610,7 +616,6 @@
             }
         }
 
-        // 停止 Record Scanner
         function stopRecordScanner() { 
             if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); 
             document.getElementById('camera-box-record').style.display='none'; 
@@ -618,7 +623,6 @@
             document.getElementById('btn-scan-stop').style.display='none'; 
         }
 
-        // 啟動 AI Scanner
         function startAiCamera() { 
             document.getElementById('ai-result-box').style.display='none'; 
             document.getElementById('camera-box-ai').style.display='block'; 
@@ -627,28 +631,11 @@
             STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); 
         }
 
-        // 停止 AI Scanner
         function stopAiScanner() { 
             if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); 
             document.getElementById('camera-box-ai').style.display='none'; 
             document.getElementById('btn-ai-start').style.display='inline-block'; 
         }
-        
-        function manualInputBarcode() {
-            const code = prompt("請輸入完整條碼數字：");
-            if (code && code.length >= 8) {
-                // 直接調用你原本寫好的 startRecordScanner 裡面的邏輯片段
-                // 為了不更動現有函式，這裡簡單處理：
-                const country = getCountryFromCode(code);
-                showModal('confirm', '手動輸入結果', `條碼：${code}<br>歸屬地：${country}`, () => {
-                    addRecord(country, 1, { barcode: code, source: "Manual_Input" });
-                });
-            } else if (code) {
-                alert("條碼長度不正確");
-            }
-        }
     </script>
 </body>
 </html>
-
-
