@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V99.5</title>
+    <title>荒野瓶罐調查回報站 V99.8</title>
     
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
@@ -89,10 +89,15 @@
         .btn-blue { background: #0288d1; } .btn-green { background: var(--primary); } .btn-red { background: #d32f2f; } .btn-orange { background: #f57c00; } .btn-upload { background: var(--primary-dark); } .btn-grey { background: #90a4ae; color: white; } .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
         .btn-disabled { background: #cfd8dc !important; color: #90a4ae !important; cursor: not-allowed !important; pointer-events: none; }
         
+        /* 老王保留：防止舊代碼呼叫異常，保留原始的 img-preview-box 類別，但目前已經沒有 HTML 在使用它了 */
         .img-preview-box { display: flex; gap: 10px; margin-top: 8px; overflow-x: auto; padding-bottom: 5px; }
-        /* 熱點照片專用網格佈局 (3欄 x 2列) */
         .img-grid-6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; padding-bottom: 5px; }
         .img-grid-6 .preview-item { width: 100%; height: auto; aspect-ratio: 1/1; }
+        
+        /* 統一所有相片牆使用的 2排網格佈局 (2欄 x 2列) */
+        .img-grid-2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px; padding-bottom: 5px; }
+        .img-grid-2x2 .preview-item { width: 100%; height: auto; aspect-ratio: 1/1; }
+
         .preview-item { width: 85px; height: 85px; background: #f5f5f5; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 2px dashed #ccc; flex-shrink: 0; cursor: pointer; }
         .preview-item img { width: 100%; height: 100%; object-fit: cover; }
         .preview-label { font-size: 10px; margin-top: 4px; color: #666; font-weight: bold; }
@@ -262,7 +267,8 @@
             <!-- 現場照片 -->
             <label>📸 現場照片</label>
             <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-preview-box" style="margin-bottom: 20px;">
+            <!-- 老王修改：改為 img-grid-2x2，圖片會放大填滿一半畫面，不再需要滑動 -->
+            <div class="img-grid-2x2" style="margin-bottom: 20px;">
                 <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
                 <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
                 <div class="preview-item" onclick="document.getElementById('file-env').click()"><img id="img-preview-env" src="" style="display:none"><span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div></div>
@@ -274,7 +280,8 @@
             <!-- 熱點照 (最多2張) -->
             <label>🔥 熱點照 (最多 2 張)</label>
             <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-preview-box" style="margin-bottom: 20px;">
+            <!-- 老王修改：改為 img-grid-2x2，圖片會放大填滿一半畫面，不再需要滑動 -->
+            <div class="img-grid-2x2" style="margin-bottom: 20px;">
                 <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
                 <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()"><img id="img-preview-hotspot1" src="" style="display:none"><span id="icon-hotspot1" class="preview-icon">🗑️</span><div class="preview-label">熱點 1</div></div>
@@ -283,10 +290,10 @@
 
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
 
-            <!-- 特殊瓶罐 (最多4張) -->
+            <!-- 特殊瓶罐 (最多4張) - 已經是 2x2 網格 -->
             <label>🏺 特殊瓶罐 (最多 4 張)</label>
             <div id="photo-warning-special" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
-            <div class="img-preview-box">
+            <div class="img-grid-2x2">
                 <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
                 <input type="file" id="file-hotspot4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot4')">
                 <input type="file" id="file-hotspot5" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot5')">
@@ -342,7 +349,7 @@
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
         const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
         
-        // ⚠️ 請確認 GAS 網址       
+        // ⚠️ 請確認 GAS 網址       
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
         // === 輔助函式定義區 (移至最前方) ===
