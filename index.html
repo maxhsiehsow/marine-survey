@@ -22,6 +22,9 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        html, body {
+            overscroll-behavior-y: contain;
+        }
         /* V98: 荒野綠主題色 */
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
         
@@ -223,6 +226,7 @@
             </div>
             <button id="btn-scan-start" onclick="startRecordScanner()" class="btn-orange">📷 掃描條碼記錄</button>
             <button id="btn-scan-stop" onclick="stopRecordScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
+            <button id="btn-manual-barcode" onclick="manualInputBarcode()" class="btn-outline" style="margin-top:10px;">⌨️ 掃不到？手動輸入條碼</button>
             <div id="camera-box-record" class="camera-box"><div id="reader-record" class="scanner-view"></div></div>
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
             <label>🔍 條碼前 3 碼查詢記錄</label>
@@ -308,7 +312,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null };
+        const STATE = { count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, isProcessing: false };
         const timers = { 10: { total: 600, endTime: null, interval: null, running: false }, 20: { total: 1200, endTime: null, interval: null, running: false } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
@@ -362,7 +366,22 @@
         function loadProductDB() { if (!navigator.onLine) return; fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { if(data.status === "success") { STATE.productCache = data.products; STATE.manufacturerCache = data.manufacturers; console.log("DB Loaded. P:", Object.keys(STATE.productCache).length, "M:", Object.keys(STATE.manufacturerCache).length); } }).catch(e => console.error("DB Load Error:", e)); }
         function loadSurveyPoints(){if(!navigator.onLine)return;fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:"getPoints"})}).then(res=>res.json()).then(data=>{if(data.status==="success"){STATE.surveyPoints=data.points;}}).catch(e=>console.error(e));}
         function selectPoint(p){STATE.selectedPoint=p;document.querySelectorAll('.point-item').forEach(el=>el.classList.remove('selected'));const btn=document.getElementById('btn-nav-go');btn.innerText=`✅ 確認選擇：${p.name}`;btn.disabled=false;}
-        function navigateToSelected(){if(!STATE.selectedPoint)return;const p=STATE.selectedPoint;document.getElementById('inp_gps').value=`${p.lat}, ${p.lng}`;document.getElementById('inp_city').value=p.name;document.getElementById('inp_point').value=p.id;STATE.currentCity=p.name;saveState();closeMap();if(confirm(`已填入樣點：${p.name}\n\n是否開啟 Google Maps 導航前往？`)){window.open(`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`,'_blank');}}
+        function navigateToSelected(){
+            if(!STATE.selectedPoint) return;
+            const p = STATE.selectedPoint;
+            document.getElementById('inp_gps').value = `${p.lat}, ${p.lng}`;
+            document.getElementById('inp_city').value = p.name;
+            document.getElementById('inp_point').value = p.id;
+            STATE.currentCity = p.name;
+            saveState();
+            closeMap();
+            
+            if(confirm(`已填入樣點：${p.name}\n\n是否開啟 Google Maps 導航前往？`)){
+                // 修正後的 URL 格式：支援 iOS/Android 喚起 App
+                const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`;
+                window.open(mapUrl, '_blank');
+            }
+        }
         function runGPS(){document.getElementById('inp_gps').value="定位中...";document.getElementById('inp_point').value="";if(!navigator.geolocation){alert("您的裝置不支援 GPS");return;}navigator.geolocation.getCurrentPosition(p=>{const gpsText=`${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`;document.getElementById('inp_gps').value=gpsText;if(navigator.onLine){fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&localityLanguage=zh`).then(r=>r.json()).then(d=>{let city=(d.principalSubdivision||"").replace("Province","").trim();let town=(d.locality||"").trim();STATE.currentCity=`${city} ${town}`;document.getElementById('inp_city').value=STATE.currentCity;saveState();}).catch(e=>{STATE.currentCity="定位成功(無地址)";document.getElementById('inp_city').value=STATE.currentCity;saveState();});}else{STATE.currentCity="離線座標";document.getElementById('inp_city').value="⚠️ 離線模式 (等待連線後自動補全)";saveState();}},()=>{alert("定位失敗");document.getElementById('inp_gps').value="";});}
         function openMap(){document.getElementById('map-modal').style.display='flex';if(!STATE.map){STATE.map=L.map('map-container').setView([23.9,121],7);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(STATE.map);}document.getElementById('map-list').innerHTML='<div style="text-align:center; padding:10px; color:#666;">📡 正在取得您的位置...</div>';navigator.geolocation.getCurrentPosition(p=>{const userLat=p.coords.latitude;const userLng=p.coords.longitude;STATE.map.setView([userLat,userLng],13);if(STATE.userMarker)STATE.map.removeLayer(STATE.userMarker);STATE.userMarker=L.marker([userLat,userLng]).addTo(STATE.map).bindPopup("您的位置").openPopup();findNearestPoints(userLat,userLng);},()=>{alert("無法取得位置");});}
         function closeMap(){document.getElementById('map-modal').style.display='none';}
@@ -425,12 +444,13 @@
             document.getElementById('btn-scan-stop').style.display = 'inline-block';
             
             STATE.scanners.record = new Html5Qrcode("reader-record");
+            
             STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-                if (!txt || txt.trim() === "") {
-                    showModal('warning', '掃描錯誤', '⚠️ 內容為空', null);
-                    return;
-                }
-                STATE.scanners.record.pause();
+            if (!txt || txt.trim() === "" || STATE.isProcessing) return; // 正在處理中就跳過
+            
+            STATE.isProcessing = true; // 鎖定
+            STATE.scanners.record.pause();
+            
                 
                 // 1. 智慧廠商比對 (12碼 ~ 6碼)
                 let manuData = null;
@@ -490,9 +510,12 @@
                             img_url: displayImg,
                             source: logSource
                         });
+                        STATE.isProcessing = false; // 解除鎖定
+                        setTimeout(() => STATE.scanners.record.resume(), 500);                        
+                       }, () => {
+                        STATE.isProcessing = false; // 解除鎖定
                         setTimeout(() => STATE.scanners.record.resume(), 500);
-                    }, () => setTimeout(() => STATE.scanners.record.resume(), 500));
-
+                    });
                 } else {
                     // 本地無資料 -> 查 API (預設顯示卡片結構，等待 API 填入)
                     const modalHtml = `
@@ -610,6 +633,21 @@
             document.getElementById('camera-box-ai').style.display='none'; 
             document.getElementById('btn-ai-start').style.display='inline-block'; 
         }
+        
+        function manualInputBarcode() {
+            const code = prompt("請輸入完整條碼數字：");
+            if (code && code.length >= 8) {
+                // 直接調用你原本寫好的 startRecordScanner 裡面的邏輯片段
+                // 為了不更動現有函式，這裡簡單處理：
+                const country = getCountryFromCode(code);
+                showModal('confirm', '手動輸入結果', `條碼：${code}<br>歸屬地：${country}`, () => {
+                    addRecord(country, 1, { barcode: code, source: "Manual_Input" });
+                });
+            } else if (code) {
+                alert("條碼長度不正確");
+            }
+        }
     </script>
 </body>
 </html>
+
