@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>荒野商品建檔神器 (與老王協作版)</title>
+    <title>荒野商品建檔神器 (終極半自動版)</title>
     <style>
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); font-size: 14px; }
@@ -25,6 +25,10 @@
         .btn-action:hover { background: #0277bd; }
         .btn-ai { background: #673ab7; font-size: 15px; padding: 12px 20px; border-radius: 8px; width: 100%; margin-top: 5px; margin-bottom: 10px; text-align: center; display: block; box-shadow: 0 4px 6px rgba(103, 58, 183, 0.2); }
         .btn-ai:hover { background: #512da8; }
+
+        /* 老王新加的 AI 接收區 */
+        .ai-import-box { background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px dashed #2196f3; margin-bottom: 20px; display: none; }
+        .ai-import-box label { font-weight: bold; color: #0277bd; display: block; margin-bottom: 8px; }
 
         .list-header { display: flex; padding: 10px; background: #f1f8e9; border-radius: 8px; font-weight: bold; margin-bottom: 10px; font-size: 14px; color: var(--primary); border: 1px solid #c8e6c9; }
         .record-card { display: flex; padding: 10px 10px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 8px; background: #fff; align-items: center; transition: border-color 0.3s; }
@@ -57,8 +61,8 @@
 <body>
 
 <div class="container">
-    <h1>🌱 荒野商品建檔神器 (與老王協作版)</h1>
-    <p>這是一套極速半自動工作站。系統會秒速判定產地，遇到未知的商品，您可以一鍵複製所有條碼，然後到旁邊的 <b>Gemini 聊天視窗</b> 呼叫老王幫您精準查詢！</p>
+    <h1>🌱 荒野商品建檔神器 (終極半自動版)</h1>
+    <p>貼上條碼 ➡️ 產出提問詞 ➡️ 交給聊天室的老王查 ➡️ 將老王的 JSON 結果貼回此頁 ➡️ 自動填表！</p>
 
     <div class="input-section">
         <textarea id="barcodeInput" placeholder="請在此貼上條碼，例如：&#10;4710000000001&#10;6942404210071"></textarea>
@@ -67,9 +71,13 @@
     </div>
 
     <div id="resultList" style="display:none; margin-top: 15px;">
-        <!-- 神奇的複製提問詞按鈕 -->
-        <button id="btnCopyPrompt" class="btn btn-ai" onclick="copyBatchPromptForAI()">🤖 產出「向老王提問」的整批條碼清單 (點擊複製)</button>
-        <p style="text-align:center; font-size:13px; color:#666; margin-bottom: 20px;">點擊上方按鈕後，請到旁邊的 Gemini 視窗貼上對話，讓旗艦級 AI 幫您查商品！</p>
+        <button id="btnCopyPrompt" class="btn btn-ai" onclick="copyBatchPromptForAI()">🤖 2. 產出「向老王提問」的整批條碼清單 (點擊複製)</button>
+        
+        <div id="aiImportSection" class="ai-import-box">
+            <label>📥 3. 將聊天室老王回傳的代碼 (JSON) 貼在這裡：</label>
+            <textarea id="aiResultInput" style="height: 80px;" placeholder='[{"barcode":"69123456789", "name":"商品", "brand":"品牌"}]'></textarea>
+            <button class="btn" style="background:#0277bd; margin-top:10px; width:100%;" onclick="fillAiResults()">✨ 4. 瞬間一鍵填入下方表格</button>
+        </div>
         
         <div class="list-header">
             <div style="width: 40px; text-align: center;"><input type="checkbox" id="checkAll" onclick="toggleAllChecks(this)"></div>
@@ -79,13 +87,12 @@
     </div>
 
     <div id="bottomActions" class="bottom-actions" style="display:none;">
-        <span style="color:#d32f2f; font-size:13px; margin-right:15px; font-weight:bold;">⚠️ 請對照老王的回答，確認無誤後，再點擊批次寫入。</span>
-        <button id="btnSave" class="btn" style="background:#f57c00;" onclick="batchSave()">💾 2. 將勾選資料批次寫入商品庫</button>
+        <span style="color:#d32f2f; font-size:13px; margin-right:15px; font-weight:bold;">⚠️ 請利用 Google 按鈕確認自動填入的內容無誤後，再批次寫入。</span>
+        <button id="btnSave" class="btn" style="background:#f57c00;" onclick="batchSave()">💾 5. 將勾選資料批次寫入商品庫</button>
     </div>
 </div>
 
 <script>
-// ⚠️ 這裡的網址必須與你手機版調查APP使用的 Apps Script 網址完全相同
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
 const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
@@ -97,7 +104,6 @@ const commonCountries = ["🇹🇼 台灣", "🇨🇳 中國", "🇻🇳 越南"
 let globalRowId = 0;
 let tableData = []; 
 
-// 剪貼簿相容性寫法 (確保在各瀏覽器環境皆可運作)
 function copyToClipboard(text) {
     var textArea = document.createElement("textarea");
     textArea.value = text;
@@ -107,30 +113,65 @@ function copyToClipboard(text) {
     textArea.select();
     try {
         document.execCommand('copy');
-        alert('🎉 提示詞已複製！\n\n請立刻切換到旁邊的 Gemini 聊天視窗，貼上 (Ctrl+V) 送出，老王就會幫你查好！');
+        alert('🎉 提示詞已複製！\n\n請切換到旁邊的 Gemini 聊天視窗貼上。等老王回傳後，把他的答案貼回下方的藍色接收區！');
     } catch (err) {
         alert('無法自動複製，請手動選取複製');
     }
     document.body.removeChild(textArea);
 }
 
-// 產生給老王的對話提示詞
+// ⚠️ 老王改寫：強制要求聊天室的老王只吐出 JSON
 function copyBatchPromptForAI() {
     let unknownBarcodes = tableData.filter(r => !r.exists).map(r => r.barcode);
-    if(unknownBarcodes.length === 0) {
-        alert("目前沒有需要查詢的新條碼。");
-        return;
-    }
+    if(unknownBarcodes.length === 0) return alert("目前沒有需要查詢的新條碼。");
     
-    let promptText = `老王，請發揮你旗艦級 AI 的聯網搜尋能力，幫我查詢以下 ${unknownBarcodes.length} 個國際條碼的「商品名稱」與「品牌/廠商」。
-請注意避開條碼農場的假資料陷阱，以官方、大型電商或實體包裝圖片為準。請用條列式回覆我：
+    let promptText = `老王，請幫我聯網查詢以下 ${unknownBarcodes.length} 個國際條碼的「商品名稱」與「品牌/廠商」。
+請避開條碼農場假資料，以官方或實體圖片為準。若找不到請填寫「未查獲」。
 
-`;
-    unknownBarcodes.forEach((bc, idx) => {
-        promptText += `${idx + 1}. ${bc}\n`;
-    });
+【🚨非常重要】請務必只回傳一個「純 JSON 陣列」，不要包含任何 Markdown 語法 (不要寫 \`\`\`json)，也不要任何問候語！格式範例必須完全如下：
+[
+  {"barcode": "69123456789", "name": "商品名稱", "brand": "品牌"},
+  {"barcode": "47123456789", "name": "未查獲", "brand": "未查獲"}
+]
+
+以下是需要查詢的條碼清單：\n`;
+    unknownBarcodes.forEach(bc => { promptText += `${bc}\n`; });
     
     copyToClipboard(promptText);
+}
+
+// 🚀 老王新增：一鍵填入表格的魔法函式
+function fillAiResults() {
+    let rawStr = document.getElementById('aiResultInput').value.trim();
+    if (!rawStr) return alert("請先將老王的回覆貼上來！");
+    
+    try {
+        // 容錯機制：如果聊天室的老王還是不聽話加了 markdown，自動清掉
+        rawStr = rawStr.replace(/```json/gi, "").replace(/```/g, "").trim();
+        let aiData = JSON.parse(rawStr);
+        
+        let fillCount = 0;
+        aiData.forEach(item => {
+            // 找到對應的條碼那一行
+            let row = tableData.find(r => r.barcode === String(item.barcode));
+            if (row) {
+                let nameInput = document.getElementById(`name-${row.id}`);
+                let brandInput = document.getElementById(`brand-${row.id}`);
+                
+                // 只有當老王有查到東西時，才覆蓋上去
+                if (nameInput && item.name && item.name !== "未查獲") nameInput.value = item.name;
+                if (brandInput && item.brand && item.brand !== "未查獲") brandInput.value = item.brand;
+                
+                fillCount++;
+            }
+        });
+        
+        alert(`✅ 魔法成功！已自動對齊填入 ${fillCount} 筆資料。\n請用 Google 按鈕快速瀏覽檢查一下，沒問題就能存檔了！`);
+        document.getElementById('aiResultInput').value = ""; // 填完清空
+        
+    } catch (e) {
+        alert("解析失敗！請確認貼上的是純 JSON 格式的括號 [ ]。\n錯誤訊息：" + e.message);
+    }
 }
 
 function copySingleBarcode(barcode) {
@@ -140,10 +181,7 @@ function copySingleBarcode(barcode) {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    try {
-        document.execCommand('copy');
-        alert(`已複製條碼：${barcode}`);
-    } catch (err) {}
+    try { document.execCommand('copy'); alert(`已複製：${barcode}`); } catch (err) {}
     document.body.removeChild(textArea);
 }
 
@@ -153,7 +191,6 @@ async function startParsing() {
     
     let barcodes = rawText.split(/[\n,]+/).map(b => b.trim()).filter(b => b.length > 5);
     barcodes = [...new Set(barcodes)];
-    
     if(barcodes.length === 0) return alert("找不到有效的條碼格式。");
 
     document.getElementById('btnParse').disabled = true;
@@ -178,12 +215,8 @@ async function startParsing() {
             
             let finalOrigin = getCountryFallback(bc);
             let selectHtml = `<select id="sel-${rowObj.id}" class="inp-origin"><option value="">產地...</option>`;
-            commonCountries.forEach(c => { 
-                selectHtml += `<option value="${c}" ${c===finalOrigin ? 'selected' : ''}>${c}</option>`; 
-            });
-            if(!commonCountries.includes(finalOrigin) && finalOrigin !== "未知") {
-                selectHtml += `<option value="${finalOrigin}" selected>${finalOrigin}</option>`;
-            }
+            commonCountries.forEach(c => { selectHtml += `<option value="${c}" ${c===finalOrigin ? 'selected' : ''}>${c}</option>`; });
+            if(!commonCountries.includes(finalOrigin) && finalOrigin !== "未知") { selectHtml += `<option value="${finalOrigin}" selected>${finalOrigin}</option>`; }
             selectHtml += `</select>`;
 
             let card = document.createElement('div');
@@ -200,7 +233,6 @@ async function startParsing() {
                         <span id="status-${rowObj.id}">${isExists ? '<span class="status-badge badge-yellow">已在庫中</span>' : '<span class="status-badge badge-green">可新增</span>'}</span>
                         <span id="links-${rowObj.id}">
                             <a href="https://www.google.com/search?q=${bc}" target="_blank" class="btn-action" style="background:#757575;">🔍 Google 搜尋</a>
-                            <button class="btn-action" style="background:#0288d1;" onclick="copySingleBarcode('${bc}')">📋 複製條碼</button>
                         </span>
                     </div>
                     <div class="line-2">
@@ -217,10 +249,11 @@ async function startParsing() {
         
         let newItemsCount = tableData.filter(r => !r.exists).length;
         if(newItemsCount > 0) {
-            document.getElementById('btnCopyPrompt').innerText = `🤖 產出「向老王提問」的 ${newItemsCount} 筆條碼清單 (點擊複製)`;
             document.getElementById('btnCopyPrompt').style.display = 'block';
+            document.getElementById('aiImportSection').style.display = 'block';
         } else {
             document.getElementById('btnCopyPrompt').style.display = 'none';
+            document.getElementById('aiImportSection').style.display = 'none';
         }
 
     } catch(err) {
@@ -261,7 +294,7 @@ async function batchSave() {
         const data = await res.json();
         
         if(data.status === "success") {
-            alert(`✅ 成功寫入 ${data.added} 筆商品資料！手機版 APP 重新整理後即可生效。`);
+            alert(`✅ 成功寫入 ${data.added} 筆商品資料！`);
             
             rowIdsToMark.forEach(rId => {
                 let card = document.getElementById(`row-${rId}`);
@@ -275,15 +308,9 @@ async function batchSave() {
                 document.getElementById(`brand-${rId}`).disabled = true;
                 document.getElementById(`sel-${rId}`).disabled = true;
             });
-        } else {
-            throw new Error(data.message);
-        }
-    } catch(e) {
-        alert("寫入失敗：" + e.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "💾 2. 將勾選資料批次寫入商品庫";
-    }
+        } else { throw new Error(data.message); }
+    } catch(e) { alert("寫入失敗：" + e.message); } 
+    finally { btn.disabled = false; btn.innerText = "💾 5. 將勾選資料批次寫入商品庫"; }
 }
 </script>
 </body>
