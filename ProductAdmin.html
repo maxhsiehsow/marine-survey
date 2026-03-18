@@ -3,55 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>荒野商品建檔神器 (AI 輔助版)</title>
+    <title>荒野商品建檔神器 (AI 緊湊版)</title>
     <style>
         :root { --primary: #587a30; --primary-dark: #3e5c20; --bg: #f4f7f4; --text: #333; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h1 { color: var(--primary); border-left: 6px solid var(--primary); padding-left: 15px; margin-top: 0; }
-        p { color: #666; line-height: 1.6; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--text); font-size: 14px; }
+        .container { max-width: 950px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: var(--primary); border-left: 6px solid var(--primary); padding-left: 15px; margin-top: 0; font-size: 22px; }
+        p { color: #666; line-height: 1.5; font-size: 14px; }
         
-        .input-section { margin-bottom: 30px; }
-        textarea { width: 100%; height: 120px; padding: 15px; font-size: 16px; border: 2px solid #ddd; border-radius: 12px; box-sizing: border-box; resize: vertical; font-family: monospace; }
+        .input-section { margin-bottom: 25px; }
+        textarea { width: 100%; height: 100px; padding: 12px; font-size: 14px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; resize: vertical; font-family: monospace; }
         textarea:focus { border-color: var(--primary); outline: none; }
         
-        .btn { padding: 12px 24px; font-size: 16px; font-weight: bold; color: white; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .btn { padding: 10px 20px; font-size: 14px; font-weight: bold; color: white; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; }
         .btn:active { transform: scale(0.98); }
         .btn:disabled { background: #ccc !important; cursor: not-allowed; }
         .btn-primary { background: var(--primary); }
         .btn-primary:hover { background: var(--primary-dark); }
-        .btn-action { background: #0288d1; padding: 6px 12px; font-size: 13px; border-radius: 6px; text-decoration: none; color: white; display: inline-block; margin-right: 5px; }
+        .btn-action { background: #0288d1; padding: 4px 10px; font-size: 12px; border-radius: 4px; text-decoration: none; color: white; display: inline-block; margin-right: 5px; }
         
-        .progress-bar { display: none; background: #e0e0e0; border-radius: 8px; height: 20px; overflow: hidden; margin-top: 15px; }
+        .progress-bar { display: none; background: #e0e0e0; border-radius: 6px; height: 16px; overflow: hidden; margin-top: 15px; }
         .progress-fill { background: #ff9800; height: 100%; width: 0%; transition: width 0.3s; }
-        .progress-text { text-align: center; font-size: 14px; margin-top: 5px; color: #ff9800; font-weight: bold; }
+        .progress-text { text-align: center; font-size: 13px; margin-top: 5px; color: #ff9800; font-weight: bold; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 15px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f1f8e9; color: var(--primary); font-weight: bold; position: sticky; top: 0; }
+        /* 老王全新設計：緊湊型兩行卡片佈局 */
+        .list-header { display: flex; padding: 10px; background: #f1f8e9; border-radius: 8px; font-weight: bold; margin-bottom: 10px; font-size: 14px; color: var(--primary); border: 1px solid #c8e6c9; }
+        .record-card { display: flex; padding: 10px 10px; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 8px; background: #fff; align-items: center; transition: border-color 0.3s; }
+        .record-card:hover { border-color: #bdbdbd; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .record-card.row-exists { background: #fffde7; border-color: #ffe082; }
+        .record-card.row-saved { background: #e8f5e9; border-color: #a5d6a7; }
         
-        .row-exists { background-color: #fffde7; color: #757575; }
-        .row-ready { background-color: #ffffff; }
-        .row-saved { background-color: #e8f5e9; }
+        .check-col { width: 40px; text-align: center; }
+        .content-col { flex: 1; display: flex; flex-direction: column; gap: 6px; }
         
-        input[type="text"], select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        input[type="text"]:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 3px rgba(88, 122, 48, 0.3); }
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+        /* 第一行：條碼與狀態 */
+        .line-1 { display: flex; align-items: center; gap: 15px; }
+        .barcode-text { font-family: monospace; font-size: 16px; font-weight: 900; color: #2e4418; letter-spacing: 1px; }
+        
+        /* 第二行：輸入框 */
+        .line-2 { display: flex; align-items: center; gap: 10px; }
+        .line-2 input, .line-2 select { padding: 6px 10px; font-size: 13px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; background: #fafafa; }
+        .line-2 input:focus, .line-2 select:focus { border-color: var(--primary); background: #fff; outline: none; }
+        .line-2 input:disabled, .line-2 select:disabled { background: #f5f5f5; color: #9e9e9e; }
+        
+        .inp-name { flex: 3; }
+        .inp-brand { flex: 2; }
+        .inp-origin { flex: 1; min-width: 100px; }
+        
+        .status-badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; }
         .badge-yellow { background: #ffe082; color: #f57f17; }
         .badge-green { background: #c8e6c9; color: #2e7d32; }
         .badge-blue { background: #e1f5fe; color: #0277bd; }
+        .badge-red { background: #ffcdd2; color: #c62828; }
         
-        .bottom-actions { margin-top: 30px; text-align: right; padding-top: 20px; border-top: 2px dashed #eee; }
+        .bottom-actions { margin-top: 25px; text-align: right; padding-top: 20px; border-top: 2px dashed #eee; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🌱 荒野商品建檔神器 (AI 特務版)</h1>
-    <p>請將調查回來的未知條碼貼在下方（可貼多筆，用換行或逗號隔開）。系統會先比對資料庫，排除已存在的條碼後，派出 AI 特務上網搜尋商品資訊。</p>
+    <h1>🌱 荒野商品建檔神器 (AI 緊湊版)</h1>
+    <p>貼上條碼後，系統會派 AI 逐筆解析，並以最省空間的「兩行版面」顯示，方便您快速校對修改。</p>
 
     <div class="input-section">
-        <textarea id="barcodeInput" placeholder="請在此貼上條碼，例如：&#10;4710000000001&#10;6921234567890"></textarea>
+        <textarea id="barcodeInput" placeholder="請在此貼上條碼，例如：&#10;4710000000001&#10;6917878030623"></textarea>
         <br><br>
         <button id="btnParse" class="btn btn-primary" onclick="startParsing()">🚀 1. 開始 AI 解析與排重</button>
     </div>
@@ -61,29 +76,22 @@
         <div id="progressText" class="progress-text">準備出動 AI 特務...</div>
     </div>
 
-    <table id="resultTable" style="display:none;">
-        <thead>
-            <tr>
-                <th width="40"><input type="checkbox" id="checkAll" onclick="toggleAllChecks(this)"></th>
-                <th width="140">條碼</th>
-                <th width="100">狀態</th>
-                <th width="200">商品名稱 (可修改)</th>
-                <th width="150">廠商/品牌 (可修改)</th>
-                <th width="130">產地 (可修改)</th>
-                <th>查證工具</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+    <div id="resultList" style="display:none; margin-top: 15px;">
+        <div class="list-header">
+            <div style="width: 40px; text-align: center;"><input type="checkbox" id="checkAll" onclick="toggleAllChecks(this)"></div>
+            <div>全選 / 取消全選</div>
+        </div>
+        <div id="listBody"></div>
+    </div>
 
     <div id="bottomActions" class="bottom-actions" style="display:none;">
-        <span style="color:#d32f2f; font-size:14px; margin-right:15px;">⚠️ 請務必人工確認表格內容無誤後，再勾選寫入。</span>
+        <span style="color:#d32f2f; font-size:13px; margin-right:15px; font-weight:bold;">⚠️ 請人工確認內容無誤後，再點擊批次寫入。</span>
         <button id="btnSave" class="btn" style="background:#f57c00;" onclick="batchSave()">💾 2. 將勾選資料批次寫入商品庫</button>
     </div>
 </div>
 
 <script>
-// ⚠️ 請確認 GAS 網址與 APP 相同
+// ⚠️ 這裡的網址必須與你手機版調查APP使用的 Apps Script 網址完全相同
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
 // 內建 GS1 字典 (當 AI 找不到時的保底機制)
@@ -94,31 +102,29 @@ function getCountryFallback(code) { return (code && code.length >= 3) ? (PREFIX_
 const commonCountries = ["🇹🇼 台灣", "🇨🇳 中國", "🇻🇳 越南", "🇵🇭 菲律賓", "🇹🇭 泰國", "🇮🇩 印尼", "🇲🇾 馬來西亞", "🇰🇷 韓國", "🇯🇵 日本", "🇺🇸 美國", "其它"];
 
 let globalRowId = 0;
-let tableData = []; // [{id, barcode, exists, name, brand, origin, url}]
+let tableData = []; 
 
 async function startParsing() {
     const rawText = document.getElementById('barcodeInput').value;
     if(!rawText.trim()) return alert("請先輸入條碼！");
     
-    // 整理條碼列表 (去空白、逗號換行分割、去重複)
     let barcodes = rawText.split(/[\n,]+/).map(b => b.trim()).filter(b => b.length > 5);
     barcodes = [...new Set(barcodes)];
     
     if(barcodes.length === 0) return alert("找不到有效的條碼格式。");
 
     document.getElementById('btnParse').disabled = true;
-    document.getElementById('resultTable').style.display = 'table';
+    document.getElementById('resultList').style.display = 'block';
     document.getElementById('bottomActions').style.display = 'block';
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = "<tr><td colspan='7' style='text-align:center;'>🔍 正在與雲端資料庫比對查重中...</td></tr>";
+    const listBody = document.getElementById('listBody');
+    listBody.innerHTML = "<div style='text-align:center; padding: 20px;'>🔍 正在與雲端資料庫比對查重中...</div>";
 
     try {
-        // 1. 呼叫後端檢查重複
         const resDb = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "checkDbExists" }) });
         const dataDb = await resDb.json();
         const existingSet = new Set(dataDb.existing || []);
 
-        tbody.innerHTML = "";
+        listBody.innerHTML = "";
         tableData = [];
         globalRowId = 0;
 
@@ -126,7 +132,7 @@ async function startParsing() {
         let newCount = 0;
         let completedCount = 0;
 
-        // 2. 建立表格並標示狀態
+        // 建立緊湊型卡片 UI
         for(let bc of barcodes) {
             let isExists = existingSet.has(bc);
             let rowObj = { id: globalRowId++, barcode: bc, exists: isExists, name: "", brand: "", origin: "", url: "" };
@@ -134,30 +140,37 @@ async function startParsing() {
             
             if(!isExists) newCount++;
             
-            let tr = document.createElement('tr');
-            tr.id = `row-${rowObj.id}`;
-            tr.className = isExists ? 'row-exists' : 'row-ready';
-            
-            // 建立國家選單 HTML
-            let selectHtml = `<select id="sel-${rowObj.id}"><option value="">--請選擇--</option>`;
+            let selectHtml = `<select id="sel-${rowObj.id}" class="inp-origin"><option value="">產地...</option>`;
             commonCountries.forEach(c => { selectHtml += `<option value="${c}">${c}</option>`; });
             selectHtml += `</select>`;
 
-            tr.innerHTML = `
-                <td><input type="checkbox" class="row-checkbox" value="${rowObj.id}" ${isExists ? 'disabled' : 'checked'}></td>
-                <td style="font-family:monospace; font-weight:bold;">${bc}</td>
-                <td id="status-${rowObj.id}">${isExists ? '<span class="status-badge badge-yellow">已在庫中</span>' : '<span class="status-badge badge-blue">等待 AI</span>'}</td>
-                <td><input type="text" id="name-${rowObj.id}" value="" ${isExists ? 'disabled' : ''} placeholder="AI 解析中..."></td>
-                <td><input type="text" id="brand-${rowObj.id}" value="" ${isExists ? 'disabled' : ''}></td>
-                <td>${isExists ? '<input type="text" disabled value="已在庫中">' : selectHtml}</td>
-                <td id="links-${rowObj.id}">
-                    <a href="https://www.google.com/search?q=${bc}" target="_blank" class="btn-action" style="background:#757575;">🔍 Google</a>
-                </td>
+            let card = document.createElement('div');
+            card.id = `row-${rowObj.id}`;
+            card.className = `record-card ${isExists ? 'row-exists' : 'row-ready'}`;
+            
+            card.innerHTML = `
+                <div class="check-col">
+                    <input type="checkbox" class="row-checkbox" value="${rowObj.id}" ${isExists ? 'disabled' : 'checked'}>
+                </div>
+                <div class="content-col">
+                    <div class="line-1">
+                        <span class="barcode-text">${bc}</span>
+                        <span id="status-${rowObj.id}">${isExists ? '<span class="status-badge badge-yellow">已在庫中</span>' : '<span class="status-badge badge-blue">等待 AI</span>'}</span>
+                        <span id="links-${rowObj.id}">
+                            <a href="https://www.google.com/search?q=${bc}" target="_blank" class="btn-action" style="background:#757575;">🔍 Google 查證</a>
+                        </span>
+                    </div>
+                    <div class="line-2">
+                        <input type="text" id="name-${rowObj.id}" class="inp-name" value="" ${isExists ? 'disabled' : ''} placeholder="商品名稱 (AI解析中...)">
+                        <input type="text" id="brand-${rowObj.id}" class="inp-brand" value="" ${isExists ? 'disabled' : ''} placeholder="廠商/品牌">
+                        ${isExists ? '<input type="text" class="inp-origin" disabled value="已在庫中">' : selectHtml}
+                    </div>
+                </div>
             `;
-            tbody.appendChild(tr);
+            listBody.appendChild(card);
         }
 
-        // 3. 逐筆派 AI 特務出動 (只針對新條碼，加入延遲避免被鎖 API)
+        // 派 AI 特務出動
         for(let row of tableData) {
             if(row.exists) continue;
 
@@ -165,8 +178,7 @@ async function startParsing() {
             document.getElementById(`status-${row.id}`).innerHTML = '<span class="status-badge badge-blue">🤖 搜尋中</span>';
 
             try {
-                // 等待 3.5 秒避免 Google API Rate Limit (免費版限制)
-                await new Promise(r => setTimeout(r, 3500));
+                await new Promise(r => setTimeout(r, 3500)); // 避免被 API 阻擋
                 
                 const resAi = await fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "aiSearchBarcode", barcode: row.barcode }) });
                 const dataAi = await resAi.json();
@@ -175,22 +187,21 @@ async function startParsing() {
                     let aiObj = {};
                     try { aiObj = typeof dataAi.result === 'string' ? JSON.parse(dataAi.result) : dataAi.result; } catch(e){}
                     
-                    document.getElementById(`name-${row.id}`).value = aiObj.name || "";
-                    document.getElementById(`brand-${row.id}`).value = aiObj.brand || "";
+                    // 填入文字 (強制填寫，解決空白問題)
+                    document.getElementById(`name-${row.id}`).value = aiObj.name || "未查獲商品名稱";
+                    document.getElementById(`brand-${row.id}`).value = aiObj.brand || "未查獲品牌";
                     
-                    // 產地判定：AI 優先，找不到則呼叫 GS1 本地保底
+                    // 產地判定
                     let finalOrigin = aiObj.origin || "";
                     if(!finalOrigin || finalOrigin === "未知" || finalOrigin === "") {
                         finalOrigin = getCountryFallback(row.barcode);
                     }
                     
-                    // 如果下拉選單沒有這個國家，自動新增
                     let sel = document.getElementById(`sel-${row.id}`);
                     let optionExists = Array.from(sel.options).some(opt => opt.value === finalOrigin);
                     if(!optionExists && finalOrigin) { sel.add(new Option(finalOrigin, finalOrigin)); }
                     sel.value = finalOrigin;
 
-                    // 加上 AI 找到的連結
                     if(aiObj.url) {
                         document.getElementById(`links-${row.id}`).innerHTML += `<a href="${aiObj.url}" target="_blank" class="btn-action" style="background:#ff9800;">🔗 AI來源</a>`;
                     }
@@ -200,12 +211,10 @@ async function startParsing() {
                     throw new Error("API 回傳失敗");
                 }
             } catch(e) {
-                // AI 失敗時的保底機制：只給 GS1 產地
                 document.getElementById(`name-${row.id}`).placeholder = "AI 查詢失敗，請手動輸入";
                 let fallbackOrigin = getCountryFallback(row.barcode);
-                let sel = document.getElementById(`sel-${row.id}`);
-                sel.value = fallbackOrigin;
-                document.getElementById(`status-${row.id}`).innerHTML = '<span class="status-badge" style="background:#ffebee; color:#c62828;">⚠️ AI 超時</span>';
+                document.getElementById(`sel-${row.id}`).value = fallbackOrigin;
+                document.getElementById(`status-${row.id}`).innerHTML = '<span class="status-badge badge-red">⚠️ AI 超時</span>';
             }
             
             completedCount++;
@@ -255,9 +264,10 @@ async function batchSave() {
         if(data.status === "success") {
             alert(`✅ 成功寫入 ${data.added} 筆商品資料！手機版 APP 重新整理後即可生效。`);
             
-            // 將畫面上已儲存的列標記為完成，並取消勾選
             rowIdsToMark.forEach(rId => {
-                document.getElementById(`row-${rId}`).className = 'row-saved';
+                let card = document.getElementById(`row-${rId}`);
+                card.classList.remove('row-ready');
+                card.classList.add('row-saved');
                 document.getElementById(`status-${rId}`).innerHTML = '<span class="status-badge badge-green">💾 已寫入庫</span>';
                 let cb = document.querySelector(`.row-checkbox[value="${rId}"]`);
                 cb.checked = false;
