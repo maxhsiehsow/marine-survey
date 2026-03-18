@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V101</title>
+    <title>荒野瓶罐調查回報站 V102</title>
     
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="logo.png">
 
     <!-- [Social Sharing 設定] -->
-    <meta property="og:title" content="荒野瓶罐調查回報站 V101">
+    <meta property="og:title" content="荒野瓶罐調查回報站 V102">
     <meta property="og:description" content="結合 AI 辨識與大數據的海廢調查工具。">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://marine-survey.vercel.app/logo.png">
@@ -79,11 +79,23 @@
         h2 { margin-top: 0; color: var(--primary); font-size: 18px; border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 15px; font-weight: 700; letter-spacing: 0.5px; }
         label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 15px; color: #444; }
         .required::after { content: " *"; color: #e53935; }
+        
         input, select, textarea { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; background: #fafafa; transition: border 0.2s, background 0.2s; appearance: none; }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
         input[readonly].locked-field { background: #e0e0e0; color: #555; border-color: #bdbdbd; cursor: not-allowed; }
         input[readonly] { color: var(--primary); font-weight: bold; background: #f1f8e9; }
-        #ai-country-select { font-size: 24px; font-weight: 800; color: #333; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; height: auto; background: #fff; }
+        
+        /* 老王修正：加上 SVG 向下箭頭，讓 select 元素看起來像真正的下拉選單 */
+        select {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23587a30' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 18px;
+            padding-right: 40px; /* 預留空間給箭頭 */
+            cursor: pointer;
+        }
+        
+        #ai-country-select { font-size: 24px; font-weight: 800; color: #333; padding: 15px; border: 3px solid var(--primary); border-radius: 12px; height: auto; background-color: #fff; }
         button, .btn { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 10px; text-align: center; letter-spacing: 1px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         button:active { transform: scale(0.98); }
         .btn-blue { background: #0288d1; } .btn-green { background: var(--primary); } .btn-red { background: #d32f2f; } .btn-orange { background: #f57c00; } .btn-upload { background: var(--primary-dark); } .btn-grey { background: #90a4ae; color: white; } .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
@@ -168,6 +180,7 @@
             <div style="font-size:12px; color:#666; margin:5px 0;">已偵測到網路，請點擊下方按鈕同步</div>
             <button id="btn-sync" class="btn" onclick="syncOfflineData()">☁️ 立即上傳暫存資料 (含地址補全)</button>
         </div>
+        
         <h2>📝 1. 參與人員資訊</h2>
         <div class="card">
             <label class="required">填表人姓名</label>
@@ -176,21 +189,11 @@
             <input type="tel" id="inp_phone" placeholder="09xx-xxx-xxx" onchange="saveState()">
             <label class="required">參與人數</label>
             <input type="number" id="inp_participants" value="1" min="1" style="text-align:center;" onchange="saveState()">
-            <!-- 老王新增：參與者姓名 -->
             <label class="required">參與者姓名</label>
             <input type="text" id="inp_participant_names" placeholder="請輸入所有參與者的真實姓名" onchange="saveState()">
-            <!-- 老王新增：調查區塊 -->
-            <label class="required">調查區塊</label>
-            <select id="sel_survey_zone" onchange="saveState()">
-                <option value="" disabled selected>請選擇調查區塊</option>
-                <option value="高潮帶左岸">高潮帶左岸</option>
-                <option value="高潮帶右岸">高潮帶右岸</option>
-                <option value="低潮帶左岸">低潮帶左岸</option>
-                <option value="低潮帶右岸">低潮帶右岸</option>
-            </select>
+            <!-- 老王搬家：調查區塊已經移到下方「調查地點資訊」的最後面 -->
         </div>
         
-        <!-- 老王修改：標題更名為調查地點資訊 -->
         <h2>📍 2. 調查地點資訊</h2>
         <div class="card">
             <label class="required">位置設定</label>
@@ -204,7 +207,7 @@
             <input type="text" id="inp_city" readonly placeholder="縣市鄉鎮或樣點名稱">
             <label>調查樣點</label>
             <input type="text" id="inp_point" readonly class="locked-field" placeholder="僅限從地圖選擇代號">
-            <!-- 老王新增：灘地類型 -->
+            
             <label class="required">灘地類型</label>
             <select id="sel_beach_type" onchange="saveState()">
                 <option value="" disabled selected>請選擇灘地類型</option>
@@ -213,6 +216,16 @@
                 <option value="礫石灘">礫石灘</option>
                 <option value="礁岩">礁岩</option>
                 <option value="消波塊／海堤">消波塊／海堤</option>
+            </select>
+            
+            <!-- 老王搬家：將調查區塊移至此處 -->
+            <label class="required" style="margin-top:12px;">調查區塊</label>
+            <select id="sel_survey_zone" onchange="saveState()">
+                <option value="" disabled selected>請選擇調查區塊</option>
+                <option value="高潮帶左岸">高潮帶左岸</option>
+                <option value="高潮帶右岸">高潮帶右岸</option>
+                <option value="低潮帶左岸">低潮帶左岸</option>
+                <option value="低潮帶右岸">低潮帶右岸</option>
             </select>
         </div>
 
@@ -234,7 +247,6 @@
                 </div>
             </div>
             
-            <!-- 老王移動：將大量垃圾通報區塊移至此處下方 -->
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
                 <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
                 <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報。</p>
@@ -242,7 +254,6 @@
             </div>
         </div>
         
-        <!-- 老王修改：版權文字調整 -->
         <div class="footer-credit">網頁規劃設計：荒野保護協會 棲地守護部雁子<br>聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a></div>
     </div>
 
@@ -335,7 +346,7 @@
         <div class="card" style="text-align:center;">
             <p id="ai-offline-warning" style="display:none; color:#d32f2f; font-weight:bold; background:#ffebee; padding:10px; border-radius:8px;">⚠️ 離線模式無法使用 AI，請改用掃碼</p>
             <p style="color:#666;">拍一張，AI 幫你分類！</p>
-            <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟動 AI 相機</button>
+            <button id="btn-ai-start" onclick="startAiCamera()" class="btn-blue">📷 啟勃 AI 相機</button>
             <div id="camera-box-ai" class="camera-box"><div id="reader-ai" class="scanner-view"></div><div onclick="takeAiSnapshot()" class="btn-snap-div">📸</div></div>
             <div id="ai-result-box" class="ai-result-box">
                 <img id="ai-preview-img" style="width:140px; height:140px; object-fit:cover; border-radius:12px; border:3px solid white; box-shadow:0 4px 8px rgba(0,0,0,0.15);">
@@ -362,7 +373,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // 老王修正：STATE 擴充
         const STATE = { isProcessing: false, count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, startGps: null, endGps: null, surveyDistance: null };
         const timers = { 20: { total: 1200, endTime: null, interval: null, running: false } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
