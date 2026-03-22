@@ -23,10 +23,9 @@
         
         .btn-action { background: #0288d1; padding: 4px 10px; font-size: 12px; border-radius: 4px; text-decoration: none; color: white; display: inline-flex; align-items: center; justify-content: center; margin-right: 5px; cursor: pointer; border: none; }
         .btn-action:hover { background: #0277bd; }
-        .btn-ai { background: #673ab7; font-size: 15px; padding: 12px 20px; border-radius: 8px; width: 100%; margin-top: 5px; margin-bottom: 10px; text-align: center; display: block; box-shadow: 0 4px 6px rgba(103, 58, 183, 0.2); }
+        .btn-ai { background: #673ab7; font-size: 15px; padding: 12px 20px; border-radius: 8px; width: 100%; margin-top: 5px; margin-bottom: 10px; text-align: center; display: block; box-shadow: 0 4px 6px rgba(103, 58, 183, 0.2); color: white; border: none; cursor: pointer; }
         .btn-ai:hover { background: #512da8; }
 
-        /* 老王新加的 AI 接收區 */
         .ai-import-box { background: #e3f2fd; padding: 15px; border-radius: 8px; border: 1px dashed #2196f3; margin-bottom: 20px; display: none; }
         .ai-import-box label { font-weight: bold; color: #0277bd; display: block; margin-bottom: 8px; }
 
@@ -73,10 +72,11 @@
     <div id="resultList" style="display:none; margin-top: 15px;">
         <button id="btnCopyPrompt" class="btn btn-ai" onclick="copyBatchPromptForAI()">🤖 2. 產出「向老王提問」的整批條碼清單 (點擊複製)</button>
         
+        <!-- 老王新加的 AI 接收區 -->
         <div id="aiImportSection" class="ai-import-box">
             <label>📥 3. 將聊天室老王回傳的代碼 (JSON) 貼在這裡：</label>
-            <textarea id="aiResultInput" style="height: 80px;" placeholder='[{"barcode":"69123456789", "name":"商品", "brand":"品牌"}]'></textarea>
-            <button class="btn" style="background:#0277bd; margin-top:10px; width:100%;" onclick="fillAiResults()">✨ 4. 瞬間一鍵填入下方表格</button>
+            <textarea id="aiResultInput" style="height: 100px;" placeholder='[{"barcode":"69123456789", "name":"商品", "brand":"品牌"}]'></textarea>
+            <button class="btn" style="background:#0277bd; margin-top:10px; width:100%; color: white;" onclick="fillAiResults()">✨ 4. 瞬間一鍵填入下方表格</button>
         </div>
         
         <div class="list-header">
@@ -93,6 +93,7 @@
 </div>
 
 <script>
+// ⚠️ 這裡的網址必須與你手機版調查APP使用的 Apps Script 網址完全相同
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
 const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
@@ -120,7 +121,6 @@ function copyToClipboard(text) {
     document.body.removeChild(textArea);
 }
 
-// ⚠️ 老王改寫：強制要求聊天室的老王只吐出 JSON
 function copyBatchPromptForAI() {
     let unknownBarcodes = tableData.filter(r => !r.exists).map(r => r.barcode);
     if(unknownBarcodes.length === 0) return alert("目前沒有需要查詢的新條碼。");
@@ -140,34 +140,61 @@ function copyBatchPromptForAI() {
     copyToClipboard(promptText);
 }
 
-// 🚀 老王新增：一鍵填入表格的魔法函式
+// 🚀 老王新增：帶有強大除錯與防呆功能的一鍵填入函式
 function fillAiResults() {
     let rawStr = document.getElementById('aiResultInput').value.trim();
     if (!rawStr) return alert("請先將老王的回覆貼上來！");
     
     try {
-        // 容錯機制：如果聊天室的老王還是不聽話加了 markdown，自動清掉
+        // 容錯機制：如果聊天室的老王加了 markdown，自動清掉
         rawStr = rawStr.replace(/```json/gi, "").replace(/```/g, "").trim();
         let aiData = JSON.parse(rawStr);
         
         let fillCount = 0;
+        let debugLog = "【老王除錯紀錄】\n";
+        
         aiData.forEach(item => {
+            // 防呆：容忍 AI 將屬性首字母大寫，或是數值型態的問題
+            let itemBc = String(item.barcode || item.Barcode || "").trim();
+            let itemName = item.name || item.Name || "";
+            let itemBrand = item.brand || item.Brand || "";
+            
             // 找到對應的條碼那一行
-            let row = tableData.find(r => r.barcode === String(item.barcode));
+            let row = tableData.find(r => r.barcode === itemBc);
             if (row) {
                 let nameInput = document.getElementById(`name-${row.id}`);
                 let brandInput = document.getElementById(`brand-${row.id}`);
                 
+                let filledName = false;
+                let filledBrand = false;
+
                 // 只有當老王有查到東西時，才覆蓋上去
-                if (nameInput && item.name && item.name !== "未查獲") nameInput.value = item.name;
-                if (brandInput && item.brand && item.brand !== "未查獲") brandInput.value = item.brand;
+                if (nameInput && itemName && itemName !== "未查獲") {
+                    nameInput.value = itemName;
+                    filledName = true;
+                }
+                if (brandInput && itemBrand && itemBrand !== "未查獲") {
+                    brandInput.value = itemBrand;
+                    filledBrand = true;
+                }
+                
+                if (!filledName && !filledBrand) {
+                    debugLog += `⚠️ 條碼 ${itemBc} 對齊成功，但內容為「未查獲」或空白，故未填入。\n`;
+                } else {
+                    debugLog += `✅ 條碼 ${itemBc} 填入成功！(商品: ${itemName}, 品牌: ${itemBrand})\n`;
+                }
                 
                 fillCount++;
+            } else {
+                debugLog += `❌ 條碼 ${itemBc} 在表格中找不到對應列！\n`;
             }
         });
         
-        alert(`✅ 魔法成功！已自動對齊填入 ${fillCount} 筆資料。\n請用 Google 按鈕快速瀏覽檢查一下，沒問題就能存檔了！`);
-        document.getElementById('aiResultInput').value = ""; // 填完清空
+        console.log("【原始 JSON 解析結果】", aiData);
+        console.log(debugLog);
+        
+        alert(`✅ 魔法成功！找到 ${fillCount} 筆對應條碼。\n\n⚠️ 如果欄位沒出現文字，請按鍵盤【F12】打開「Console / 主控台」查看除錯紀錄！`);
+        // document.getElementById('aiResultInput').value = ""; // 保留內容，方便你除錯查看
         
     } catch (e) {
         alert("解析失敗！請確認貼上的是純 JSON 格式的括號 [ ]。\n錯誤訊息：" + e.message);
@@ -233,6 +260,7 @@ async function startParsing() {
                         <span id="status-${rowObj.id}">${isExists ? '<span class="status-badge badge-yellow">已在庫中</span>' : '<span class="status-badge badge-green">可新增</span>'}</span>
                         <span id="links-${rowObj.id}">
                             <a href="https://www.google.com/search?q=${bc}" target="_blank" class="btn-action" style="background:#757575;">🔍 Google 搜尋</a>
+                            <button class="btn-action" style="background:#0288d1;" onclick="copySingleBarcode('${bc}')">📋 複製條碼</button>
                         </span>
                     </div>
                     <div class="line-2">
