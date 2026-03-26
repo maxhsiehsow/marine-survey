@@ -325,14 +325,14 @@
             <label>🏺 特殊瓶罐 (最多 4 張)</label>
             <div id="photo-warning-special" class="photo-warning">⚠️ 系統剛從休眠中恢復，照片已重置，請重新拍攝。</div>
             <div class="img-grid-2x2">
-                <input type="file" id="file-hotspot3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot3')">
-                <input type="file" id="file-hotspot4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot4')">
-                <input type="file" id="file-hotspot5" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot5')">
-                <input type="file" id="file-hotspot6" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot6')">
-                <div class="preview-item" onclick="document.getElementById('file-hotspot3').click()"><img id="img-preview-hotspot3" src="" style="display:none"><span id="icon-hotspot3" class="preview-icon">🍾</span><div class="preview-label">瓶罐 1</div></div>
-                <div class="preview-item" onclick="document.getElementById('file-hotspot4').click()"><img id="img-preview-hotspot4" src="" style="display:none"><span id="icon-hotspot4" class="preview-icon">🍾</span><div class="preview-label">瓶罐 2</div></div>
-                <div class="preview-item" onclick="document.getElementById('file-hotspot5').click()"><img id="img-preview-hotspot5" src="" style="display:none"><span id="icon-hotspot5" class="preview-icon">🍾</span><div class="preview-label">瓶罐 3</div></div>
-                <div class="preview-item" onclick="document.getElementById('file-hotspot6').click()"><img id="img-preview-hotspot6" src="" style="display:none"><span id="icon-hotspot6" class="preview-icon">🍾</span><div class="preview-label">瓶罐 4</div></div>
+                <input type="file" id="file-special1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special1')">
+                <input type="file" id="file-special2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special2')">
+                <input type="file" id="file-special3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special3')">
+                <input type="file" id="file-special4" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special4')">
+                <div class="preview-item" onclick="document.getElementById('file-special1').click()"><img id="img-preview-special1" src="" style="display:none"><span id="icon-special1" class="preview-icon">🍾</span><div class="preview-label">瓶罐 1</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-special2').click()"><img id="img-preview-special2" src="" style="display:none"><span id="icon-special2" class="preview-icon">🍾</span><div class="preview-label">瓶罐 2</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-special3').click()"><img id="img-preview-special3" src="" style="display:none"><span id="icon-special3" class="preview-icon">🍾</span><div class="preview-label">瓶罐 3</div></div>
+                <div class="preview-item" onclick="document.getElementById('file-special4').click()"><img id="img-preview-special4" src="" style="display:none"><span id="icon-special4" class="preview-icon">🍾</span><div class="preview-label">瓶罐 4</div></div>
             </div>
             
             <label style="margin-top:15px;">其他記錄</label>
@@ -373,7 +373,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        const STATE = { isProcessing: false, count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, hotspot3: null, hotspot4: null, hotspot5: null, hotspot6: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, startGps: null, endGps: null, surveyDistance: null };
+        const STATE = { isProcessing: false, count: 0, target: 100, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, special1: null, special2: null, special3: null, special4: null }, scanners: { record: null, ai: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, startGps: null, endGps: null, surveyDistance: null };
         const timers = { 20: { total: 1200, endTime: null, interval: null, running: false } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
@@ -666,7 +666,7 @@
                 beachType: document.getElementById('sel_beach_type').value,   
                 total:STATE.count,
                 note:document.getElementById('inp_note').value,
-                hotspotData1:STATE.imgs.hotspot1||"", hotspotData2:STATE.imgs.hotspot2||"", hotspotData3:STATE.imgs.hotspot3||"", hotspotData4:STATE.imgs.hotspot4||"", hotspotData5:STATE.imgs.hotspot5||"", hotspotData6:STATE.imgs.hotspot6||"",
+                hotspotData1:STATE.imgs.hotspot1||"", hotspotData2:STATE.imgs.hotspot2||"", specialData1:STATE.imgs.special1||"", specialData2:STATE.imgs.special2||"", specialData3:STATE.imgs.special3||"", specialData4:STATE.imgs.special4||"",
                 envData:STATE.imgs.env||"", groupData:STATE.imgs.group||"", scanLogs:STATE.scanLogs, ...statsOut
             };
             
@@ -712,8 +712,8 @@
             STATE.startGps = null; STATE.endGps = null; STATE.surveyDistance = null;
             if(document.getElementById('dist-display')) { document.getElementById('dist-display').innerText = "等待計時"; document.getElementById('dist-display').style.color = "#90a4ae"; }
 
-            STATE.imgs={env:null,group:null,hotspot1:null,hotspot2:null,hotspot3:null,hotspot4:null,hotspot5:null,hotspot6:null};
-            ['env','group','hotspot1','hotspot2','hotspot3','hotspot4','hotspot5','hotspot6'].forEach(k=>{if(document.getElementById(`img-preview-${k}`))document.getElementById(`img-preview-${k}`).style.display='none';if(document.getElementById(`icon-${k}`))document.getElementById(`icon-${k}`).style.display='block';});
+            STATE.imgs={env:null,group:null,hotspot1:null,hotspot2:null,special1:null,special2:null,special3:null,special4:null};
+            ['env','group','hotspot1','hotspot2','special1','special2','special3','special4'].forEach(k=>{if(document.getElementById(`img-preview-${k}`))document.getElementById(`img-preview-${k}`).style.display='none';if(document.getElementById(`icon-${k}`))document.getElementById(`icon-${k}`).style.display='block';});
             
             // 重置表單 (注意：保留了 participant_names)
             document.getElementById('inp_gps').value="";document.getElementById('inp_city').value="";STATE.currentCity="未定位";
