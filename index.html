@@ -654,7 +654,7 @@
                 action:"save",
                 sessionId:sessionId,
                 name:document.getElementById('inp_name').value,
-                phone:document.getElementById('inp_phone').value,
+                phone: "'" + document.getElementById('inp_phone').value, // 👈 老王修正：加上單引號，防止 Google 試算表把 0 吞掉
                 participants:document.getElementById('inp_participants').value,
                 participantNames:document.getElementById('inp_participant_names').value, 
                 city:document.getElementById('inp_city').value,
