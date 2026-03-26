@@ -708,6 +708,26 @@
             if(document.getElementById('success-modal'))document.getElementById('success-modal').style.display='none';
             if(document.getElementById('custom-modal'))document.getElementById('custom-modal').style.display='none';
             
+            // ==========================================
+            // 🛑 老王修復：強制停止並重置 20 分鐘計時器
+            // ==========================================
+            if (timers && timers[20] && timers[20].interval) {
+                clearInterval(timers[20].interval); // 煞車！停止背景扣秒
+            }
+            if (timers && timers[20]) {
+                timers[20].running = false;
+                timers[20].endTime = null;
+                timers[20].total = 1200; // 恢復成完整的 20 分鐘 (1200秒)
+            }
+            
+            // 將計時按鈕的文字恢復原狀
+            let timerBtn = document.getElementById('btn-timer-20');
+            if (timerBtn) {
+                timerBtn.innerText = "⏳ 開始 20 分鐘計時"; 
+                timerBtn.style.background = ""; // 清除可能因為倒數變紅的顏色
+            }
+            // ==========================================
+
             STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.scanLogs=[]; 
             STATE.startGps = null; STATE.endGps = null; STATE.surveyDistance = null;
             if(document.getElementById('dist-display')) { document.getElementById('dist-display').innerText = "等待計時"; document.getElementById('dist-display').style.color = "#90a4ae"; }
