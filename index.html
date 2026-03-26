@@ -475,16 +475,17 @@
         // 直線距離計算 (回傳公里)
         function getDistance(lat1,lon1,lat2,lon2){const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
         
-        // 帶有 GPS 檢查的 Timer Toggle
+         // 🛑 修復 1：真正的「暫停」與「開始」邏輯
         function toggleTimer(min){
             let t=timers[min];
             let box=document.getElementById(`timer-${min}`);
             
             if(t.running){
-                // 暫停計時
+                // 真正的暫停：煞車，並「記下當下還剩多少毫秒」
                 clearInterval(t.interval);
                 t.running=false;
                 box.classList.remove('running');
+                t.pausedRemainingMs = t.endTime - Date.now(); // 關鍵！記憶暫停當下的剩餘時間
                 saveState();
             } else {
                 // 開始計時：必須取得起點 GPS
@@ -496,6 +497,79 @@
             }
         }
 
+        // 🛑 修復 2：從「暫停的秒數」精準接續倒數
+        function executeTimerStart(min, t, box) {
+            if (t.pausedRemainingMs) {
+                // 如果是從暫停中恢復，就用「剛才剩下的秒數」推算新的結束時間
+                t.endTime = Date.now() + t.pausedRemainingMs;
+                t.pausedRemainingMs = null; // 恢復後清空暫存
+            } else if (!t.endTime || t.endTime <= Date.now()) {
+                // 如果是全新開始，才給滿 20 分鐘
+                t.endTime = Date.now() + (min * 60 * 1000);
+            }
+            box.classList.remove('done');
+            box.classList.add('running');
+            t.running=true;
+            document.getElementById('dist-display').innerText = "📍 記錄中...";
+            document.getElementById('dist-display').style.color = "#ff9800";
+            saveState();
+            resumeTimer(min);
+        }
+
+        // 🛑 修復 3：上傳成功後，讓面板徹底「歸零為 20:00」
+        function handleSuccessConfirm(isOffline){
+            if(document.getElementById('success-modal'))document.getElementById('success-modal').style.display='none';
+            if(document.getElementById('custom-modal'))document.getElementById('custom-modal').style.display='none';
+            
+            // 強制停止並徹底重置 20 分鐘計時器 (包含背景與 UI 面板)
+            if (timers && timers[20] && timers[20].interval) {
+                clearInterval(timers[20].interval);
+            }
+            if (timers && timers[20]) {
+                timers[20].running = false;
+                timers[20].endTime = null;
+                timers[20].pausedRemainingMs = null; 
+            }
+            
+            // 👉 把面板撥回 20:00 初始狀態！
+            let timerBox = document.getElementById('timer-20');
+            if (timerBox) timerBox.classList.remove('running', 'done');
+            let timeDisplay = document.getElementById('time-display-20');
+            if (timeDisplay) timeDisplay.innerText = "20:00";
+
+            STATE.count=0; STATE.stats={}; STATE.historyStack=[]; STATE.scanLogs=[]; 
+            STATE.startGps = null; STATE.endGps = null; STATE.surveyDistance = null;
+            if(document.getElementById('dist-display')) { document.getElementById('dist-display').innerText = "等待計時"; document.getElementById('dist-display').style.color = "#90a4ae"; }
+
+            STATE.imgs={env:null,group:null,hotspot1:null,hotspot2:null,special1:null,special2:null,special3:null,special4:null};
+            ['env','group','hotspot1','hotspot2','special1','special2','special3','special4'].forEach(k=>{if(document.getElementById(`img-preview-${k}`))document.getElementById(`img-preview-${k}`).style.display='none';if(document.getElementById(`icon-${k}`))document.getElementById(`icon-${k}`).style.display='block';});
+            
+            // 重置表單 (注意：保留了 participant_names)
+            document.getElementById('inp_gps').value="";document.getElementById('inp_city').value="";STATE.currentCity="未定位";
+            document.getElementById('inp_point').value="";
+            document.getElementById('sel_survey_zone').value="";
+            document.getElementById('sel_beach_type').value=""; 
+            document.getElementById('sel_country').selectedIndex=0;document.getElementById('inp_qty').value=1;document.getElementById('inp_note').value="";
+            
+            clearState();updateUI();checkOfflineQueue();switchTab('basic');
+        }
+
+        // 🛑 修復 4：讓「暫停狀態」也能挺過網頁重新整理
+        function saveState() { 
+            const currentState = { 
+                name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value, participantNames: document.getElementById('inp_participant_names').value, gps: document.getElementById('inp_gps').value, city: document.getElementById('inp_city').value, point: document.getElementById('inp_point').value, surveyZone: document.getElementById('sel_survey_zone').value, beachType: document.getElementById('sel_beach_type').value, selectedPoint: STATE.selectedPoint, stats: STATE.stats, count: STATE.count, historyStack: STATE.historyStack, scanLogs: STATE.scanLogs, note: document.getElementById('inp_note').value, currentCity: STATE.currentCity, 
+                timer20End: timers[20].running ? timers[20].endTime : null, 
+                timer20PausedRemaining: timers[20].pausedRemainingMs || null, // 記憶暫停的剩餘秒數
+                startGps: STATE.startGps, endGps: STATE.endGps, surveyDistance: STATE.surveyDistance 
+            }; 
+            localStorage.setItem('survey_session', JSON.stringify(currentState)); 
+        }
+        
+        // 🛑 修復 5：網頁重整時，如果是在暫停中，就顯示暫停的秒數
+        function restoreState() { const savedJSON = localStorage.getItem('survey_session'); if (!savedJSON) return; try { const saved = JSON.parse(savedJSON); if (saved.count > 0 || saved.gps) { showModal('confirm', '恢復調查', '⚠️ 偵測到您上次有未完成的紀錄，是否恢復？', () => { document.getElementById('inp_name').value = saved.name || ''; document.getElementById('inp_phone').value = saved.phone || ''; document.getElementById('inp_participants').value = saved.participants || 1; document.getElementById('inp_participant_names').value = saved.participantNames || ''; document.getElementById('sel_survey_zone').value = saved.surveyZone || ''; document.getElementById('sel_beach_type').value = saved.beachType || ''; document.getElementById('inp_gps').value = saved.gps || ''; document.getElementById('inp_city').value = saved.city || ''; document.getElementById('inp_point').value = saved.point || ''; document.getElementById('inp_note').value = saved.note || ''; STATE.selectedPoint = saved.selectedPoint; STATE.stats = saved.stats || {}; STATE.count = saved.count || 0; STATE.historyStack = saved.historyStack || []; STATE.scanLogs = saved.scanLogs || []; STATE.currentCity = saved.currentCity || "未定位"; STATE.startGps = saved.startGps || null; STATE.endGps = saved.endGps || null; STATE.surveyDistance = saved.surveyDistance !== undefined ? saved.surveyDistance : null; updateUI(); 
+        if (STATE.surveyDistance !== null) { document.getElementById('dist-display').innerText = STATE.surveyDistance + " m"; document.getElementById('dist-display').style.color = "var(--primary)"; } else if (STATE.startGps) { document.getElementById('dist-display').innerText = "📍 記錄中..."; document.getElementById('dist-display').style.color = "#ff9800"; }
+        if (saved.timer20End) { timers[20].endTime = saved.timer20End; timers[20].running = true; if (Date.now() >= saved.timer20End) { document.getElementById('timer-20').classList.add('done'); document.getElementById('time-display-20').innerText = "00:00"; timers[20].running = false; showModal('alarm', '時間到！', '調查時間已結束。', null); } else { resumeTimer(20); } } else if (saved.timer20PausedRemaining) { timers[20].pausedRemainingMs = saved.timer20PausedRemaining; let m = Math.floor((saved.timer20PausedRemaining/1000)/60).toString().padStart(2,'0'); let s = Math.floor((saved.timer20PausedRemaining/1000)%60).toString().padStart(2,'0'); document.getElementById('time-display-20').innerText = `${m}:${s}`; } document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'block'); }, () => { localStorage.removeItem('survey_session'); }); } } catch (e) { localStorage.removeItem('survey_session'); } }
+        
         // 執行計時器啟動UI與邏輯
         function executeTimerStart(min, t, box) {
             if(!t.endTime||t.endTime<=Date.now()){ t.endTime=Date.now()+(min*60*1000); }
