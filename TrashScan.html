@@ -650,7 +650,7 @@
             updateUI(); saveState();
         }
 
-        // 上傳時攔截，計算終點距離
+       // 上傳時攔截，計算終點距離
         function uploadData(){
             if(STATE.count===0){showModal('warning','無資料','請先收集數據再上傳',null);return;}
             if(!document.getElementById('inp_name').value){showModal('warning','資料未填','請填寫 [填表人姓名]',()=>switchTab('basic'));return;}
@@ -693,7 +693,10 @@
                 action:"save",
                 sessionId:sessionId,
                 name:document.getElementById('inp_name').value,
-                phone: "'" + document.getElementById('inp_phone').value, // 👈 老王修正：加上單引號，防止 Google 試算表把 0 吞掉
+                
+                // 👉 老王微創修改點：在 phone 的值前面加上 "'" 單引號
+                phone: "'" + document.getElementById('inp_phone').value, 
+                
                 participants:document.getElementById('inp_participants').value,
                 participantNames:document.getElementById('inp_participant_names').value, 
                 city:document.getElementById('inp_city').value,
@@ -721,7 +724,7 @@
                 btn.innerText="🚀 上傳資料至雲端"; btn.disabled=false;
             });
         }
-
+        
         // 取終點座標並計算距離
         function getGpsForEnd(callback) {
             document.getElementById('loading-mask').style.display = 'flex';
