@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>荒野瓶罐調查回報站 V102</title>
+    <title>荒野瓶罐調查回報站 V200</title>
     
     <!-- [PWA 設定] -->
     <link rel="manifest" href="manifest.json">
@@ -15,7 +15,7 @@
     <link rel="apple-touch-icon" href="logo.png">
 
     <!-- [Social Sharing 設定] -->
-    <meta property="og:title" content="荒野瓶罐調查回報站 V102">
+    <meta property="og:title" content="荒野瓶罐調查回報站 V200">
     <meta property="og:description" content="結合 AI 辨識與大數據的海廢調查工具。">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://marine-survey.vercel.app/logo.png">
@@ -85,13 +85,12 @@
         input[readonly].locked-field { background: #e0e0e0; color: #555; border-color: #bdbdbd; cursor: not-allowed; }
         input[readonly] { color: var(--primary); font-weight: bold; background: #f1f8e9; }
         
-        /* 老王修正：加上 SVG 向下箭頭，讓 select 元素看起來像真正的下拉選單 */
         select {
             background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23587a30' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 12px center;
             background-size: 18px;
-            padding-right: 40px; /* 預留空間給箭頭 */
+            padding-right: 40px;
             cursor: pointer;
         }
         
@@ -101,7 +100,6 @@
         .btn-blue { background: #0288d1; } .btn-green { background: var(--primary); } .btn-red { background: #d32f2f; } .btn-orange { background: #f57c00; } .btn-upload { background: var(--primary-dark); } .btn-grey { background: #90a4ae; color: white; } .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
         .btn-disabled { background: #cfd8dc !important; color: #90a4ae !important; cursor: not-allowed !important; pointer-events: none; }
         
-        /* 統一 2排網格佈局 (2欄 x 2列) */
         .img-grid-2x2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 8px; padding-bottom: 5px; }
         .img-grid-2x2 .preview-item { width: 100%; height: auto; aspect-ratio: 1/1; }
 
@@ -110,7 +108,6 @@
         .preview-label { font-size: 12px; margin-top: 4px; color: #666; font-weight: bold; }
         .preview-icon { font-size: 32px; color: #999; }
         
-        /* 計時器專用特效 (套用於 preview-item) */
         .preview-item.running { border: 3px solid #ffb74d; animation: pulse 1.5s infinite; background: #fff8e1; }
         .preview-item.done { border: 3px solid #ef5350; background: #ffebee; }
         
@@ -160,6 +157,7 @@
         <h1>請點擊右上角<br>使用其他瀏覽器開啟</h1>
         <p>LINE 內建瀏覽器不支援相機與定位功能。<br>請切換至 Chrome (Android) 或 Safari (iOS)。</p>
     </div>
+    
     <div id="custom-modal" class="modal-overlay">
         <div id="modal-content-box" class="modal-content">
             <span id="modal-icon" class="modal-icon">⚠️</span>
@@ -171,8 +169,54 @@
             </div>
         </div>
     </div>
+    
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">系統載入中...</p></div>
     
+    <!-- [V200 🌟資深版專用] 新商品建檔表單彈窗 -->
+    <div id="build-product-modal" class="modal-overlay" style="z-index: 10500;">
+        <div class="modal-content" style="max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; text-align: left; padding: 20px;">
+            <h2 style="margin-top:0; border-left: 5px solid #f57c00; color: #f57c00;">📝 新商品建檔</h2>
+            
+            <label style="color:#757575;">條碼 (系統帶入)</label>
+            <input type="text" id="build_barcode" readonly class="locked-field" style="margin-bottom:10px;">
+            
+            <label style="color:#757575;">產地判定</label>
+            <select id="build_country" style="margin-bottom:10px;"></select>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="flex:1;">
+                    <label class="required">正面照</label>
+                    <div class="preview-item" style="width:100%; height:120px;" onclick="document.getElementById('build_file_front').click()">
+                        <img id="build_img_front" style="display:none; width:100%; height:100%; object-fit:cover;">
+                        <span id="build_icon_front" class="preview-icon">📸</span>
+                    </div>
+                    <input type="file" id="build_file_front" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'front')">
+                </div>
+                <div style="flex:1;">
+                    <label class="required">背面/條碼照</label>
+                    <div class="preview-item" style="width:100%; height:120px;" onclick="document.getElementById('build_file_back').click()">
+                        <img id="build_img_back" style="display:none; width:100%; height:100%; object-fit:cover;">
+                        <span id="build_icon_back" class="preview-icon">📸</span>
+                    </div>
+                    <input type="file" id="build_file_back" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'back')">
+                </div>
+            </div>
+
+            <button onclick="autoFillByAI()" class="btn-blue" style="margin-top:15px; background:#673ab7; box-shadow:0 4px 10px rgba(103,58,183,0.3);">✨ AI 雙圖辨識代填</button>
+
+            <label class="required" style="margin-top:15px;">商品名稱</label>
+            <input type="text" id="build_name" placeholder="例: 康師傅礦泉水 500ml">
+            
+            <label class="required">廠商名稱</label>
+            <input type="text" id="build_brand" placeholder="例: 康師傅控股">
+
+            <div class="modal-btns" style="margin-top: 25px;">
+                <button onclick="closeBuildModal()" class="btn-grey">取消</button>
+                <button onclick="submitNewProduct()" class="btn-orange">📤 確認建檔</button>
+            </div>
+        </div>
+    </div>
+
     <div id="view-basic" class="container active-tab">
         <h1 class="app-title">荒野瓶罐調查回報站</h1>
         <div id="offline-sync-box">
@@ -433,18 +477,16 @@
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
 
-        // 🛑 修復 4：讓「暫停狀態」也能挺過網頁重新整理
         function saveState() { 
             const currentState = { 
                 name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value, participantNames: document.getElementById('inp_participant_names').value, gps: document.getElementById('inp_gps').value, city: document.getElementById('inp_city').value, point: document.getElementById('inp_point').value, surveyZone: document.getElementById('sel_survey_zone').value, beachType: document.getElementById('sel_beach_type').value, selectedPoint: STATE.selectedPoint, stats: STATE.stats, count: STATE.count, historyStack: STATE.historyStack, scanLogs: STATE.scanLogs, note: document.getElementById('inp_note').value, currentCity: STATE.currentCity, 
                 timer20End: timers[20].running ? timers[20].endTime : null, 
-                timer20PausedRemaining: timers[20].pausedRemainingMs || null, // 記憶暫停的剩餘秒數
+                timer20PausedRemaining: timers[20].pausedRemainingMs || null,
                 startGps: STATE.startGps, endGps: STATE.endGps, surveyDistance: STATE.surveyDistance 
             }; 
             localStorage.setItem('survey_session', JSON.stringify(currentState)); 
         }
         
-        // 🛑 修復 5：網頁重整時，如果是在暫停中，就顯示暫停的秒數
         function restoreState() { const savedJSON = localStorage.getItem('survey_session'); if (!savedJSON) return; try { const saved = JSON.parse(savedJSON); if (saved.count > 0 || saved.gps) { showModal('confirm', '恢復調查', '⚠️ 偵測到您上次有未完成的紀錄，是否恢復？', () => { document.getElementById('inp_name').value = saved.name || ''; document.getElementById('inp_phone').value = saved.phone || ''; document.getElementById('inp_participants').value = saved.participants || 1; document.getElementById('inp_participant_names').value = saved.participantNames || ''; document.getElementById('sel_survey_zone').value = saved.surveyZone || ''; document.getElementById('sel_beach_type').value = saved.beachType || ''; document.getElementById('inp_gps').value = saved.gps || ''; document.getElementById('inp_city').value = saved.city || ''; document.getElementById('inp_point').value = saved.point || ''; document.getElementById('inp_note').value = saved.note || ''; STATE.selectedPoint = saved.selectedPoint; STATE.stats = saved.stats || {}; STATE.count = saved.count || 0; STATE.historyStack = saved.historyStack || []; STATE.scanLogs = saved.scanLogs || []; STATE.currentCity = saved.currentCity || "未定位"; STATE.startGps = saved.startGps || null; STATE.endGps = saved.endGps || null; STATE.surveyDistance = saved.surveyDistance !== undefined ? saved.surveyDistance : null; updateUI(); 
         if (STATE.surveyDistance !== null) { document.getElementById('dist-display').innerText = STATE.surveyDistance + " m"; document.getElementById('dist-display').style.color = "var(--primary)"; } else if (STATE.startGps) { document.getElementById('dist-display').innerText = "📍 記錄中..."; document.getElementById('dist-display').style.color = "#ff9800"; }
         if (saved.timer20End) { timers[20].endTime = saved.timer20End; timers[20].running = true; if (Date.now() >= saved.timer20End) { document.getElementById('timer-20').classList.add('done'); document.getElementById('time-display-20').innerText = "00:00"; timers[20].running = false; showModal('alarm', '時間到！', '調查時間已結束。', null); } else { resumeTimer(20); } } else if (saved.timer20PausedRemaining) { timers[20].pausedRemainingMs = saved.timer20PausedRemaining; let m = Math.floor((saved.timer20PausedRemaining/1000)/60).toString().padStart(2,'0'); let s = Math.floor((saved.timer20PausedRemaining/1000)%60).toString().padStart(2,'0'); document.getElementById('time-display-20').innerText = `${m}:${s}`; } document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'block'); }, () => { localStorage.removeItem('survey_session'); }); } } catch (e) { localStorage.removeItem('survey_session'); } }
@@ -463,23 +505,19 @@
         function toggleMapMode(){const btn=document.getElementById('btn-toggle-map');if(btn.innerText.includes("全台")){STATE.map.setView([23.9,121],7);STATE.surveyPoints.forEach(p=>{L.circleMarker([p.lat,p.lng],{radius:5,color:'#587a30'}).addTo(STATE.map).bindPopup(p.name).on('click',()=>selectPoint(p));});btn.innerText="📍 顯示最近";}else{openMap();btn.innerText="🗺️ 顯示全台";}}
         function createRedIcon(){return new L.Icon({iconUrl:'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',shadowUrl:'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',iconSize:[25,41],iconAnchor:[12,41],popupAnchor:[1,-34],shadowSize:[41,41]});}
         
-        // 直線距離計算 (回傳公里)
         function getDistance(lat1,lon1,lat2,lon2){const R=6371;const dLat=(lat2-lat1)*Math.PI/180;const dLon=(lon2-lon1)*Math.PI/180;const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));}
         
-        // 🛑 修復 1：真正的「暫停」與「開始」邏輯
         function toggleTimer(min){
             let t=timers[min];
             let box=document.getElementById(`timer-${min}`);
             
             if(t.running){
-                // 真正的暫停：煞車，並「記下當下還剩多少毫秒」
                 clearInterval(t.interval);
                 t.running=false;
                 box.classList.remove('running');
-                t.pausedRemainingMs = t.endTime - Date.now(); // 關鍵！記憶暫停當下的剩餘時間
+                t.pausedRemainingMs = t.endTime - Date.now(); 
                 saveState();
             } else {
-                // 開始計時：必須取得起點 GPS
                 if(!STATE.startGps) {
                     getGpsForStart(() => { executeTimerStart(min, t, box); });
                 } else {
@@ -488,14 +526,11 @@
             }
         }
 
-        // 🛑 修復 2：從「暫停的秒數」精準接續倒數
         function executeTimerStart(min, t, box) {
             if (t.pausedRemainingMs) {
-                // 如果是從暫停中恢復，就用「剛才剩下的秒數」推算新的結束時間
                 t.endTime = Date.now() + t.pausedRemainingMs;
-                t.pausedRemainingMs = null; // 恢復後清空暫存
+                t.pausedRemainingMs = null; 
             } else if (!t.endTime || t.endTime <= Date.now()) {
-                // 如果是全新開始，才給滿 20 分鐘
                 t.endTime = Date.now() + (min * 60 * 1000);
             }
             box.classList.remove('done');
@@ -507,7 +542,6 @@
             resumeTimer(min);
         }
 
-        // 取起點座標防呆
         function getGpsForStart(callback) {
             document.getElementById('loading-mask').style.display = 'flex';
             document.getElementById('loading-text').innerText = "定位起點中 (用以計算調查距離)...";
@@ -518,12 +552,11 @@
             }, err => {
                 document.getElementById('loading-mask').style.display = 'none';
                 showModal('confirm', '⚠️ 無法取得起點', '系統無法取得起點座標，請確保手機 GPS 已開啟，或走到空曠處再試。', () => {
-                    getGpsForStart(callback); // 重試
-                }, () => {}); // 取消就不啟動
+                    getGpsForStart(callback); 
+                }, () => {}); 
             }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
 
-        // 微棲地 GPS 快取記錄法
         function getBottleGpsAsync(callback) {
             if (!navigator.geolocation) { callback("未定位"); return; }
             navigator.geolocation.getCurrentPosition(
@@ -539,6 +572,117 @@
         function switchTab(tabName){document.querySelectorAll('.container').forEach(el=>el.classList.remove('active-tab'));document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+tabName).classList.add('active-tab');document.getElementById('nav-'+tabName).classList.add('active');stopRecordScanner();stopAiScanner();}
         function handleImgUpload(input,type){if(!input.files||!input.files[0])return;const file=input.files[0];const reader=new FileReader();reader.onload=function(e){const imgId=`img-preview-${type}`;const imgEl=document.getElementById(imgId);imgEl.src=e.target.result;imgEl.style.display='block';const icon=document.getElementById(`icon-${type}`);if(icon)icon.style.display='none';const temp=new Image();temp.src=e.target.result;temp.onload=function(){const cvs=document.createElement('canvas');let s=1024/temp.width;if(s>1)s=1;cvs.width=temp.width*s;cvs.height=temp.height*s;cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height);STATE.imgs[type]=cvs.toDataURL('image/jpeg',0.7).split(',')[1];}};reader.readAsDataURL(file);}
         
+        // --- 🌟 V200 資深版：新商品建檔邏輯 ---
+        let BUILD_STATE = { barcode: "", gps: "", front: null, back: null, wasTimerRunning: false };
+
+        function openBuildModal(barcode, country, gps) {
+            BUILD_STATE = { barcode: barcode, gps: gps, front: null, back: null, wasTimerRunning: false };
+            
+            // 💡 智慧記憶計時器狀態並自動暫停
+            if (timers[20].running) {
+                BUILD_STATE.wasTimerRunning = true;
+                toggleTimer(20); // 呼叫 toggleTimer 執行暫停並記憶 pausedRemainingMs
+            }
+
+            document.getElementById('build_barcode').value = barcode;
+            document.getElementById('build_name').value = "";
+            document.getElementById('build_brand').value = "";
+            
+            const sel = document.getElementById('build_country');
+            sel.innerHTML = "";
+            for(let c of Object.keys(COLORS)) { sel.add(new Option(c, c)); }
+            sel.value = normalizeName(country);
+
+            ['front', 'back'].forEach(k => {
+                document.getElementById(`build_img_${k}`).style.display = 'none';
+                document.getElementById(`build_icon_${k}`).style.display = 'block';
+                document.getElementById(`build_file_${k}`).value = ""; // 清空之前的檔案
+            });
+            document.getElementById('build-product-modal').style.display = 'flex';
+        }
+
+        function closeBuildModal() {
+            document.getElementById('build-product-modal').style.display = 'none';
+            
+            // 💡 智慧恢復計時器狀態
+            if (BUILD_STATE.wasTimerRunning && !timers[20].running) {
+                toggleTimer(20); // 重新啟動計時器
+            }
+
+            setTimeout(() => { 
+                STATE.isProcessing = false; 
+                if(STATE.scanners.record) STATE.scanners.record.resume(); 
+            }, 800);
+        }
+
+        function handleBuildImg(input, type) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = function() {
+                    const cvs = document.createElement('canvas');
+                    let s = 800 / img.width; if (s > 1) s = 1;
+                    cvs.width = img.width * s; cvs.height = img.height * s;
+                    cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
+                    BUILD_STATE[type] = cvs.toDataURL('image/jpeg', 0.7).split(',')[1];
+                    document.getElementById(`build_img_${type}`).src = cvs.toDataURL();
+                    document.getElementById(`build_img_${type}`).style.display = 'block';
+                    document.getElementById(`build_icon_${type}`).style.display = 'none';
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        function autoFillByAI() {
+            if (!BUILD_STATE.front || !BUILD_STATE.back) { alert("請先拍好「正面」與「背面/條碼照」兩張照片喔！"); return; }
+            document.getElementById('loading-mask').style.display='flex';
+            document.getElementById('loading-text').innerText = "🤖 AI 正在雙圖交叉比對...";
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST', body: JSON.stringify({ action: "aiProductRecognize", front: BUILD_STATE.front, back: BUILD_STATE.back })
+            }).then(res => res.json()).then(data => {
+                document.getElementById('loading-mask').style.display='none';
+                if(data.status === "success") {
+                    try {
+                        const resObj = JSON.parse(data.result);
+                        if(resObj.name) document.getElementById('build_name').value = resObj.name;
+                        if(resObj.brand) document.getElementById('build_brand').value = resObj.brand;
+                        alert("✅ AI 辨識完成！請協助確認並修正錯漏字。");
+                    } catch(e) { alert("AI 回傳格式異常，請手動輸入。"); }
+                } else { alert("辨識失敗：" + data.message); }
+            }).catch(e => { document.getElementById('loading-mask').style.display='none'; alert("網路異常"); });
+        }
+
+        function submitNewProduct() {
+            const name = document.getElementById('build_name').value.trim();
+            const brand = document.getElementById('build_brand').value.trim();
+            const country = document.getElementById('build_country').value;
+            
+            if(!name || !brand || !BUILD_STATE.front || !BUILD_STATE.back) { alert("照片與名稱/廠商欄位皆為必填！"); return; }
+
+            document.getElementById('loading-mask').style.display='flex';
+            document.getElementById('loading-text').innerText = "正在上傳建檔資料與照片...";
+
+            fetch(GOOGLE_SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ action: "addProduct", barcode: BUILD_STATE.barcode, name: name, brand: brand, origin: country, frontImg: BUILD_STATE.front, backImg: BUILD_STATE.back }) 
+            }).then(res => res.json()).then(data => {
+                document.getElementById('loading-mask').style.display='none';
+                if(data.status === "success") {
+                    alert("🎉 建檔成功！此商品已同步擴充至資料庫。");
+                    // 寫入本地快取，下一次掃描直接命中
+                    if(!STATE.productCache) STATE.productCache = {};
+                    STATE.productCache[BUILD_STATE.barcode] = { name: name, brand: brand, origin: country, img_url: data.imgUrl || "" };
+                    // 直接算入本次調查記錄
+                    addRecord(country, 1, { barcode: BUILD_STATE.barcode, name: name, brand: brand, origin: country, source: "Built_New", bottleGps: BUILD_STATE.gps, img_url: data.imgUrl || "" });
+                    
+                    closeBuildModal(); // 關閉視窗，並智慧恢復計時器
+                } else { alert("建檔失敗：" + data.message); }
+            }).catch(e => { document.getElementById('loading-mask').style.display='none'; alert("網路異常，建檔失敗"); });
+        }
+
+        // --- 主掃描器邏輯 (已拔除外部 API，並加入攔截建檔流程) ---
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block';
@@ -548,14 +692,12 @@
             STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
                 if (!txt || txt.trim() === "" || STATE.isProcessing) return;
                 
-                // 🛑 老王修正 1：用變數擋住重複掃描就好，不要呼叫 .pause() 避免畫面凍結報錯
                 STATE.isProcessing = true; 
+                STATE.scanners.record.pause();
                 
-                // 背景開始抓取微棲地 GPS
                 let tempGps = "未定位";
                 getBottleGpsAsync(coords => { tempGps = coords; });
                 
-                // 🛑 老王修正 2：增加安全檢查。因為後端已經拔除廠商庫，這裡如果沒資料就不會報錯崩潰
                 let manuData = null;
                 if (STATE.manufacturerCache) {
                     for (let i = 12; i >= 6; i--) { 
@@ -574,14 +716,31 @@
                     const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">✨ 本地資料庫命中</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:left;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${displayName}</div></div></div>`;
                     showModal('confirm', '掃描成功', modalHtml, () => { 
                         addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
-                        setTimeout(() => { STATE.isProcessing = false; }, 800); 
-                    }, () => { setTimeout(() => { STATE.isProcessing = false; }, 800); });
+                        setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); 
+                    }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); });
                 } else {
-                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">🔍 未知商品</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="color:#757575; font-size:15px; font-weight:bold; margin-top:10px;">ℹ️ 資料庫比對不到<br><span style="font-size:12px; font-weight:normal;">(將僅記錄條碼與產地)</span></div></div>`;
-                    showModal('confirm', '掃描成功', modalHtml, () => { 
+                    // 💡 攔截未知商品，提供前往建檔按鈕
+                    const modalHtml = `<div style="background:#fff8e1; padding:20px; border-radius:16px; border:2px solid #ff9800; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">🔍 未知商品</div><div style="font-size:32px; font-weight:900; color:#e65100; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#ff9800; margin-bottom:15px;">${displayCountry}</div><div style="color:#555; font-size:14px; font-weight:bold; margin-top:10px;">資料庫目前查無此條碼。<br>您要協助進行新商品建檔嗎？</div></div>`;
+                    
+                    showModal('warning', '發現新商品', modalHtml, null, null);
+                    
+                    const btnConfirm = document.getElementById('btn-modal-confirm');
+                    const btnCancel = document.getElementById('btn-modal-cancel');
+                    
+                    btnConfirm.innerText = "📝 前往建檔";
+                    btnCancel.innerText = "略過(僅記產地)";
+                    btnCancel.style.display = "block";
+
+                    btnConfirm.onclick = () => {
+                        document.getElementById('custom-modal').style.display = 'none';
+                        openBuildModal(txt, displayCountry, tempGps);
+                    };
+                    
+                    btnCancel.onclick = () => {
+                        document.getElementById('custom-modal').style.display = 'none';
                         addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); 
-                        setTimeout(() => { STATE.isProcessing = false; }, 800); 
-                    }, () => { setTimeout(() => { STATE.isProcessing = false; }, 800); });
+                        setTimeout(() => { STATE.isProcessing = false; if(STATE.scanners.record) STATE.scanners.record.resume(); }, 800); 
+                    };
                 }
             }, () => {});
         }
@@ -637,7 +796,6 @@
             STATE.stats[safeName] += qty;
             STATE.count += qty;
             
-            // 確保每個記錄都有 bottleGps
             const logEntry = details || { source: "Manual_Select", barcode: "", bottleGps: "未定位" };
             if (!logEntry.bottleGps) logEntry.bottleGps = "未定位";
             logEntry.origin = safeName;
@@ -660,7 +818,6 @@
             updateUI(); saveState();
         }
 
-       // 上傳時攔截，計算終點距離
         function uploadData(){
             if(STATE.count===0){showModal('warning','無資料','請先收集數據再上傳',null);return;}
             if(!document.getElementById('inp_name').value){showModal('warning','資料未填','請填寫 [填表人姓名]',()=>switchTab('basic'));return;}
@@ -671,7 +828,6 @@
             if(!document.getElementById('sel_beach_type').value){showModal('warning','資料未填','請選擇 [灘地類型]',()=>switchTab('basic'));return;}
             if(!document.getElementById('inp_gps').value){showModal('warning','尚未定位','請按 [定位] 按鈕獲取 GPS',()=>switchTab('basic'));return;}
             
-            // 【終點防呆與距離計算】
             if (STATE.startGps && STATE.surveyDistance === null) {
                 getGpsForEnd(() => { uploadData(); });
                 return;
@@ -679,7 +835,7 @@
 
             localStorage.setItem('surveyor_name',document.getElementById('inp_name').value);
             localStorage.setItem('surveyor_phone',document.getElementById('inp_phone').value);
-            localStorage.setItem('surveyor_participant_names',document.getElementById('inp_participant_names').value); // 姓名留存到下一筆
+            localStorage.setItem('surveyor_participant_names',document.getElementById('inp_participant_names').value); 
             
             let statsOut={cnt_tw:0,cnt_cn:0,cnt_vn:0,cnt_ph:0,cnt_my:0,cnt_id:0,cnt_th:0,cnt_kr:0,cnt_jp:0,cnt_other:""};
             let others=[];
@@ -703,10 +859,7 @@
                 action:"save",
                 sessionId:sessionId,
                 name:document.getElementById('inp_name').value,
-                
-                // 👉 老王微創修改點：在 phone 的值前面加上 "'" 單引號
-                phone: "'" + document.getElementById('inp_phone').value, 
-                
+                phone: "'" + document.getElementById('inp_phone').value, // 解決 0 被吃掉的問題
                 participants:document.getElementById('inp_participants').value,
                 participantNames:document.getElementById('inp_participant_names').value, 
                 city:document.getElementById('inp_city').value,
@@ -734,8 +887,7 @@
                 btn.innerText="🚀 上傳資料至雲端"; btn.disabled=false;
             });
         }
-        
-        // 取終點座標並計算距離
+
         function getGpsForEnd(callback) {
             document.getElementById('loading-mask').style.display = 'flex';
             document.getElementById('loading-text').innerText = "計算調查距離中...";
@@ -744,7 +896,7 @@
                 STATE.endGps = { lat: p.coords.latitude, lng: p.coords.longitude };
                 
                 let distKm = getDistance(STATE.startGps.lat, STATE.startGps.lng, STATE.endGps.lat, STATE.endGps.lng);
-                STATE.surveyDistance = Math.round(distKm * 1000); // 轉為公尺
+                STATE.surveyDistance = Math.round(distKm * 1000); 
                 
                 document.getElementById('dist-display').innerText = STATE.surveyDistance + " m";
                 document.getElementById('dist-display').style.color = "var(--primary)";
@@ -755,12 +907,10 @@
             }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         }
 
-        // 🛑 修復 3：上傳成功後，讓面板徹底「歸零為 20:00」
         function handleSuccessConfirm(isOffline){
             if(document.getElementById('success-modal'))document.getElementById('success-modal').style.display='none';
             if(document.getElementById('custom-modal'))document.getElementById('custom-modal').style.display='none';
             
-            // 強制停止並徹底重置 20 分鐘計時器 (包含背景與 UI 面板)
             if (timers && timers[20] && timers[20].interval) {
                 clearInterval(timers[20].interval);
             }
@@ -770,7 +920,6 @@
                 timers[20].pausedRemainingMs = null; 
             }
             
-            // 👉 把面板撥回 20:00 初始狀態！
             let timerBox = document.getElementById('timer-20');
             if (timerBox) timerBox.classList.remove('running', 'done');
             let timeDisplay = document.getElementById('time-display-20');
@@ -783,7 +932,6 @@
             STATE.imgs={env:null,group:null,hotspot1:null,hotspot2:null,special1:null,special2:null,special3:null,special4:null};
             ['env','group','hotspot1','hotspot2','special1','special2','special3','special4'].forEach(k=>{if(document.getElementById(`img-preview-${k}`))document.getElementById(`img-preview-${k}`).style.display='none';if(document.getElementById(`icon-${k}`))document.getElementById(`icon-${k}`).style.display='block';});
             
-            // 重置表單 (注意：保留了 participant_names)
             document.getElementById('inp_gps').value="";document.getElementById('inp_city').value="";STATE.currentCity="未定位";
             document.getElementById('inp_point').value="";
             document.getElementById('sel_survey_zone').value="";
@@ -796,7 +944,7 @@
         function saveOffline(payload){try{let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");queue.push(payload);localStorage.setItem('offline_queue',JSON.stringify(queue));showModal('offline','已暫存','網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。',()=>handleSuccessConfirm(true));}catch(e){showModal('warning','儲存失敗','手機儲存空間不足。',null);}}
         function checkOfflineQueue(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");const syncBox=document.getElementById('offline-sync-box');if(queue.length>0&&navigator.onLine){syncBox.style.display='block';document.getElementById('offline-count').innerText=queue.length;}else{syncBox.style.display='none';}}
         async function syncOfflineData(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");if(queue.length===0)return;const btn=document.getElementById('btn-sync');btn.disabled=true;btn.innerText="⏳ 同步中 (補全地址)...";let successCount=0;let failCount=0;let newQueue=[];for(let item of queue){if(item.gps&&(item.city.includes("離線")||item.city==="")){try{let[lat,long]=item.gps.split(', ');let res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`);let data=await res.json();item.city=`${(data.principalSubdivision||"").replace("Province","").trim()} ${(data.locality||"").trim()}`;}catch(e){}}try{await fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify(item)});successCount++;}catch(e){failCount++;newQueue.push(item);}}localStorage.setItem('offline_queue',JSON.stringify(newQueue));checkOfflineQueue();btn.disabled=false;btn.innerText="☁️ 立即上傳暫存資料";if(failCount===0)showModal('success','同步完成',`成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`,null);else showModal('warning','部分失敗',`成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`,null);}
-        
+
         function startAiCamera() { document.getElementById('ai-result-box').style.display='none'; document.getElementById('camera-box-ai').style.display='block'; document.getElementById('btn-ai-start').style.display='none'; STATE.scanners.ai = new Html5Qrcode("reader-ai"); STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); }
         function stopAiScanner() { if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); document.getElementById('camera-box-ai').style.display='none'; document.getElementById('btn-ai-start').style.display='inline-block'; }
     </script>
