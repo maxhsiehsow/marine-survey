@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="荒野調查">
+    <meta name="apple-mobile-web-app-title" content="荒野瓶罐調查">
     <link rel="apple-touch-icon" href="logo.png">
 
     <!-- [Social Sharing 設定] -->
@@ -539,6 +539,55 @@
         function switchTab(tabName){document.querySelectorAll('.container').forEach(el=>el.classList.remove('active-tab'));document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+tabName).classList.add('active-tab');document.getElementById('nav-'+tabName).classList.add('active');stopRecordScanner();stopAiScanner();}
         function handleImgUpload(input,type){if(!input.files||!input.files[0])return;const file=input.files[0];const reader=new FileReader();reader.onload=function(e){const imgId=`img-preview-${type}`;const imgEl=document.getElementById(imgId);imgEl.src=e.target.result;imgEl.style.display='block';const icon=document.getElementById(`icon-${type}`);if(icon)icon.style.display='none';const temp=new Image();temp.src=e.target.result;temp.onload=function(){const cvs=document.createElement('canvas');let s=1024/temp.width;if(s>1)s=1;cvs.width=temp.width*s;cvs.height=temp.height*s;cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height);STATE.imgs[type]=cvs.toDataURL('image/jpeg',0.7).split(',')[1];}};reader.readAsDataURL(file);}
         
+        function startRecordScanner() {
+            if (STATE.scanners.record) return;
+            document.getElementById('camera-box-record').style.display = 'block';
+            document.getElementById('btn-scan-start').style.display = 'none';
+            document.getElementById('btn-scan-stop').style.display = 'inline-block';
+            STATE.scanners.record = new Html5Qrcode("reader-record");
+            STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
+                if (!txt || txt.trim() === "" || STATE.isProcessing) return;
+                
+                // 🛑 老王修正 1：用變數擋住重複掃描就好，不要呼叫 .pause() 避免畫面凍結報錯
+                STATE.isProcessing = true; 
+                
+                // 背景開始抓取微棲地 GPS
+                let tempGps = "未定位";
+                getBottleGpsAsync(coords => { tempGps = coords; });
+                
+                // 🛑 老王修正 2：增加安全檢查。因為後端已經拔除廠商庫，這裡如果沒資料就不會報錯崩潰
+                let manuData = null;
+                if (STATE.manufacturerCache) {
+                    for (let i = 12; i >= 6; i--) { 
+                        const prefix = txt.substring(0, i); 
+                        if (STATE.manufacturerCache[prefix]) { manuData = STATE.manufacturerCache[prefix]; break; } 
+                    }
+                }
+                
+                const prodData = STATE.productCache ? STATE.productCache[txt] : null;
+                let displayCountry = getCountryFromCode(txt), displayBrand = "", displayName = "", displayImg = "", logSource = "", isHit = false;
+                
+                if (prodData) { isHit = true; logSource = "Local_Product"; displayCountry = prodData.origin || displayCountry; displayBrand = prodData.manufacturer || (manuData ? manuData.name : ""); displayName = prodData.name; displayImg = prodData.img_url; } 
+                else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
+                
+                if (isHit) {
+                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">✨ 本地資料庫命中</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:left;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${displayName}</div></div></div>`;
+                    showModal('confirm', '掃描成功', modalHtml, () => { 
+                        addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
+                        setTimeout(() => { STATE.isProcessing = false; }, 800); 
+                    }, () => { setTimeout(() => { STATE.isProcessing = false; }, 800); });
+                } else {
+                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">🔍 未知商品</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="color:#757575; font-size:15px; font-weight:bold; margin-top:10px;">ℹ️ 資料庫比對不到<br><span style="font-size:12px; font-weight:normal;">(將僅記錄條碼與產地)</span></div></div>`;
+                    showModal('confirm', '掃描成功', modalHtml, () => { 
+                        addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); 
+                        setTimeout(() => { STATE.isProcessing = false; }, 800); 
+                    }, () => { setTimeout(() => { STATE.isProcessing = false; }, 800); });
+                }
+            }, () => {});
+        }
+        
+        function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
+        
         function takeAiSnapshot(){var videoEl=document.querySelector("#reader-ai video");if(!videoEl){alert("相機未啟動");return;}videoEl.pause();document.getElementById('loading-mask').style.display='flex';document.getElementById('loading-text').innerText = "🤖 AI 視覺辨識中，請稍候...";var cvs=document.createElement("canvas");var max=800;var w=videoEl.videoWidth;var h=videoEl.videoHeight;var s=(w>h?(w>max?max/w:1):(h>max?max/h:1));cvs.width=w*s;cvs.height=h*s;cvs.getContext("2d").drawImage(videoEl,0,0,cvs.width,cvs.height);var b64Full=cvs.toDataURL("image/jpeg",0.6);stopAiScanner();fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:"identify",image:b64Full.split(',')[1]})}).then(res=>res.json()).then(data=>{document.getElementById('loading-mask').style.display='none';if(data.status==="success"){try{var raw=typeof data.result==='string'?data.result:JSON.stringify(data.result);var match=raw.match(/\{[\s\S]*\}/);if(match)displayAiResult(JSON.parse(match[0]),b64Full);else alert("AI 格式錯誤: "+raw);}catch(e){alert("解析失敗: "+e.message);}}else{alert("後端錯誤: "+data.message);}}).catch(err=>{document.getElementById('loading-mask').style.display='none';alert("連線失敗: "+err);});}
         
         function displayAiResult(data,imgSrc){
@@ -611,7 +660,7 @@
             updateUI(); saveState();
         }
 
-        // 上傳時攔截，計算終點距離
+       // 上傳時攔截，計算終點距離
         function uploadData(){
             if(STATE.count===0){showModal('warning','無資料','請先收集數據再上傳',null);return;}
             if(!document.getElementById('inp_name').value){showModal('warning','資料未填','請填寫 [填表人姓名]',()=>switchTab('basic'));return;}
@@ -654,7 +703,10 @@
                 action:"save",
                 sessionId:sessionId,
                 name:document.getElementById('inp_name').value,
-                phone: "'" + document.getElementById('inp_phone').value, // 👈 老王修正：加上單引號，防止 Google 試算表把 0 吞掉
+                
+                // 👉 老王微創修改點：在 phone 的值前面加上 "'" 單引號
+                phone: "'" + document.getElementById('inp_phone').value, 
+                
                 participants:document.getElementById('inp_participants').value,
                 participantNames:document.getElementById('inp_participant_names').value, 
                 city:document.getElementById('inp_city').value,
@@ -682,7 +734,7 @@
                 btn.innerText="🚀 上傳資料至雲端"; btn.disabled=false;
             });
         }
-
+        
         // 取終點座標並計算距離
         function getGpsForEnd(callback) {
             document.getElementById('loading-mask').style.display = 'flex';
@@ -744,87 +796,7 @@
         function saveOffline(payload){try{let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");queue.push(payload);localStorage.setItem('offline_queue',JSON.stringify(queue));showModal('offline','已暫存','網路不通，資料已安全保存在手機中。<br>請在網路恢復後按「同步」上傳。',()=>handleSuccessConfirm(true));}catch(e){showModal('warning','儲存失敗','手機儲存空間不足。',null);}}
         function checkOfflineQueue(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");const syncBox=document.getElementById('offline-sync-box');if(queue.length>0&&navigator.onLine){syncBox.style.display='block';document.getElementById('offline-count').innerText=queue.length;}else{syncBox.style.display='none';}}
         async function syncOfflineData(){let queue=JSON.parse(localStorage.getItem('offline_queue')||"[]");if(queue.length===0)return;const btn=document.getElementById('btn-sync');btn.disabled=true;btn.innerText="⏳ 同步中 (補全地址)...";let successCount=0;let failCount=0;let newQueue=[];for(let item of queue){if(item.gps&&(item.city.includes("離線")||item.city==="")){try{let[lat,long]=item.gps.split(', ');let res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${long}&localityLanguage=zh`);let data=await res.json();item.city=`${(data.principalSubdivision||"").replace("Province","").trim()} ${(data.locality||"").trim()}`;}catch(e){}}try{await fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify(item)});successCount++;}catch(e){failCount++;newQueue.push(item);}}localStorage.setItem('offline_queue',JSON.stringify(newQueue));checkOfflineQueue();btn.disabled=false;btn.innerText="☁️ 立即上傳暫存資料";if(failCount===0)showModal('success','同步完成',`成功上傳 ${successCount} 筆資料！<br>(地址已嘗試補全)`,null);else showModal('warning','部分失敗',`成功 ${successCount} 筆，失敗 ${failCount} 筆。<br>失敗資料仍保留在暫存區。`,null);}
-
-        function manualInputBarcode() {
-            const code = prompt("請輸入完整條碼數字：");
-            if (code && code.length >= 8) {
-                const country = getCountryFromCode(code);
-                let tempGps = "未定位";
-                getBottleGpsAsync(coords => { tempGps = coords; }); // 背景抓取 GPS
-                showModal('confirm', '手動輸入結果', `條碼：${code}<br>歸屬地：<span style="color:var(--primary); font-weight:bold;">${country}</span>`, () => {
-                    addRecord(country, 1, { barcode: code, source: "Manual_Input", bottleGps: tempGps });
-                });
-            } else if (code) {
-                alert("條碼長度不正確 (通常需大於8碼)");
-            }
-        }
-
-        function startRecordScanner() {
-            if (STATE.scanners.record) return;
-            document.getElementById('camera-box-record').style.display = 'block';
-            document.getElementById('btn-scan-start').style.display = 'none';
-            document.getElementById('btn-scan-stop').style.display = 'inline-block';
-            STATE.scanners.record = new Html5Qrcode("reader-record");
-            STATE.scanners.record.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-                if (!txt || txt.trim() === "" || STATE.isProcessing) return;
-                STATE.isProcessing = true; STATE.scanners.record.pause();
-                
-                // 背景開始抓取微棲地 GPS
-                let tempGps = "未定位";
-                getBottleGpsAsync(coords => { tempGps = coords; });
-                
-                let manuData = null;
-                for (let i = 12; i >= 6; i--) { const prefix = txt.substring(0, i); if (STATE.manufacturerCache[prefix]) { manuData = STATE.manufacturerCache[prefix]; break; } }
-                const prodData = STATE.productCache[txt];
-                let displayCountry = getCountryFromCode(txt), displayBrand = "", displayName = "", displayImg = "", logSource = "", isHit = false;
-                
-                if (prodData) { isHit = true; logSource = "Local_Product"; displayCountry = prodData.origin || displayCountry; displayBrand = prodData.manufacturer || (manuData ? manuData.name : ""); displayName = prodData.name; displayImg = prodData.img_url; } else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
-                
-                if (isHit) {
-                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">✨ 本地資料庫命中</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:left;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${displayName}</div></div></div>`;
-                    showModal('confirm', '掃描成功', modalHtml, () => { 
-                        addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
-                        STATE.isProcessing = false; setTimeout(() => STATE.scanners.record.resume(), 500); 
-                    }, () => { STATE.isProcessing = false; setTimeout(() => STATE.scanners.record.resume(), 500); });
-                } else {
-                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">☁️ 雲端查詢中</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div id="api-product-area" style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; min-height:80px; display:flex; flex-direction:column; justify-content:center; align-items:center;"><div class="spinner" style="width:25px; height:25px; border-width:3px;"></div><div style="font-size:13px; color:#587a30; margin-top:8px;">正在比對全球資料庫...</div></div></div>`;
-                    let apiDataBuffer = null;
-                    showModal('confirm', '掃描成功', modalHtml, () => { 
-                        if (apiDataBuffer) { 
-                            apiDataBuffer.bottleGps = tempGps; 
-                            addRecord(displayCountry, 1, apiDataBuffer); 
-                        } else { 
-                            addRecord(displayCountry, 1, { barcode: txt, source: "API_Pending_Or_Fail", bottleGps: tempGps }); 
-                        } 
-                        STATE.isProcessing = false; setTimeout(() => STATE.scanners.record.resume(), 500); 
-                    }, () => { STATE.isProcessing = false; setTimeout(() => STATE.scanners.record.resume(), 500); });
-                    fetchProductData(txt).then(data => { apiDataBuffer = data; updateApiAreaUI(data); });
-                }
-            }, () => {});
-        }
         
-        async function fetchProductData(barcode) {
-            if (!navigator.onLine) { updateApiAreaUI({ error: "offline" }); return null; }
-            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 5000);
-            try {
-                const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                if (res.status === 404) { updateApiAreaUI({ error: "not_found" }); return { barcode: barcode, source: "API_Not_Found" }; }
-                if (!res.ok) throw new Error("HTTP " + res.status);
-                const data = await res.json();
-                if (data.status === 1) { const p = data.product; return { barcode: barcode, name: p.product_name_zh || p.product_name || "未命名商品", brand: p.brands || "未知品牌", img_url: p.image_front_small_url || "", source: "Cloud_API" }; } else { updateApiAreaUI({ error: "not_found" }); return { barcode: barcode, source: "API_Not_Found" }; }
-            } catch (err) {
-                if (err.name === 'AbortError') { updateApiAreaUI({ error: "timeout" }); } else { updateApiAreaUI({ error: "network_error" }); }
-                return null;
-            }
-        }
-        
-        function updateApiAreaUI(data) {
-            const area = document.getElementById('api-product-area'); if(!area) return;
-            if (data && data.source === "Cloud_API") { area.innerHTML = `<div style="text-align:left; width:100%;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${data.brand}</div><div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${data.name}</div></div>`; } else if (data && (data.error === "not_found" || data.source === "API_Not_Found")) { area.innerHTML = `<div style="color:#757575; font-size:15px; font-weight:bold;">ℹ️ 資料庫比對不到<br><span style="font-size:12px; font-weight:normal;">(將僅記錄條碼與產地)</span></div>`; } else if (data && data.error === "timeout") { area.innerHTML = `<div style="color:#d32f2f; font-size:15px; font-weight:bold;">⚠️ 連線逾時<br><span style="font-size:12px; font-weight:normal;">(請檢查網路狀況)</span></div>`; } else { area.innerHTML = `<div style="color:#d32f2f; font-size:15px; font-weight:bold;">⚠️ 連線錯誤 / 無法取得資訊</div>`; }
-        }
-
-        function stopRecordScanner() { if(STATE.scanners.record) STATE.scanners.record.stop().then(()=>{STATE.scanners.record.clear(); STATE.scanners.record=null;}).catch(()=>{}); document.getElementById('camera-box-record').style.display='none'; document.getElementById('btn-scan-start').style.display='inline-block'; document.getElementById('btn-scan-stop').style.display='none'; }
         function startAiCamera() { document.getElementById('ai-result-box').style.display='none'; document.getElementById('camera-box-ai').style.display='block'; document.getElementById('btn-ai-start').style.display='none'; STATE.scanners.ai = new Html5Qrcode("reader-ai"); STATE.scanners.ai.start({ facingMode: "environment" }, { fps: 10 }, ()=>{}, ()=>{}); }
         function stopAiScanner() { if(STATE.scanners.ai) STATE.scanners.ai.stop().then(()=>{STATE.scanners.ai.clear(); STATE.scanners.ai=null;}).catch(()=>{}); document.getElementById('camera-box-ai').style.display='none'; document.getElementById('btn-ai-start').style.display='inline-block'; }
     </script>
