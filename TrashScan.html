@@ -190,7 +190,7 @@
                         <img id="build_img_front" style="display:none; width:100%; height:100%; object-fit:cover;">
                         <span id="build_icon_front" class="preview-icon">📸</span>
                     </div>
-                    <!-- 拿掉 capture，讓使用者可以選拍照或相簿 -->
+                    <!-- [標準寫法] 拿掉 capture，讓瀏覽器自己決定要開相機還是相簿 -->
                     <input type="file" id="build_file_front" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'front')">
                 </div>
                 <div style="flex:1;">
@@ -199,7 +199,7 @@
                         <img id="build_img_back" style="display:none; width:100%; height:100%; object-fit:cover;">
                         <span id="build_icon_back" class="preview-icon">📸</span>
                     </div>
-                    <!-- 拿掉 capture，讓使用者可以選拍照或相簿 -->
+                    <!-- [標準寫法] 拿掉 capture，讓瀏覽器自己決定要開相機還是相簿 -->
                     <input type="file" id="build_file_back" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'back')">
                 </div>
             </div>
@@ -345,8 +345,9 @@
         <h2>🚀 5. 成果上傳</h2>
         <div class="card">
             <label>📸 現場照片</label>
+            <div id="photo-warning-env" class="photo-warning">⚠️ 系統剛從休眠中恢復，如果您剛才有拍照片，保險起見請重新點擊上傳。</div>
             <div class="img-grid-2x2" style="margin-bottom: 20px;">
-                <!-- 拿掉 capture，讓使用者可以選拍照或相簿 -->
+                <!-- [標準寫法] 拿掉 capture，讓瀏覽器自己決定要開相機還是相簿 -->
                 <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
                 <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
                 <div class="preview-item" onclick="document.getElementById('file-env').click()"><img id="img-preview-env" src="" style="display:none"><span id="icon-env" class="preview-icon">🏞️</span><div class="preview-label">環境照</div></div>
@@ -356,8 +357,8 @@
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
 
             <label>🔥 熱點照 (最多 2 張)</label>
+            <div id="photo-warning-hotspot" class="photo-warning">⚠️ 系統剛從休眠中恢復，如果您剛才有拍照片，保險起見請重新點擊上傳。</div>
             <div class="img-grid-2x2" style="margin-bottom: 20px;">
-                <!-- 拿掉 capture，讓使用者可以選拍照或相簿 -->
                 <input type="file" id="file-hotspot1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot1')">
                 <input type="file" id="file-hotspot2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'hotspot2')">
                 <div class="preview-item" onclick="document.getElementById('file-hotspot1').click()"><img id="img-preview-hotspot1" src="" style="display:none"><span id="icon-hotspot1" class="preview-icon">🗑️</span><div class="preview-label">熱點 1</div></div>
@@ -367,8 +368,8 @@
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
 
             <label>🏺 特殊瓶罐 (最多 4 張)</label>
+            <div id="photo-warning-special" class="photo-warning">⚠️ 系統剛從休眠中恢復，如果您剛才有拍照片，保險起見請重新點擊上傳。</div>
             <div class="img-grid-2x2">
-                <!-- 拿掉 capture，讓使用者可以選拍照或相簿 -->
                 <input type="file" id="file-special1" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special1')">
                 <input type="file" id="file-special2" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special2')">
                 <input type="file" id="file-special3" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'special3')">
@@ -501,63 +502,19 @@
             setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
 
-        // 💡 將照片寫入 LocalStorage，解決「網頁重整照片不見」的災難！
         function saveState() { 
             const currentState = { 
                 name: document.getElementById('inp_name').value, phone: document.getElementById('inp_phone').value, participants: document.getElementById('inp_participants').value, participantNames: document.getElementById('inp_participant_names').value, gps: document.getElementById('inp_gps').value, city: document.getElementById('inp_city').value, point: document.getElementById('inp_point').value, surveyZone: document.getElementById('sel_survey_zone').value, beachType: document.getElementById('sel_beach_type').value, selectedPoint: STATE.selectedPoint, stats: STATE.stats, count: STATE.count, historyStack: STATE.historyStack, scanLogs: STATE.scanLogs, note: document.getElementById('inp_note').value, currentCity: STATE.currentCity, 
                 timer20End: timers[20].running ? timers[20].endTime : null, 
                 timer20PausedRemaining: timers[20].pausedRemainingMs || null,
-                startGps: STATE.startGps, endGps: STATE.endGps, surveyDistance: STATE.surveyDistance,
-                imgs: STATE.imgs,
-                buildFront: BUILD_STATE.front,
-                buildBack: BUILD_STATE.back
+                startGps: STATE.startGps, endGps: STATE.endGps, surveyDistance: STATE.surveyDistance 
             }; 
-            
-            try {
-                localStorage.setItem('survey_session', JSON.stringify(currentState)); 
-            } catch (e) {
-                // 如果照片太多超過 localStorage 5MB 限制，就放棄儲存照片，保住其他文字資料
-                console.warn("手機記憶體空間不足，僅儲存文字紀錄。");
-                delete currentState.imgs;
-                delete currentState.buildFront;
-                delete currentState.buildBack;
-                localStorage.setItem('survey_session', JSON.stringify(currentState)); 
-            }
+            localStorage.setItem('survey_session', JSON.stringify(currentState)); 
         }
         
-        function restoreState() { 
-            const savedJSON = localStorage.getItem('survey_session'); if (!savedJSON) return; 
-            try { 
-                const saved = JSON.parse(savedJSON); 
-                if (saved.count > 0 || saved.gps) { 
-                    showModal('confirm', '恢復調查', '⚠️ 偵測到您上次有未完成的紀錄，是否恢復？', () => { 
-                        document.getElementById('inp_name').value = saved.name || ''; document.getElementById('inp_phone').value = saved.phone || ''; document.getElementById('inp_participants').value = saved.participants || 1; document.getElementById('inp_participant_names').value = saved.participantNames || ''; document.getElementById('sel_survey_zone').value = saved.surveyZone || ''; document.getElementById('sel_beach_type').value = saved.beachType || ''; document.getElementById('inp_gps').value = saved.gps || ''; document.getElementById('inp_city').value = saved.city || ''; document.getElementById('inp_point').value = saved.point || ''; document.getElementById('inp_note').value = saved.note || ''; 
-                        STATE.selectedPoint = saved.selectedPoint; STATE.stats = saved.stats || {}; STATE.count = saved.count || 0; STATE.historyStack = saved.historyStack || []; STATE.scanLogs = saved.scanLogs || []; STATE.currentCity = saved.currentCity || "未定位"; STATE.startGps = saved.startGps || null; STATE.endGps = saved.endGps || null; STATE.surveyDistance = saved.surveyDistance !== undefined ? saved.surveyDistance : null; 
-                        
-                        // 恢復照片資料
-                        STATE.imgs = saved.imgs || { env: null, group: null, hotspot1: null, hotspot2: null, special1: null, special2: null, special3: null, special4: null };
-                        BUILD_STATE.front = saved.buildFront || null;
-                        BUILD_STATE.back = saved.buildBack || null;
-                        
-                        // 將照片顯示在預覽框
-                        ['env','group','hotspot1','hotspot2','special1','special2','special3','special4'].forEach(k => {
-                            if(STATE.imgs[k]) {
-                                document.getElementById(`img-preview-${k}`).src = "data:image/jpeg;base64," + STATE.imgs[k];
-                                document.getElementById(`img-preview-${k}`).style.display = 'block';
-                                if(document.getElementById(`icon-${k}`)) document.getElementById(`icon-${k}`).style.display = 'none';
-                            }
-                        });
-                        
-                        updateUI(); 
-                        
-                        if (STATE.surveyDistance !== null) { document.getElementById('dist-display').innerText = STATE.surveyDistance + " m"; document.getElementById('dist-display').style.color = "var(--primary)"; } else if (STATE.startGps) { document.getElementById('dist-display').innerText = "📍 記錄中..."; document.getElementById('dist-display').style.color = "#ff9800"; }
-                        if (saved.timer20End) { timers[20].endTime = saved.timer20End; timers[20].running = true; if (Date.now() >= saved.timer20End) { document.getElementById('timer-20').classList.add('done'); document.getElementById('time-display-20').innerText = "00:00"; timers[20].running = false; showModal('alarm', '時間到！', '調查時間已結束。', null); } else { resumeTimer(20); } } else if (saved.timer20PausedRemaining) { timers[20].pausedRemainingMs = saved.timer20PausedRemaining; let m = Math.floor((saved.timer20PausedRemaining/1000)/60).toString().padStart(2,'0'); let s = Math.floor((saved.timer20PausedRemaining/1000)%60).toString().padStart(2,'0'); document.getElementById('time-display-20').innerText = `${m}:${s}`; } 
-                        // 因為照片已經存活，隱藏那些警告重拍的紅字
-                        document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'none'); 
-                    }, () => { localStorage.removeItem('survey_session'); }); 
-                } 
-            } catch (e) { localStorage.removeItem('survey_session'); } 
-        }
+        function restoreState() { const savedJSON = localStorage.getItem('survey_session'); if (!savedJSON) return; try { const saved = JSON.parse(savedJSON); if (saved.count > 0 || saved.gps) { showModal('confirm', '恢復調查', '⚠️ 偵測到您上次有未完成的紀錄，是否恢復？', () => { document.getElementById('inp_name').value = saved.name || ''; document.getElementById('inp_phone').value = saved.phone || ''; document.getElementById('inp_participants').value = saved.participants || 1; document.getElementById('inp_participant_names').value = saved.participantNames || ''; document.getElementById('sel_survey_zone').value = saved.surveyZone || ''; document.getElementById('sel_beach_type').value = saved.beachType || ''; document.getElementById('inp_gps').value = saved.gps || ''; document.getElementById('inp_city').value = saved.city || ''; document.getElementById('inp_point').value = saved.point || ''; document.getElementById('inp_note').value = saved.note || ''; STATE.selectedPoint = saved.selectedPoint; STATE.stats = saved.stats || {}; STATE.count = saved.count || 0; STATE.historyStack = saved.historyStack || []; STATE.scanLogs = saved.scanLogs || []; STATE.currentCity = saved.currentCity || "未定位"; STATE.startGps = saved.startGps || null; STATE.endGps = saved.endGps || null; STATE.surveyDistance = saved.surveyDistance !== undefined ? saved.surveyDistance : null; updateUI(); 
+        if (STATE.surveyDistance !== null) { document.getElementById('dist-display').innerText = STATE.surveyDistance + " m"; document.getElementById('dist-display').style.color = "var(--primary)"; } else if (STATE.startGps) { document.getElementById('dist-display').innerText = "📍 記錄中..."; document.getElementById('dist-display').style.color = "#ff9800"; }
+        if (saved.timer20End) { timers[20].endTime = saved.timer20End; timers[20].running = true; if (Date.now() >= saved.timer20End) { document.getElementById('timer-20').classList.add('done'); document.getElementById('time-display-20').innerText = "00:00"; timers[20].running = false; showModal('alarm', '時間到！', '調查時間已結束。', null); } else { resumeTimer(20); } } else if (saved.timer20PausedRemaining) { timers[20].pausedRemainingMs = saved.timer20PausedRemaining; let m = Math.floor((saved.timer20PausedRemaining/1000)/60).toString().padStart(2,'0'); let s = Math.floor((saved.timer20PausedRemaining/1000)%60).toString().padStart(2,'0'); document.getElementById('time-display-20').innerText = `${m}:${s}`; } document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'block'); }, () => { localStorage.removeItem('survey_session'); }); } } catch (e) { localStorage.removeItem('survey_session'); } }
         
         function clearState() { localStorage.removeItem('survey_session'); document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'none'); }
         function loadProductDB() { if (!navigator.onLine) return; fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { if(data.status === "success") { STATE.productCache = data.products; STATE.manufacturerCache = data.manufacturers; } }).catch(e => console.error("DB Load Error:", e)); }
@@ -658,7 +615,6 @@
                     cvs.width=temp.width*s;cvs.height=temp.height*s;
                     cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height);
                     STATE.imgs[type]=cvs.toDataURL('image/jpeg',0.7).split(',')[1];
-                    saveState(); // 拍照後立即記憶，不怕重整
                 };
             };
             reader.readAsDataURL(file);
@@ -670,7 +626,6 @@
         function openBuildModal(barcode, country, gps) {
             BUILD_STATE = { barcode: barcode, gps: gps, front: null, back: null, wasTimerRunning: false };
             
-            // 💡 智慧記憶計時器狀態並自動暫停
             if (timers[20].running) {
                 BUILD_STATE.wasTimerRunning = true;
                 toggleTimer(20); 
@@ -696,7 +651,6 @@
         function closeBuildModal() {
             document.getElementById('build-product-modal').style.display = 'none';
             
-            // 💡 智慧恢復計時器狀態
             if (BUILD_STATE.wasTimerRunning && !timers[20].running) {
                 toggleTimer(20); 
             }
@@ -721,13 +675,11 @@
                     document.getElementById(`build_img_${type}`).src = cvs.toDataURL();
                     document.getElementById(`build_img_${type}`).style.display = 'block';
                     document.getElementById(`build_icon_${type}`).style.display = 'none';
-                    saveState(); // 拍照後立即記憶
                 }
             };
             reader.readAsDataURL(input.files[0]);
         }
 
-        // 💡 修改 AI 解析邏輯，防止出現 undefined 並過濾 Markdown
         function autoFillByAI() {
             if (!BUILD_STATE.front || !BUILD_STATE.back) { alert("請先拍好「正面照」與「背面/條碼照」喔！"); return; }
             document.getElementById('loading-mask').style.display='flex';
@@ -739,11 +691,9 @@
                 document.getElementById('loading-mask').style.display='none';
                 if(data.status === "success") {
                     try {
-                        // 清理 AI 可能自作主張加入的 ```json 標籤
                         let rawStr = data.result.replace(/```json/gi, "").replace(/```/g, "").trim();
                         const resObj = JSON.parse(rawStr);
                         
-                        // 容錯機制：AI 有時會把欄位名稱翻成中文
                         let parsedName = resObj.name || resObj.商品名稱 || resObj.Name || "";
                         let parsedBrand = resObj.brand || resObj.品牌 || resObj.廠商 || resObj.Brand || "";
                         
@@ -819,7 +769,6 @@
                         setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); 
                     }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); });
                 } else {
-                    // 🌟 [V200 新增] 掃描失敗時：顯示3顆並排按鈕
                     const modalHtml = `
                         <div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
                             <div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">🔍 未知商品</div>
@@ -835,11 +784,11 @@
                         </div>`;
                     
                     showModal('warning', '發現新商品', modalHtml, null, null);
-                    document.getElementById('modal-btns').style.display = 'none'; // 隱藏原本預設的2顆按鈕
+                    document.getElementById('modal-btns').style.display = 'none'; 
                     
                     document.getElementById('btn-custom-build').onclick = () => {
                         document.getElementById('custom-modal').style.display = 'none';
-                        document.getElementById('modal-btns').style.display = 'flex'; // 恢復彈窗原本按鈕狀態
+                        document.getElementById('modal-btns').style.display = 'flex'; 
                         openBuildModal(txt, displayCountry, tempGps);
                     };
                     
@@ -903,14 +852,12 @@
         
         function updateUI(){document.getElementById('disp_count').innerText=STATE.count;const tbody=document.getElementById('stats-body');tbody.innerHTML="";let grad=[],deg=0;if(STATE.count===0){document.getElementById('css-pie').style.background="transparent";document.getElementById('css-pie').style.border="2px dashed #ddd";return;}else{document.getElementById('css-pie').style.border="4px solid #fff";}for(const[key,val]of Object.entries(STATE.stats)){const color=COLORS[key]||'#757575';const pct=((val/STATE.count)*100).toFixed(1);tbody.innerHTML+=`<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`;const d=(val/STATE.count)*360;grad.push(`${color} ${deg}deg ${deg+d}deg`);deg+=d;}document.getElementById('css-pie').style.background=`conic-gradient(${grad.join(", ")})`;}
 
-        // 💡 修正 undefined 問題：給定預設空字串
         function addRecord(country, qty, details) {
             let safeName = normalizeName(country);
             if (!STATE.stats[safeName]) STATE.stats[safeName] = 0;
             STATE.stats[safeName] += qty;
             STATE.count += qty;
             
-            // 安全複製 details，並確保沒有 undefined
             const logEntry = details ? JSON.parse(JSON.stringify(details)) : {};
             logEntry.source = logEntry.source || "Manual_Select";
             logEntry.barcode = logEntry.barcode || "";
@@ -979,7 +926,7 @@
                 action:"save",
                 sessionId:sessionId,
                 name:document.getElementById('inp_name').value,
-                phone: "'" + document.getElementById('inp_phone').value, // 解決 0 被吃掉的問題
+                phone: "'" + document.getElementById('inp_phone').value,
                 participants:document.getElementById('inp_participants').value,
                 participantNames:document.getElementById('inp_participant_names').value, 
                 city:document.getElementById('inp_city').value,
