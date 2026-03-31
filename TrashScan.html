@@ -691,8 +691,8 @@
             document.getElementById('build_name').value = existingName;
             document.getElementById('build_brand').value = existingBrand;
             
-            // 🛑 如果有帶入名稱，就隱藏 AI 按鈕 (不需要辨識了)
-            document.getElementById('btn-ai-autofill').style.display = existingName ? 'none' : 'block';
+            // 🛑 永遠顯示 AI 按鈕，讓志工可以選擇用 AI 更新錯誤的舊資料
+            document.getElementById('btn-ai-autofill').style.display = 'block';
             
             const sel = document.getElementById('build_country');
             sel.innerHTML = "";
@@ -843,7 +843,8 @@
                 const prodData = STATE.productCache ? STATE.productCache[txt] : null;
                 let displayCountry = getCountryFromCode(txt), displayBrand = "", displayName = "", displayImg = "", logSource = "", isHit = false;
                 
-                if (prodData) { isHit = true; logSource = "Local_Product"; displayCountry = prodData.origin || displayCountry; displayBrand = prodData.manufacturer || (manuData ? manuData.name : ""); displayName = prodData.name; displayImg = prodData.img_url; } 
+                // 🛑 修正：將 prodData.manufacturer 改為 prodData.brand，正確讀取快取中的廠商名稱
+                if (prodData) { isHit = true; logSource = "Local_Product"; displayCountry = prodData.origin || displayCountry; displayBrand = prodData.brand || (manuData ? manuData.name : ""); displayName = prodData.name; displayImg = prodData.img_url; } 
                 else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
                 
                 if (isHit) {
@@ -852,7 +853,8 @@
                         
                         let promptName = logSource === "Local_Manufacturer" ? "" : displayName; 
                         let modalTitle = logSource === "Local_Manufacturer" ? "🔍 發現廠商新商品" : "📸 發現無照片商品";
-                        let modalMsg = logSource === "Local_Manufacturer" ? "此為已知廠商的未知商品，要幫忙建檔嗎？" : "此商品目前缺乏照片，要幫忙補拍嗎？<br>(系統已自動帶入名稱)";
+                        // 🛑 修正：更改提示文字，明確告知志工可以順便更新名稱
+                        let modalMsg = logSource === "Local_Manufacturer" ? "此為已知廠商的未知商品，要幫忙建檔嗎？" : "此商品目前缺乏照片，要幫忙補拍嗎？<br>(系統已帶入舊名稱，您可順便修改更新)";
 
                         const modalHtml = `
                             <div style="background:#e3f2fd; padding:15px; border-radius:16px; border:2px solid #1976d2; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
