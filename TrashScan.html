@@ -188,7 +188,7 @@
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <div style="flex:1;">
                     <label class="required">正面照</label>
-                    <div class="preview-item" style="width:100%; height:120px;" onclick="document.getElementById('build_file_front_cam').click()">
+                    <div class="preview-item" style="width:100%; height:120px;" onclick="document.getElementById('build_file_front_alb').click()">
                         <img id="build_img_front" style="display:none; width:100%; height:100%; object-fit:cover;">
                         <span id="build_icon_front" class="preview-icon">📸</span>
                     </div>
@@ -197,13 +197,13 @@
                         <button class="btn-grey" style="flex:1; padding:6px 2px; font-size:12px; margin:0;" onclick="document.getElementById('build_file_front_cam').click()">📸 拍照</button>
                         <button class="btn-grey" style="flex:1; padding:6px 2px; font-size:12px; margin:0;" onclick="document.getElementById('build_file_front_alb').click()">🖼️ 相簿</button>
                     </div>
-                    <!-- 隱藏的兩個 Input，一個強制相機，一個開相簿 -->
+                    <!-- 隱藏的兩個 Input，一個強制相機，一個不強制 -->
                     <input type="file" id="build_file_front_cam" accept="image/*" capture="environment" style="display:none" onchange="handleBuildImg(this, 'front')">
                     <input type="file" id="build_file_front_alb" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'front')">
                 </div>
                 <div style="flex:1;">
                     <label class="required">背面/條碼照</label>
-                    <div class="preview-item" style="width:100%; height:120px;" onclick="document.getElementById('build_file_back_cam').click()">
+                    <div class="preview-item" style="width:100%; height:120px;" onclick="document.getElementById('build_file_back_alb').click()">
                         <img id="build_img_back" style="display:none; width:100%; height:100%; object-fit:cover;">
                         <span id="build_icon_back" class="preview-icon">📸</span>
                     </div>
@@ -212,13 +212,14 @@
                         <button class="btn-grey" style="flex:1; padding:6px 2px; font-size:12px; margin:0;" onclick="document.getElementById('build_file_back_cam').click()">📸 拍照</button>
                         <button class="btn-grey" style="flex:1; padding:6px 2px; font-size:12px; margin:0;" onclick="document.getElementById('build_file_back_alb').click()">🖼️ 相簿</button>
                     </div>
-                    <!-- 隱藏的兩個 Input，一個強制相機，一個開相簿 -->
+                    <!-- 隱藏的兩個 Input，一個強制相機，一個不強制 -->
                     <input type="file" id="build_file_back_cam" accept="image/*" capture="environment" style="display:none" onchange="handleBuildImg(this, 'back')">
                     <input type="file" id="build_file_back_alb" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'back')">
                 </div>
             </div>
 
-            <button onclick="autoFillByAI()" class="btn-blue" style="margin-top:15px; background:#673ab7; box-shadow:0 4px 10px rgba(103,58,183,0.3);">✨ AI 雙圖辨識代填</button>
+            <!-- ✨ 具有防呆的 AI 按鈕 -->
+            <button id="btn-ai-autofill" onclick="autoFillByAI()" class="btn-blue" style="margin-top:15px; background:#673ab7; box-shadow:0 4px 10px rgba(103,58,183,0.3);">✨ AI 雙圖辨識代填</button>
 
             <label class="required" style="margin-top:15px;">商品名稱</label>
             <input type="text" id="build_name" placeholder="例: 康師傅礦泉水 500ml" onchange="saveState()">
@@ -341,7 +342,7 @@
                     <option value="🇻🇳 越南">🇻🇳 越南</option><option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
                     <option value="🇹🇭 泰國">🇹🇭 泰國</option><option value="🇮🇩 印尼">🇮🇩 印尼</option>
                     <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option><option value="🇰🇷 韓國">🇰🇷 韓國</option>
-                    <option value="🇯 ঐতি 日本">🇯🇵 日本</option><option value="其它">❓ 其它</option>
+                    <option value="🇯🇵 日本">🇯🇵 日本</option><option value="其它">❓ 其它</option>
                 </select>
                 <input type="number" id="inp_qty" value="1" style="flex:1; text-align:center; margin-bottom:0;">
             </div>
@@ -359,7 +360,7 @@
         <h2>🚀 5. 成果上傳</h2>
         <div class="card">
             <label>📸 現場照片</label>
-            <!-- 🛑 所有一般照片拿掉 capture 屬性，回歸相簿點選 -->
+            <!-- 🛑 所有一般照片拿掉 capture 屬性，回歸相簿雙向點選 -->
             <div class="img-grid-2x2" style="margin-bottom: 20px;">
                 <input type="file" id="file-env" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'env')">
                 <input type="file" id="file-group" accept="image/*" style="display:none" onchange="handleImgUpload(this, 'group')">
@@ -545,12 +546,10 @@
                         document.getElementById('inp_name').value = saved.name || ''; document.getElementById('inp_phone').value = saved.phone || ''; document.getElementById('inp_participants').value = saved.participants || 1; document.getElementById('inp_participant_names').value = saved.participantNames || ''; document.getElementById('sel_survey_zone').value = saved.surveyZone || ''; document.getElementById('sel_beach_type').value = saved.beachType || ''; document.getElementById('inp_gps').value = saved.gps || ''; document.getElementById('inp_city').value = saved.city || ''; document.getElementById('inp_point').value = saved.point || ''; document.getElementById('inp_note').value = saved.note || ''; 
                         STATE.selectedPoint = saved.selectedPoint; STATE.stats = saved.stats || {}; STATE.count = saved.count || 0; STATE.historyStack = saved.historyStack || []; STATE.scanLogs = saved.scanLogs || []; STATE.currentCity = saved.currentCity || "未定位"; STATE.startGps = saved.startGps || null; STATE.endGps = saved.endGps || null; STATE.surveyDistance = saved.surveyDistance !== undefined ? saved.surveyDistance : null; 
                         
-                        // 恢復照片資料
                         STATE.imgs = saved.imgs || { env: null, group: null, hotspot1: null, hotspot2: null, special1: null, special2: null, special3: null, special4: null };
                         BUILD_STATE.front = saved.buildFront || null;
                         BUILD_STATE.back = saved.buildBack || null;
                         
-                        // 將一般照片顯示在預覽框
                         ['env','group','hotspot1','hotspot2','special1','special2','special3','special4'].forEach(k => {
                             if(STATE.imgs[k]) {
                                 document.getElementById(`img-preview-${k}`).src = "data:image/jpeg;base64," + STATE.imgs[k];
@@ -569,7 +568,7 @@
             } catch (e) { localStorage.removeItem('survey_session'); } 
         }
         
-        function clearState() { localStorage.removeItem('survey_session'); document.querySelectorAll('.photo-warning').forEach(el => el.style.display = 'none'); }
+        function clearState() { localStorage.removeItem('survey_session'); }
         function loadProductDB() { if (!navigator.onLine) return; fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { if(data.status === "success") { STATE.productCache = data.products; STATE.manufacturerCache = data.manufacturers; } }).catch(e => console.error("DB Load Error:", e)); }
         function loadSurveyPoints(){if(!navigator.onLine)return;fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:"getPoints"})}).then(res=>res.json()).then(data=>{if(data.status==="success"){STATE.surveyPoints=data.points;}}).catch(e=>console.error(e));}
         function selectPoint(p){STATE.selectedPoint=p;document.querySelectorAll('.point-item').forEach(el=>el.classList.remove('selected'));const btn=document.getElementById('btn-nav-go');btn.innerText=`✅ 確認選擇：${p.name}`;btn.disabled=false;}
@@ -668,27 +667,32 @@
                     cvs.width=temp.width*s;cvs.height=temp.height*s;
                     cvs.getContext('2d').drawImage(temp,0,0,cvs.width,cvs.height);
                     STATE.imgs[type]=cvs.toDataURL('image/jpeg',0.7).split(',')[1];
-                    saveState(); // 拍照後立即記憶，不怕重整
+                    saveState(); 
                 };
             };
             reader.readAsDataURL(file);
         }
         
-        // --- 🌟 V200 資深版：新商品建檔邏輯 ---
+        // --- 🌟 V200 資深版：新商品建檔邏輯 (支援自動帶入名稱) ---
         let BUILD_STATE = { barcode: "", gps: "", front: null, back: null, wasTimerRunning: false };
 
-        function openBuildModal(barcode, country, gps) {
+        // 🛑 新增 existingName, existingBrand 參數，用來自動帶入名稱
+        function openBuildModal(barcode, country, gps, existingName = "", existingBrand = "") {
             BUILD_STATE = { barcode: barcode, gps: gps, front: null, back: null, wasTimerRunning: false };
             
-            // 💡 智慧記憶計時器狀態並自動暫停
             if (timers[20].running) {
                 BUILD_STATE.wasTimerRunning = true;
                 toggleTimer(20); 
             }
 
             document.getElementById('build_barcode').value = barcode;
-            document.getElementById('build_name').value = "";
-            document.getElementById('build_brand').value = "";
+            
+            // 🛑 自動帶入已知的名稱與廠商
+            document.getElementById('build_name').value = existingName;
+            document.getElementById('build_brand').value = existingBrand;
+            
+            // 🛑 如果有帶入名稱，就隱藏 AI 按鈕 (不需要辨識了)
+            document.getElementById('btn-ai-autofill').style.display = existingName ? 'none' : 'block';
             
             const sel = document.getElementById('build_country');
             sel.innerHTML = "";
@@ -698,11 +702,10 @@
             ['front', 'back'].forEach(k => {
                 document.getElementById(`build_img_${k}`).style.display = 'none';
                 document.getElementById(`build_icon_${k}`).style.display = 'block';
-                document.getElementById(`build_file_${k}_cam`).value = ""; 
                 document.getElementById(`build_file_${k}_alb`).value = ""; 
+                document.getElementById(`build_file_${k}_cam`).value = "";
             });
             
-            // 嘗試恢復記憶體中的建檔照片
             if (BUILD_STATE.front) {
                 document.getElementById('build_img_front').src = "data:image/jpeg;base64," + BUILD_STATE.front;
                 document.getElementById('build_img_front').style.display = 'block';
@@ -720,7 +723,6 @@
         function closeBuildModal() {
             document.getElementById('build-product-modal').style.display = 'none';
             
-            // 💡 智慧恢復計時器狀態
             if (BUILD_STATE.wasTimerRunning && !timers[20].running) {
                 toggleTimer(20); 
             }
@@ -745,7 +747,7 @@
                     document.getElementById(`build_img_${type}`).src = cvs.toDataURL();
                     document.getElementById(`build_img_${type}`).style.display = 'block';
                     document.getElementById(`build_icon_${type}`).style.display = 'none';
-                    saveState(); // 拍照後立即記憶
+                    saveState(); 
                 }
             };
             reader.readAsDataURL(input.files[0]);
@@ -789,10 +791,7 @@
             document.getElementById('loading-text').innerText = "正在上傳建檔資料與照片...";
             
             const btnSubmit = document.getElementById('btn-submit-build');
-            if(btnSubmit) {
-                btnSubmit.disabled = true;
-                btnSubmit.innerText = "⏳ 上傳中...";
-            }
+            if(btnSubmit) { btnSubmit.disabled = true; btnSubmit.innerText = "⏳ 上傳中..."; }
 
             fetch(GOOGLE_SCRIPT_URL, { 
                 method: 'POST', 
@@ -802,12 +801,11 @@
                 if(btnSubmit) { btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認建檔"; }
                 
                 if(data.status === "success") {
-                    alert("🎉 建檔成功！此商品已同步擴充至資料庫。");
+                    alert("🎉 建檔成功！照片已自動寫入資料庫。");
                     if(!STATE.productCache) STATE.productCache = {};
                     STATE.productCache[BUILD_STATE.barcode] = { name: name, brand: brand, origin: country, img_url: data.imgUrl || "" };
                     addRecord(country, 1, { barcode: BUILD_STATE.barcode, name: name, brand: brand, origin: country, source: "Built_New", bottleGps: BUILD_STATE.gps, img_url: data.imgUrl || "" });
                     
-                    // 清空建檔照片快取
                     BUILD_STATE.front = null; BUILD_STATE.back = null; saveState();
                     closeBuildModal(); 
                 } else { alert("建檔失敗：" + data.message); }
@@ -849,11 +847,50 @@
                 else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
                 
                 if (isHit) {
-                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">✨ 本地資料庫命中</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:left;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${displayName}</div></div></div>`;
-                    showModal('confirm', '掃描成功', modalHtml, () => { 
-                        addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
-                        setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); 
-                    }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); });
+                    // 🛑 核心邏輯：如果命中資料庫 (含純廠商命中)，但是沒有照片網址，就跳出補拍提示！
+                    if (!displayImg || displayImg.length < 5) {
+                        
+                        let promptName = logSource === "Local_Manufacturer" ? "" : displayName; 
+                        let modalTitle = logSource === "Local_Manufacturer" ? "🔍 發現廠商新商品" : "📸 發現無照片商品";
+                        let modalMsg = logSource === "Local_Manufacturer" ? "此為已知廠商的未知商品，要幫忙建檔嗎？" : "此商品目前缺乏照片，要幫忙補拍嗎？<br>(系統已自動帶入名稱)";
+
+                        const modalHtml = `
+                            <div style="background:#e3f2fd; padding:15px; border-radius:16px; border:2px solid #1976d2; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
+                                <div style="font-size:13px; font-weight:bold; color:#1976d2; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">${modalTitle}</div>
+                                <div style="font-size:28px; font-weight:900; color:#1565c0; margin:5px 0; font-family:monospace;">${txt}</div>
+                                <div style="font-size:18px; font-weight:bold; color:#1976d2; margin-bottom:10px;">${displayBrand}</div>
+                                <div style="color:#555; font-size:13px; font-weight:bold; margin-top:5px; margin-bottom:15px;">${modalMsg}</div>
+                                
+                                <div style="display:flex; gap:8px; justify-content:space-between;">
+                                    <button id="btn-custom-rebuild" class="btn-blue" style="flex:1; margin:0; padding:12px 4px; font-size:13px; border-radius:8px;">📸 幫忙補拍</button>
+                                    <button id="btn-custom-skip-photo" class="btn-grey" style="flex:1; margin:0; padding:12px 4px; font-size:13px; border-radius:8px;">⏭️ 略過(純記錄)</button>
+                                </div>
+                            </div>`;
+                        
+                        showModal('warning', '協助補拍', modalHtml, null, null);
+                        document.getElementById('modal-btns').style.display = 'none';
+                        
+                        document.getElementById('btn-custom-rebuild').onclick = () => {
+                            document.getElementById('custom-modal').style.display = 'none';
+                            document.getElementById('modal-btns').style.display = 'flex';
+                            openBuildModal(txt, displayCountry, tempGps, promptName, displayBrand);
+                        };
+                        
+                        document.getElementById('btn-custom-skip-photo').onclick = () => {
+                            document.getElementById('custom-modal').style.display = 'none';
+                            document.getElementById('modal-btns').style.display = 'flex';
+                            addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
+                            setTimeout(() => { STATE.isProcessing = false; if(STATE.scanners.record) STATE.scanners.record.resume(); }, 800); 
+                        };
+
+                    } else {
+                        // 正常有照片的商品命中
+                        const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px; text-transform:uppercase; letter-spacing:1px;">✨ 本地資料庫命中</div><div style="font-size:32px; font-weight:900; color:#2e4418; margin:5px 0; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9; box-shadow:0 2px 8px rgba(0,0,0,0.05); text-align:left;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333; line-height:1.3;">${displayName}</div></div></div>`;
+                        showModal('confirm', '掃描成功', modalHtml, () => { 
+                            addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
+                            setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); 
+                        }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); });
+                    }
                 } else {
                     const modalHtml = `
                         <div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.1);">
