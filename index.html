@@ -303,7 +303,6 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        // 常駐追蹤架構
         const STATE = { isProcessing: false, count: 0, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, special1: null, special2: null, special3: null, special4: null }, scanners: { record: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, surveyDistance: 0, latestGps: null, gpsTracker: null };
         const timers = { 20: { total: 1200, endTime: null, interval: null, running: false, pausedRemainingMs: null } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
@@ -517,7 +516,12 @@
         function uploadData(){
             if(STATE.count===0){showModal('warning','無資料','請先收集數據再上傳',null);return;}
             if(!document.getElementById('inp_name').value){showModal('warning','資料未填','請填寫 [填表人姓名]',()=>switchTab('basic'));return;}
-            if(!document.getElementById('inp_phone').value){showModal('warning','資料未填','請填寫 [聯絡人手機]',()=>switchTab('basic'));return;}
+            
+            // 🛑 前端也加上保護，確保電話送出時必定加上單引號
+            var safePhone = document.getElementById('inp_phone').value;
+            if (safePhone && !safePhone.startsWith("'")) safePhone = "'" + safePhone;
+
+            if(safePhone === "'" || !safePhone){showModal('warning','資料未填','請填寫 [聯絡人手機]',()=>switchTab('basic'));return;}
             if(!document.getElementById('inp_participants').value){showModal('warning','資料未填','請填寫 [參與人數]',()=>switchTab('basic'));return;}
             if(!document.getElementById('inp_participant_names').value){showModal('warning','資料未填','請填寫 [參與者姓名]',()=>switchTab('basic'));return;}
             if(!document.getElementById('sel_survey_zone').value){showModal('warning','資料未填','請選擇 [調查區塊]',()=>switchTab('basic'));return;}
@@ -533,7 +537,8 @@
             statsOut.cnt_other=others.join(", ");
             
             const sessionId=crypto.randomUUID?crypto.randomUUID():('sess-'+Date.now()+'-'+Math.floor(Math.random()*1000));
-            var payload={ action:"save", sessionId:sessionId, name:document.getElementById('inp_name').value, phone: "'" + document.getElementById('inp_phone').value, participants:document.getElementById('inp_participants').value, participantNames:document.getElementById('inp_participant_names').value, city:document.getElementById('inp_city').value, surveyPoint:document.getElementById('inp_point').value, gps:document.getElementById('inp_gps').value, surveyDistance: STATE.surveyDistance, surveyZone: document.getElementById('sel_survey_zone').value, beachType: document.getElementById('sel_beach_type').value, total:STATE.count, note:document.getElementById('inp_note').value, hotspotData1:STATE.imgs.hotspot1||"", hotspotData2:STATE.imgs.hotspot2||"", specialData1:STATE.imgs.special1||"", specialData2:STATE.imgs.special2||"", specialData3:STATE.imgs.special3||"", specialData4:STATE.imgs.special4||"", envData:STATE.imgs.env||"", groupData:STATE.imgs.group||"", scanLogs:STATE.scanLogs, ...statsOut };
+            
+            var payload={ action:"save", sessionId:sessionId, name:document.getElementById('inp_name').value, phone: safePhone, participants:document.getElementById('inp_participants').value, participantNames:document.getElementById('inp_participant_names').value, city:document.getElementById('inp_city').value, surveyPoint:document.getElementById('inp_point').value, gps:document.getElementById('inp_gps').value, surveyDistance: STATE.surveyDistance, surveyZone: document.getElementById('sel_survey_zone').value, beachType: document.getElementById('sel_beach_type').value, total:STATE.count, note:document.getElementById('inp_note').value, hotspotData1:STATE.imgs.hotspot1||"", hotspotData2:STATE.imgs.hotspot2||"", specialData1:STATE.imgs.special1||"", specialData2:STATE.imgs.special2||"", specialData3:STATE.imgs.special3||"", specialData4:STATE.imgs.special4||"", envData:STATE.imgs.env||"", groupData:STATE.imgs.group||"", scanLogs:STATE.scanLogs, ...statsOut };
             
             if(!navigator.onLine){saveOffline(payload);return;}
             var btn=document.getElementById('btn-upload'); btn.innerText="⏳ 上傳中...請保持螢幕開啟"; btn.disabled=true;
