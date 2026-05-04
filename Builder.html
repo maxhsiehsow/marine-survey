@@ -182,7 +182,8 @@
         }
 
         function showModal(title, msg, onConfirm) {
-            document.getElementById('modal-msg').innerHTML = `<h3 style="margin-top:0; color:var(--primary-dark);">${title}</h3><p style="color:#555; font-size:16px;">${msg}</p>`;
+            // 🛑 修改提示框的內層容器為 div，以支援大版面的美化提示
+            document.getElementById('modal-msg').innerHTML = `<h3 style="margin-top:0; color:var(--primary-dark);">${title}</h3><div style="color:#555; font-size:16px; text-align:center;">${msg}</div>`;
             document.getElementById('btn-modal-confirm').onclick = () => { document.getElementById('custom-modal').style.display = 'none'; if(onConfirm) onConfirm(); };
             document.getElementById('btn-modal-cancel').onclick = () => { document.getElementById('custom-modal').style.display = 'none'; setTimeout(()=>{ BUILD_STATE.isProcessing = false; if(html5Qrcode) html5Qrcode.resume(); }, 500); };
             document.getElementById('custom-modal').style.display = 'flex';
@@ -288,9 +289,12 @@
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "addProduct", barcode: BUILD_STATE.barcode, name: name, brand: brand, origin: country, frontImg: BUILD_STATE.front, backImg: BUILD_STATE.back, builderName: builderName, gps: BUILD_STATE.gps }) }).then(res => res.json()).then(data => {
                 document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳";
                 if(data.status === "success") {
-                    alert("🎉 建檔成功！照片與資料已同步至雲端資料庫。");
-                    productCache[BUILD_STATE.barcode] = { name: name, brand: brand, origin: country, img_url: data.imgUrl || "" };
-                    closeBuildModal(); 
+                    // 🛑 完美比照一般版格式：放大字體、顯示條碼與產品資訊
+                    const successHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:12px; border:2px solid #587a30; text-align:center;"><div style="font-size:14px; font-weight:bold; color:#587a30; margin-bottom:8px;">✨ 新增圖鑑完成</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace; margin:10px 0;">${BUILD_STATE.barcode}</div><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${brand}</div><div style="font-size:24px; font-weight:900; color:#333; margin-bottom:15px;">${name}</div><div style="background:white; padding:10px; border-radius:8px; color:#2e7d32; font-weight:bold;">照片與資料已同步至雲端庫</div></div>`;
+                    showModal('🎉 建檔成功', successHtml, () => {
+                        productCache[BUILD_STATE.barcode] = { name: name, brand: brand, origin: country, img_url: data.imgUrl || "" };
+                        closeBuildModal(); 
+                    });
                 } else { alert("建檔失敗：" + data.message); }
             }).catch(e => { document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳"; alert("網路異常，上傳失敗"); });
         }
