@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>海廢商品建檔站</title>
+    
+    <!-- 🛑 指定讀取資深版專用的 manifest -->
+    <link rel="manifest" href="manifest_senior.json">
+    <meta name="theme-color" content="#f57c00">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="圖鑑建檔">
+    <link rel="apple-touch-icon" href="logo.png">
+
+    <style>
+        :root { --primary: #f57c00; --primary-dark: #e65100; --bg: #fff3e0; --text: #333; }
+        html, body { overscroll-behavior-y: contain; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; padding-top: 10px; color: var(--text); -webkit-font-smoothing: antialiased; }
+        
+        .container { padding: 16px; max-width: 500px; margin: 0 auto; animation: fadeIn 0.4s ease-out; }
+        .app-title { text-align: center; color: var(--primary-dark); font-size: 26px; margin: 10px 0 20px; font-weight: 900; letter-spacing: 1px; }
+        .card { background: white; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        label { display: block; margin: 12px 0 6px; font-weight: 600; font-size: 15px; color: #444; }
+        .required::after { content: " *"; color: #e53935; }
+        
+        input, select { width: 100%; padding: 14px; font-size: 16px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; background: #fafafa; transition: all 0.2s; appearance: none; }
+        input:focus, select:focus { border-color: var(--primary); background: #fff; outline: none; }
+        input[readonly] { color: var(--primary); font-weight: bold; background: #fff3e0; border-color: #ffcc80; }
+        
+        select { background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f57c00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 18px; padding-right: 40px; cursor: pointer; }
+        
+        button, .btn { width: 100%; padding: 16px; font-size: 18px; font-weight: 800; margin-top: 12px; cursor: pointer; color: white; border: none; border-radius: 12px; text-align: center; letter-spacing: 1px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        button:active { transform: scale(0.97); }
+        .btn-orange { background: #f57c00; } .btn-blue { background: #1976d2; } .btn-grey { background: #90a4ae; color: white; } .btn-outline { background: white; color: var(--primary); border: 2px solid var(--primary); box-shadow: none; }
+        .btn-ai { background: #673ab7; box-shadow: 0 4px 10px rgba(103,58,183,0.3); }
+
+        .preview-item { width: 100%; height: 140px; background: #fafafa; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; border: 2px dashed #ccc; flex-shrink: 0; cursor: pointer; transition: all 0.3s; }
+        .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-icon { font-size: 40px; color: #999; }
+        
+        .camera-box { position: relative; display: none; background: #000; border-radius: 16px; overflow: hidden; margin-top: 15px; }
+        .scanner-view { width: 100%; min-height: 300px; }
+        
+        #loading-mask { display: flex; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); flex-direction:column; justify-content:center; align-items:center; z-index:99999; backdrop-filter: blur(5px); }
+        .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); animation: popUp 0.3s forwards; }
+        @keyframes popUp { to { transform: scale(1); } }
+        .modal-btns { display: flex; gap: 15px; justify-content: center; margin-top:20px; } .modal-btns button { flex: 1; padding: 15px; font-size: 16px; margin: 0; border-radius: 12px; }
+    </style>
+</head>
+<body>
+    <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">圖鑑資料庫載入中...</p></div>
+
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div id="modal-msg">內容</div>
+            <div id="modal-btns" class="modal-btns">
+                <button id="btn-modal-cancel" class="btn-grey">取消</button>
+                <button id="btn-modal-confirm" class="btn-orange">確定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📝 建檔表單 (預設隱藏) -->
+    <div id="build-form-section" class="modal-overlay" style="z-index: 10500; align-items: flex-start; padding-top:20px; overflow-y:auto;">
+        <div class="modal-content" style="max-width: 400px; width: 90%; text-align: left; padding: 20px; margin-bottom:40px;">
+            <h2 style="margin-top:0; border-left: 5px solid var(--primary); padding-left:10px; color: var(--primary-dark);">📝 商品資料建檔</h2>
+            
+            <label style="color:#757575;">建檔者</label>
+            <input type="text" id="build_author" readonly style="margin-bottom:10px; background:#eee; border-color:#ccc; color:#777;">
+
+            <label style="color:#757575;">條碼 (自動帶入)</label>
+            <input type="text" id="build_barcode" readonly style="margin-bottom:10px;">
+            
+            <label style="color:#757575;">產地判定</label>
+            <select id="build_country" style="margin-bottom:10px;"></select>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="flex:1;">
+                    <label class="required">正面照</label>
+                    <div class="preview-item" onclick="document.getElementById('build_file_front_alb').click()">
+                        <img id="build_img_front" style="display:none;">
+                        <span id="build_icon_front" class="preview-icon">📸</span>
+                    </div>
+                    <div style="display:flex; gap:4px; margin-top:5px;">
+                        <button class="btn-grey" style="flex:1; padding:8px 2px; font-size:14px; margin:0;" onclick="document.getElementById('build_file_front_cam').click()">📸 拍照</button>
+                        <button class="btn-grey" style="flex:1; padding:8px 2px; font-size:14px; margin:0;" onclick="document.getElementById('build_file_front_alb').click()">🖼️ 相簿</button>
+                    </div>
+                    <input type="file" id="build_file_front_cam" accept="image/*" capture="environment" style="display:none" onchange="handleBuildImg(this, 'front')">
+                    <input type="file" id="build_file_front_alb" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'front')">
+                </div>
+                <div style="flex:1;">
+                    <label class="required">背面/條碼照</label>
+                    <div class="preview-item" onclick="document.getElementById('build_file_back_alb').click()">
+                        <img id="build_img_back" style="display:none;">
+                        <span id="build_icon_back" class="preview-icon">📸</span>
+                    </div>
+                    <div style="display:flex; gap:4px; margin-top:5px;">
+                        <button class="btn-grey" style="flex:1; padding:8px 2px; font-size:14px; margin:0;" onclick="document.getElementById('build_file_back_cam').click()">📸 拍照</button>
+                        <button class="btn-grey" style="flex:1; padding:8px 2px; font-size:14px; margin:0;" onclick="document.getElementById('build_file_back_alb').click()">🖼️ 相簿</button>
+                    </div>
+                    <input type="file" id="build_file_back_cam" accept="image/*" capture="environment" style="display:none" onchange="handleBuildImg(this, 'back')">
+                    <input type="file" id="build_file_back_alb" accept="image/*" style="display:none" onchange="handleBuildImg(this, 'back')">
+                </div>
+            </div>
+
+            <!-- AI 辨識按鈕，後端已加上簡繁轉換指令 -->
+            <button onclick="autoFillByAI()" class="btn-ai" style="margin-top:20px;">✨ AI 辨識代填 (支援簡繁轉換)</button>
+
+            <label class="required" style="margin-top:20px;">商品名稱</label>
+            <input type="text" id="build_name" placeholder="例: 康師傅礦泉水 500ml">
+            
+            <label class="required">廠商名稱</label>
+            <input type="text" id="build_brand" placeholder="例: 康師傅控股">
+
+            <div class="modal-btns" style="margin-top: 25px;">
+                <button onclick="closeBuildModal()" class="btn-grey">取消</button>
+                <button id="btn-submit-build" onclick="submitNewProduct()" class="btn-orange">📤 確認上傳</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1 class="app-title">🛠️ 海廢商品建檔站</h1>
+        
+        <div class="card">
+            <label class="required" style="color:var(--primary-dark);">建檔者姓名</label>
+            <input type="text" id="inp_builder_name" placeholder="請輸入您的真實姓名 (統計貢獻用)" onchange="saveBuilderName()" style="border-color:var(--primary); font-weight:bold; color:var(--primary-dark);">
+        </div>
+
+        <div class="card" style="text-align: center;">
+            <p style="color:#666; font-size:14px; margin-top:0;">將自動於背景記錄發現座標，請允許位置權限。</p>
+            <button id="btn-scan-start" onclick="startScanner()" class="btn-orange" style="font-size: 22px; padding: 25px 0; border-radius:16px;">📷 掃描條碼建檔</button>
+            <button id="btn-scan-stop" onclick="stopScanner()" class="btn-red" style="display:none;">⏹ 停止掃描</button>
+            
+            <div id="camera-box-build" class="camera-box"><div id="reader-build" class="scanner-view"></div></div>
+            
+            <div style="margin-top: 25px; border-top:2px dashed #eee; padding-top:20px;">
+                <label style="text-align:left;">⌨️ 掃不到？手動輸入條碼</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="inp_manual_code" inputmode="numeric" placeholder="請輸入完整數字條碼" style="margin:0;">
+                    <button onclick="handleManualCode()" class="btn-blue" style="width:90px; margin:0; padding:10px;">查詢</button>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align:center; color:#9e9e9e; font-size:13px; margin-top:30px;">荒野保護協會 棲地守護部</div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
+        
+        const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
+        const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
+        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
+        
+        let BUILD_STATE = { barcode: "", gps: "未定位", front: null, back: null, isProcessing: false };
+        let productCache = {}, manufacturerCache = {}, html5Qrcode = null;
+
+        window.onload = () => {
+            if(localStorage.getItem('builder_name')) document.getElementById('inp_builder_name').value = localStorage.getItem('builder_name');
+            const sel = document.getElementById('build_country'); sel.innerHTML = ""; for(let c of Object.keys(COLORS)) { sel.add(new Option(c, c)); }
+            
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { 
+                if(data.status === "success") { productCache = data.products; manufacturerCache = data.manufacturers; }
+                document.getElementById('loading-mask').style.display = 'none'; 
+                getSilentGps(); // 一開網頁就默默去抓 GPS
+            }).catch(e => { document.getElementById('loading-mask').style.display = 'none'; alert("網路異常，無法載入資料庫。"); });
+        };
+
+        function saveBuilderName() { localStorage.setItem('builder_name', document.getElementById('inp_builder_name').value.trim()); }
+        function getCountryFromCode(code) { return (code && code.length >= 3) ? (PREFIX_DB[code.substring(0, 3)] || "其它") : "其它"; }
+        
+        // 🚀 默默在背景抓取 GPS，不打擾志工
+        function getSilentGps() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition( p => { BUILD_STATE.gps = `${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`; }, e => {}, { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 } );
+        }
+
+        function showModal(title, msg, onConfirm) {
+            document.getElementById('modal-msg').innerHTML = `<h3 style="margin-top:0; color:var(--primary-dark);">${title}</h3><p style="color:#555; font-size:16px;">${msg}</p>`;
+            document.getElementById('btn-modal-confirm').onclick = () => { document.getElementById('custom-modal').style.display = 'none'; if(onConfirm) onConfirm(); };
+            document.getElementById('btn-modal-cancel').onclick = () => { document.getElementById('custom-modal').style.display = 'none'; setTimeout(()=>{ BUILD_STATE.isProcessing = false; if(html5Qrcode) html5Qrcode.resume(); }, 500); };
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function startScanner() {
+            if (!document.getElementById('inp_builder_name').value.trim()) { alert("請先填寫上方的「建檔者姓名」！"); document.getElementById('inp_builder_name').focus(); return; }
+            if (html5Qrcode) return;
+            document.getElementById('camera-box-build').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'block';
+            html5Qrcode = new Html5Qrcode("reader-build");
+            html5Qrcode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => { processBarcode(txt); }, () => {});
+        }
+
+        function stopScanner() { if(html5Qrcode) html5Qrcode.stop().then(()=>{html5Qrcode.clear(); html5Qrcode=null;}).catch(()=>{}); document.getElementById('camera-box-build').style.display='none'; document.getElementById('btn-scan-start').style.display='block'; document.getElementById('btn-scan-stop').style.display='none'; }
+
+        function handleManualCode() {
+            if (!document.getElementById('inp_builder_name').value.trim()) { alert("請先填寫上方的「建檔者姓名」！"); return; }
+            const code = document.getElementById('inp_manual_code').value.trim();
+            if(code.length < 5) { alert("條碼長度不正確"); return; }
+            processBarcode(code);
+            document.getElementById('inp_manual_code').value = "";
+        }
+
+        // 🎯 核心判斷邏輯：建檔版的判斷極度直接
+        function processBarcode(txt) {
+            if (BUILD_STATE.isProcessing) return;
+            BUILD_STATE.isProcessing = true; if(html5Qrcode) html5Qrcode.pause();
+            getSilentGps(); // 再確認一次 GPS
+            
+            const prodData = productCache[txt];
+            let manuData = null; for (let i = 12; i >= 6; i--) { const prefix = txt.substring(0, i); if (manufacturerCache && manufacturerCache[prefix]) { manuData = manufacturerCache[prefix]; break; } }
+            
+            let displayCountry = getCountryFromCode(txt), displayBrand = manuData ? manuData.name : "", displayName = "", displayImg = "";
+            
+            if (prodData) {
+                displayCountry = prodData.origin || displayCountry; displayBrand = prodData.brand || displayBrand; displayName = prodData.name; displayImg = prodData.img_url;
+                if (!displayImg || displayImg.length < 5) {
+                    showModal('📸 發現無照片商品', `<div style="font-size:24px; font-weight:900; color:#1565c0; font-family:monospace; margin:10px 0;">${txt}</div>此為已知商品 [${displayName}]，但資料庫缺乏照片。<br><br>請協助立即補拍！`, () => openBuildModal(txt, displayCountry, displayName, displayBrand));
+                } else {
+                    showModal('✨ 商品資料完整', `<div style="font-size:24px; font-weight:900; color:#2e7d32; font-family:monospace; margin:10px 0;">${txt}</div>此商品 [${displayName}] 已有資料與照片。<br><br>若您覺得原資料有錯或照片不清楚，可點擊確定「重新覆寫編輯」。`, () => openBuildModal(txt, displayCountry, displayName, displayBrand));
+                }
+            } else if (manuData) {
+                showModal('📝 發現已知廠商新商品', `<div style="font-size:24px; font-weight:900; color:#e65100; font-family:monospace; margin:10px 0;">${txt}</div>系統認得廠商 [${displayBrand}]，但查無此條碼。<br><br>請協助建檔！`, () => openBuildModal(txt, displayCountry, "", displayBrand));
+            } else {
+                showModal('🌟 發現全新商品', `<div style="font-size:24px; font-weight:900; color:#d84315; font-family:monospace; margin:10px 0;">${txt}</div>資料庫完全查無此條碼。<br><br>請協助建立全新檔案！`, () => openBuildModal(txt, displayCountry, "", ""));
+            }
+        }
+
+        function openBuildModal(barcode, country, existingName, existingBrand) {
+            BUILD_STATE.barcode = barcode; BUILD_STATE.front = null; BUILD_STATE.back = null;
+            document.getElementById('build_author').value = document.getElementById('inp_builder_name').value.trim();
+            document.getElementById('build_barcode').value = barcode;
+            document.getElementById('build_name').value = existingName;
+            document.getElementById('build_brand').value = existingBrand;
+            document.getElementById('build_country').value = Object.keys(COLORS).includes(country) ? country : "其它";
+
+            ['front', 'back'].forEach(k => {
+                document.getElementById(`build_img_${k}`).style.display = 'none'; document.getElementById(`build_icon_${k}`).style.display = 'block';
+                document.getElementById(`build_file_${k}_alb`).value = ""; document.getElementById(`build_file_${k}_cam`).value = "";
+            });
+            document.getElementById('build-form-section').style.display = 'flex';
+        }
+
+        function closeBuildModal() { document.getElementById('build-form-section').style.display = 'none'; setTimeout(() => { BUILD_STATE.isProcessing = false; if(html5Qrcode) html5Qrcode.resume(); }, 500); }
+
+        function handleBuildImg(input, type) {
+            if (!input.files || !input.files[0]) return; const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image(); img.src = e.target.result;
+                img.onload = function() {
+                    const cvs = document.createElement('canvas'); let s = 800 / img.width; if (s > 1) s = 1; cvs.width = img.width * s; cvs.height = img.height * s;
+                    cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
+                    BUILD_STATE[type] = cvs.toDataURL('image/jpeg', 0.7).split(',')[1];
+                    document.getElementById(`build_img_${type}`).src = cvs.toDataURL(); document.getElementById(`build_img_${type}`).style.display = 'block'; document.getElementById(`build_icon_${type}`).style.display = 'none';
+                }
+            }; reader.readAsDataURL(input.files[0]);
+        }
+
+        function autoFillByAI() {
+            if (!BUILD_STATE.front || !BUILD_STATE.back) { alert("請先拍好「正面照」與「背面/條碼照」！"); return; }
+            document.getElementById('loading-mask').style.display='flex'; document.getElementById('loading-text').innerText = "🤖 AI 正在辨識文字 (含簡繁轉換)...";
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "aiProductRecognize", front: BUILD_STATE.front, back: BUILD_STATE.back }) }).then(res => res.json()).then(data => {
+                document.getElementById('loading-mask').style.display='none';
+                if(data.status === "success") {
+                    try {
+                        let rawStr = data.result.replace(/```json/gi, "").replace(/```/g, "").trim(); const resObj = JSON.parse(rawStr);
+                        let parsedName = resObj.name || resObj.商品名稱 || resObj.Name || ""; let parsedBrand = resObj.brand || resObj.品牌 || resObj.廠商 || resObj.Brand || "";
+                        if(parsedName) document.getElementById('build_name').value = parsedName; if(parsedBrand) document.getElementById('build_brand').value = parsedBrand;
+                        alert("✅ AI 辨識完成！請協助確認文字正確性。");
+                    } catch(e) { alert("AI 回傳格式異常，請手動輸入。"); }
+                } else { alert("辨識失敗：" + data.message); }
+            }).catch(e => { document.getElementById('loading-mask').style.display='none'; alert("網路異常"); });
+        }
+
+        function submitNewProduct() {
+            const name = document.getElementById('build_name').value.trim(); const brand = document.getElementById('build_brand').value.trim(); const country = document.getElementById('build_country').value; const builderName = document.getElementById('build_author').value;
+            if(!name || !brand || !BUILD_STATE.front || !BUILD_STATE.back) { alert("照片與名稱/廠商欄位皆為必填！"); return; }
+
+            document.getElementById('loading-mask').style.display='flex'; document.getElementById('loading-text').innerText = "正在上傳建檔資料與照片...";
+            const btnSubmit = document.getElementById('btn-submit-build'); btnSubmit.disabled = true; btnSubmit.innerText = "⏳ 上傳中...";
+
+            // 包含 builderName 與默默抓到的 GPS 座標
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "addProduct", barcode: BUILD_STATE.barcode, name: name, brand: brand, origin: country, frontImg: BUILD_STATE.front, backImg: BUILD_STATE.back, builderName: builderName, gps: BUILD_STATE.gps }) }).then(res => res.json()).then(data => {
+                document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳";
+                if(data.status === "success") {
+                    alert("🎉 建檔成功！照片與資料已同步至雲端資料庫。");
+                    productCache[BUILD_STATE.barcode] = { name: name, brand: brand, origin: country, img_url: data.imgUrl || "" };
+                    closeBuildModal(); 
+                } else { alert("建檔失敗：" + data.message); }
+            }).catch(e => { document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳"; alert("網路異常，上傳失敗"); });
+        }
+    </script>
+</body>
+</html>
