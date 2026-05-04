@@ -321,11 +321,13 @@
         
         function showModal(type, title, msg, onConfirm, onCancel) { 
             const modal = document.getElementById('custom-modal'); const box = document.getElementById('modal-content-box'); const icon = document.getElementById('modal-icon'); const btnConfirm = document.getElementById('btn-modal-confirm'); const btnCancel = document.getElementById('btn-modal-cancel'); 
-            box.className = 'modal-content'; btnCancel.style.display = 'block'; btnConfirm.innerText = "確定"; document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerHTML = msg; 
+            box.className = 'modal-content'; btnCancel.style.display = 'block'; btnCancel.innerText = "取消"; btnConfirm.innerText = "確定"; document.getElementById('modal-title').innerText = title; document.getElementById('modal-msg').innerHTML = msg; 
             if (type === 'warning') { box.classList.add('style-warning'); icon.innerText = "⚠️"; btnCancel.style.display = 'none'; btnConfirm.innerText = "繼續調查"; } 
             else if (type === 'success') { box.classList.add('style-success'); icon.innerText = "🎉"; btnCancel.style.display = 'none'; btnConfirm.innerText = "繼續調查"; } 
             else if (type === 'alarm') { box.classList.add('style-alarm'); icon.innerText = "⏰"; btnCancel.style.display = 'none'; btnConfirm.innerText = "確定 (停止震動)"; } 
             else if (type === 'offline') { box.classList.add('style-offline'); icon.innerText = "💾"; btnCancel.style.display = 'none'; btnConfirm.innerText = "我知道了"; } 
+            else if (type === 'scan_hit') { box.classList.add('style-success'); icon.innerText = "🎉"; }
+            else if (type === 'scan_miss') { box.classList.add('style-warning'); icon.innerText = "⚠️"; }
             btnConfirm.onclick = () => { modal.style.display = 'none'; if (onConfirm) onConfirm(); }; btnCancel.onclick = () => { modal.style.display = 'none'; if (onCancel) onCancel(); }; modal.style.display = 'flex'; 
         }
 
@@ -435,7 +437,7 @@
             reader.readAsDataURL(file);
         }
         
-        // 🛑 主掃描器邏輯 (零干擾模式，不提示建檔)
+        // 🛑 主掃描器邏輯 (支援確認與取消)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block';
@@ -454,12 +456,11 @@
                 else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
                 
                 if (isHit) {
-                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px;">✨ 掃描成功</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333;">${displayName}</div></div></div>`;
-                    showModal('success', '記錄成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); });
+                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px;">✨ 發現已知商品</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333;">${displayName}</div></div></div>`;
+                    showModal('scan_hit', '掃描成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); });
                 } else {
-                    // 🛑 極簡提示，不再詢問建檔
-                    const modalHtml = `<div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px;">🔍 未知商品</div><div style="font-size:28px; font-weight:900; color:#e65100; font-family:monospace; margin-bottom:10px;">${txt}</div><div style="font-size:18px; font-weight:bold; color:#ff9800; margin-bottom:15px;">${displayCountry}</div><div style="color:#555; font-size:14px; font-weight:bold; background:white; padding:10px; border-radius:8px;">資料庫查無此條碼<br>已記錄為 1 筆，建檔交由專門夥伴處理。</div></div>`;
-                    showModal('warning', '記錄成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); });
+                    const modalHtml = `<div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px;">🔍 發現未知商品</div><div style="font-size:28px; font-weight:900; color:#e65100; font-family:monospace; margin-bottom:10px;">${txt}</div><div style="font-size:18px; font-weight:bold; color:#ff9800; margin-bottom:15px;">${displayCountry}</div><div style="color:#555; font-size:14px; font-weight:bold; background:white; padding:10px; border-radius:8px;">資料庫查無此條碼<br>若點擊確定，已記錄為 1 筆，建檔交由專門夥伴處理。</div></div>`;
+                    showModal('scan_miss', '掃描成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); });
                 }
             }, () => {});
         }
