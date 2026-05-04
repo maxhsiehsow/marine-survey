@@ -1,7 +1,7 @@
 {
   "id": "/builder-app",
   "name": "海廢商品建檔站",
-  "short_name": "資深建檔",
+  "short_name": "瓶罐建檔",
   "start_url": "./Builder.html",
   "display": "standalone",
   "background_color": "#fff3e0",
