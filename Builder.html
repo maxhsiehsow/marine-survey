@@ -45,7 +45,7 @@
         .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 11000; justify-content: center; align-items: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); animation: popUp 0.3s forwards; }
         @keyframes popUp { to { transform: scale(1); } }
         .modal-btns { display: flex; gap: 15px; justify-content: center; margin-top:20px; } .modal-btns button { flex: 1; padding: 15px; font-size: 16px; margin: 0; border-radius: 12px; }
@@ -107,7 +107,7 @@
                 </div>
             </div>
 
-            <!-- AI 辨識按鈕，後端已加上簡繁轉換指令 -->
+            <!-- AI 辨識按鈕 -->
             <button onclick="autoFillByAI()" class="btn-ai" style="margin-top:20px;">✨ AI 辨識代填 (支援簡繁轉換)</button>
 
             <label class="required" style="margin-top:20px;">商品名稱</label>
@@ -168,39 +168,50 @@
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { 
                 if(data.status === "success") { productCache = data.products; manufacturerCache = data.manufacturers; }
                 document.getElementById('loading-mask').style.display = 'none'; 
-                getSilentGps(); // 一開網頁就默默去抓 GPS
-            }).catch(e => { document.getElementById('loading-mask').style.display = 'none'; alert("網路異常，無法載入資料庫。"); });
+                getSilentGps();
+            }).catch(e => { 
+                document.getElementById('loading-mask').style.display = 'none'; 
+                showModal('⚠️ 系統提示', '網路異常，無法載入資料庫。', null, false);
+            });
         };
 
         function saveBuilderName() { localStorage.setItem('builder_name', document.getElementById('inp_builder_name').value.trim()); }
         function getCountryFromCode(code) { return (code && code.length >= 3) ? (PREFIX_DB[code.substring(0, 3)] || "其它") : "其它"; }
         
-        // 🚀 默默在背景抓取 GPS，不打擾志工
         function getSilentGps() {
             if (!navigator.geolocation) return;
             navigator.geolocation.getCurrentPosition( p => { BUILD_STATE.gps = `${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`; }, e => {}, { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 } );
         }
 
-        function showModal(title, msg, onConfirm) {
-            // 🛑 修改提示框的內層容器為 div，以支援大版面的美化提示
+        // 🛑 終極 UI 統一升級：showModal 支援自訂是否顯示取消按鈕 (showCancel)
+        function showModal(title, msg, onConfirm, showCancel = true) {
             document.getElementById('modal-msg').innerHTML = `<h3 style="margin-top:0; color:var(--primary-dark);">${title}</h3><div style="color:#555; font-size:16px; text-align:center;">${msg}</div>`;
-            document.getElementById('btn-modal-confirm').onclick = () => { document.getElementById('custom-modal').style.display = 'none'; if(onConfirm) onConfirm(); };
-            document.getElementById('btn-modal-cancel').onclick = () => { document.getElementById('custom-modal').style.display = 'none'; setTimeout(()=>{ BUILD_STATE.isProcessing = false; if(html5Qrcode) html5Qrcode.resume(); }, 500); };
             
-            // 🛑 動態控制取消按鈕的顯示：如果是建檔成功，隱藏取消按鈕
-            if (title === '🎉 建檔成功') {
-                document.getElementById('btn-modal-cancel').style.display = 'none';
-                document.getElementById('btn-modal-confirm').innerText = "完成";
+            document.getElementById('btn-modal-confirm').onclick = () => { 
+                document.getElementById('custom-modal').style.display = 'none'; 
+                if(onConfirm) onConfirm(); 
+            };
+            
+            const btnCancel = document.getElementById('btn-modal-cancel');
+            if (showCancel) {
+                btnCancel.style.display = 'block';
+                btnCancel.onclick = () => { 
+                    document.getElementById('custom-modal').style.display = 'none'; 
+                    setTimeout(()=>{ BUILD_STATE.isProcessing = false; if(html5Qrcode) html5Qrcode.resume(); }, 500); 
+                };
             } else {
-                document.getElementById('btn-modal-cancel').style.display = 'block';
-                document.getElementById('btn-modal-confirm').innerText = "確定";
+                btnCancel.style.display = 'none';
             }
             
+            document.getElementById('btn-modal-confirm').innerText = (title === '🎉 建檔成功') ? "完成" : "確定";
             document.getElementById('custom-modal').style.display = 'flex';
         }
 
         function startScanner() {
-            if (!document.getElementById('inp_builder_name').value.trim()) { alert("請先填寫上方的「建檔者姓名」！"); document.getElementById('inp_builder_name').focus(); return; }
+            if (!document.getElementById('inp_builder_name').value.trim()) { 
+                showModal('⚠️ 系統提示', '請先填寫上方的「建檔者姓名」！', () => { document.getElementById('inp_builder_name').focus(); }, false);
+                return; 
+            }
             if (html5Qrcode) return;
             document.getElementById('camera-box-build').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'block';
             html5Qrcode = new Html5Qrcode("reader-build");
@@ -210,18 +221,23 @@
         function stopScanner() { if(html5Qrcode) html5Qrcode.stop().then(()=>{html5Qrcode.clear(); html5Qrcode=null;}).catch(()=>{}); document.getElementById('camera-box-build').style.display='none'; document.getElementById('btn-scan-start').style.display='block'; document.getElementById('btn-scan-stop').style.display='none'; }
 
         function handleManualCode() {
-            if (!document.getElementById('inp_builder_name').value.trim()) { alert("請先填寫上方的「建檔者姓名」！"); return; }
+            if (!document.getElementById('inp_builder_name').value.trim()) { 
+                showModal('⚠️ 系統提示', '請先填寫上方的「建檔者姓名」！', () => { document.getElementById('inp_builder_name').focus(); }, false);
+                return; 
+            }
             const code = document.getElementById('inp_manual_code').value.trim();
-            if(code.length < 5) { alert("條碼長度不正確"); return; }
+            if(code.length < 5) { 
+                showModal('⚠️ 系統提示', '條碼長度不正確，請重新確認。', null, false);
+                return; 
+            }
             processBarcode(code);
             document.getElementById('inp_manual_code').value = "";
         }
 
-        // 🎯 核心判斷邏輯：建檔版的判斷極度直接
         function processBarcode(txt) {
             if (BUILD_STATE.isProcessing) return;
             BUILD_STATE.isProcessing = true; if(html5Qrcode) html5Qrcode.pause();
-            getSilentGps(); // 再確認一次 GPS
+            getSilentGps(); 
             
             const prodData = productCache[txt];
             let manuData = null; for (let i = 12; i >= 6; i--) { const prefix = txt.substring(0, i); if (manufacturerCache && manufacturerCache[prefix]) { manuData = manufacturerCache[prefix]; break; } }
@@ -273,7 +289,10 @@
         }
 
         function autoFillByAI() {
-            if (!BUILD_STATE.front || !BUILD_STATE.back) { alert("請先拍好「正面照」與「背面/條碼照」！"); return; }
+            if (!BUILD_STATE.front || !BUILD_STATE.back) { 
+                showModal('⚠️ 系統提示', '請先拍好「正面照」與「背面/條碼照」喔！', null, false);
+                return; 
+            }
             document.getElementById('loading-mask').style.display='flex'; document.getElementById('loading-text').innerText = "🤖 AI 正在辨識文字 (含簡繁轉換)...";
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "aiProductRecognize", front: BUILD_STATE.front, back: BUILD_STATE.back }) }).then(res => res.json()).then(data => {
                 document.getElementById('loading-mask').style.display='none';
@@ -282,35 +301,51 @@
                         let rawStr = data.result.replace(/```json/gi, "").replace(/```/g, "").trim(); const resObj = JSON.parse(rawStr);
                         let parsedName = resObj.name || resObj.商品名稱 || resObj.Name || ""; let parsedBrand = resObj.brand || resObj.品牌 || resObj.廠商 || resObj.Brand || "";
                         if(parsedName) document.getElementById('build_name').value = parsedName; if(parsedBrand) document.getElementById('build_brand').value = parsedBrand;
-                        alert("✅ AI 辨識完成！請協助確認文字正確性。");
-                    } catch(e) { alert("AI 回傳格式異常，請手動輸入。"); }
-                } else { alert("辨識失敗：" + data.message); }
-            }).catch(e => { document.getElementById('loading-mask').style.display='none'; alert("網路異常"); });
+                        
+                        showModal('✨ 辨識完成', 'AI 辨識已完成！<br><br>請協助確認並修正可能的錯漏字。', null, false);
+                    } catch(e) { 
+                        showModal('⚠️ 系統提示', 'AI 辨識格式異常，請手動輸入。', null, false);
+                    }
+                } else { 
+                    showModal('⚠️ 辨識失敗', data.message, null, false);
+                }
+            }).catch(e => { 
+                document.getElementById('loading-mask').style.display='none'; 
+                showModal('⚠️ 系統提示', '網路連線異常，請稍後再試。', null, false);
+            });
         }
 
         function submitNewProduct() {
             const name = document.getElementById('build_name').value.trim(); const brand = document.getElementById('build_brand').value.trim(); const country = document.getElementById('build_country').value; const builderName = document.getElementById('build_author').value;
-            if(!name || !brand || !BUILD_STATE.front || !BUILD_STATE.back) { alert("照片與名稱/廠商欄位皆為必填！"); return; }
+            if(!name || !brand || !BUILD_STATE.front || !BUILD_STATE.back) { 
+                showModal('⚠️ 系統提示', '照片與「商品名稱」、「廠商名稱」皆為必填欄位！', null, false);
+                return; 
+            }
 
             document.getElementById('loading-mask').style.display='flex'; document.getElementById('loading-text').innerText = "正在上傳建檔資料與照片...";
             const btnSubmit = document.getElementById('btn-submit-build'); btnSubmit.disabled = true; btnSubmit.innerText = "⏳ 上傳中...";
 
-            // 包含 builderName 與默默抓到的 GPS 座標
             fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "addProduct", barcode: BUILD_STATE.barcode, name: name, brand: brand, origin: country, frontImg: BUILD_STATE.front, backImg: BUILD_STATE.back, builderName: builderName, gps: BUILD_STATE.gps }) }).then(res => res.json()).then(data => {
                 document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳";
                 if(data.status === "success") {
-                    // 🛑 完美比照一般版格式：放大字體、顯示條碼與產品資訊
+                    document.getElementById('build-form-section').style.display = 'none';
+                    
                     const successHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:12px; border:2px solid #587a30; text-align:center;"><div style="font-size:14px; font-weight:bold; color:#587a30; margin-bottom:8px;">✨ 新增圖鑑完成</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace; margin:10px 0;">${BUILD_STATE.barcode}</div><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${brand}</div><div style="font-size:24px; font-weight:900; color:#333; margin-bottom:15px;">${name}</div><div style="background:white; padding:10px; border-radius:8px; color:#2e7d32; font-weight:bold;">照片與資料已同步至雲端庫</div></div>`;
                     showModal('🎉 建檔成功', successHtml, () => {
                         productCache[BUILD_STATE.barcode] = { name: name, brand: brand, origin: country, img_url: data.imgUrl || "" };
                         
-                        // 🛑 建完一筆後，隱藏表單並停止相機，回到最前面的按鈕畫面
-                        document.getElementById('build-form-section').style.display = 'none';
                         BUILD_STATE.isProcessing = false;
+                        document.getElementById('build_name').value = ""; 
+                        document.getElementById('build_brand').value = "";
                         stopScanner(); 
-                    });
-                } else { alert("建檔失敗：" + data.message); }
-            }).catch(e => { document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳"; alert("網路異常，上傳失敗"); });
+                    }, false); // 傳入 false 確保沒有取消按鈕
+                } else { 
+                    showModal('⚠️ 建檔失敗', data.message, null, false);
+                }
+            }).catch(e => { 
+                document.getElementById('loading-mask').style.display='none'; btnSubmit.disabled = false; btnSubmit.innerText = "📤 確認上傳"; 
+                showModal('⚠️ 系統提示', '網路異常，上傳失敗，請檢查連線狀態。', null, false);
+            });
         }
     </script>
 </body>
