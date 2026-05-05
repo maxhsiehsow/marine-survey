@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>海廢商品建檔站</title>
     
-    <!-- 🛑 指定讀取資深版專用的 manifest -->
+    <!-- 🛑 指定讀取資深版專用的 manifest，並加上 ?v=2 強制更新快取 -->
     <link rel="manifest" href="manifest_senior.json?v=2">
     <meta name="theme-color" content="#f57c00">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -45,6 +45,11 @@
         .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* 🛑 新增：內建瀏覽器阻擋全黑畫面的樣式 */
+        #line-warning { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 999999; color: white; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        .arrow-icon { font-size: 50px; animation: bounce 1.5s infinite; margin-bottom: 20px; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 11000; justify-content: center; align-items: center; backdrop-filter: blur(4px); animation: fadeIn 0.2s; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; text-align: center; width: 85%; max-width: 340px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transform: scale(0.95); animation: popUp 0.3s forwards; }
         @keyframes popUp { to { transform: scale(1); } }
@@ -53,6 +58,13 @@
 </head>
 <body>
     <div id="loading-mask"><div class="spinner"></div><p id="loading-text" style="margin-top:15px; color:#555; font-weight:bold;">圖鑑資料庫載入中...</p></div>
+
+    <!-- 🛑 新增：阻擋 LINE/FB 內建瀏覽器的警告畫面 -->
+    <div id="line-warning">
+        <div class="arrow-icon">↗️</div>
+        <h1 style="color:white; font-size:26px; margin-bottom:10px;">請點擊右上角<br>使用其他瀏覽器開啟</h1>
+        <p style="color:#ddd; font-size:16px; line-height:1.6;">通訊軟體內建瀏覽器無法安裝 APP。<br>請務必切換至 Chrome 或 Safari 開啟。</p>
+    </div>
 
     <div id="custom-modal" class="modal-overlay">
         <div class="modal-content">
@@ -162,6 +174,13 @@
         let productCache = {}, manufacturerCache = {}, html5Qrcode = null;
 
         window.onload = () => {
+            // 🛑 新增：偵測是否為 LINE 或 FB 內建瀏覽器
+            if (navigator.userAgent.match(/Line|FBAN|FBAV|Instagram/i)) { 
+                document.getElementById('line-warning').style.display = 'flex'; 
+                document.getElementById('loading-mask').style.display = 'none'; 
+                return; // 終止後續載入
+            }
+
             if(localStorage.getItem('builder_name')) document.getElementById('inp_builder_name').value = localStorage.getItem('builder_name');
             const sel = document.getElementById('build_country'); sel.innerHTML = ""; for(let c of Object.keys(COLORS)) { sel.add(new Option(c, c)); }
             
