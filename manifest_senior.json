@@ -1,5 +1,5 @@
 {
-  "id": "/builder-app",
+  "id": "/wilderness-builder",
   "name": "海廢商品建檔站",
   "short_name": "瓶罐建檔",
   "start_url": "./Builder.html",
@@ -9,14 +9,10 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-512.png",
+      "src": "logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
