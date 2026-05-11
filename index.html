@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>荒野瓶罐調查回報站</title>
     
-    <!-- 🛑 指定讀取一般版的 manifest -->
+    <!-- 🛑 強制更新快取，加上 ?v=2 -->
     <link rel="manifest" href="manifest_general.json?v=2">
     <meta name="theme-color" content="#587a30">
     <meta name="mobile-web-app-capable" content="yes">
@@ -82,7 +82,6 @@
         .nav-item.active { color: var(--primary); }
         .nav-item span { display: block; font-size: 24px; margin-bottom: 2px; }
         
-        /* 🛑 確保底部署名樣式完好無缺 */
         .footer-credit { text-align: center; font-size: 13px; color: #90a4ae; margin-top: 30px; padding-bottom: 20px; line-height: 1.6; border-top: 1px dashed #cfd8dc; padding-top: 15px; }
         .footer-credit a { color: var(--primary); text-decoration: none; font-weight: bold; }
         
@@ -91,7 +90,6 @@
         
         #loading-mask { display: flex; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); flex-direction:column; justify-content:center; align-items:center; z-index:99999; backdrop-filter: blur(5px); }
         .spinner { width: 50px; height: 50px; border: 5px solid #eceff1; border-top: 5px solid var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .pie-chart { width: 130px; height: 130px; border-radius: 50%; margin: 10px auto; transition: all 0.3s; border: 2px dashed #ddd; background: transparent; }
         table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; } th, td { border-bottom: 1px solid #eee; padding: 10px 5px; }
@@ -100,6 +98,9 @@
         .dist-override-box h3 { margin: 0 0 10px 0; color: #2e7d32; font-size: 16px; }
         .dist-value-display { font-size: 28px; font-weight: 900; color: #1b5e20; margin-bottom: 10px; font-family: monospace; }
         .dist-edit-input { width: 120px; text-align: center; font-size: 20px; font-weight: bold; color: #1b5e20; padding: 8px; border: 2px solid #4caf50; border-radius: 8px; display: none; margin: 0 auto; }
+        
+        /* 🛑 新增：裸瓶獨立顯示文字樣式 */
+        .bare-info-text { text-align: center; color: #78909c; font-size: 14px; margin-top: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -190,7 +191,6 @@
                 </div>
             </div>
             
-            <!-- 🛑 完美保留：發現大量垃圾區塊 -->
             <div style="margin-top:20px; border-top:1px dashed #ddd; padding-top:15px;">
                 <label style="color:#d32f2f; display:flex; align-items:center; gap:5px;">🚨 發現大量垃圾？</label>
                 <p style="font-size:13px; color:#666; margin:5px 0 10px;">若現場垃圾量超過一台小貨車的量，請協助通報。</p>
@@ -198,7 +198,6 @@
             </div>
         </div>
         
-        <!-- 🛑 完美保留：網頁設計者與信箱 -->
         <div class="footer-credit">網頁規劃設計：荒野保護協會 棲地守護部雁子<br>聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a></div>
     </div>
 
@@ -223,29 +222,36 @@
             </div>
             <div style="display:flex; gap:10px;">
                 <select id="sel_country" style="flex:2;">
+                    <!-- 🛑 優化：將無標籤/裸瓶設為首位預設值 -->
+                    <option value="⚪ 無標籤/裸瓶" selected>⚪ 無標籤/裸瓶</option>
                     <option value="🇹🇼 台灣">🇹🇼 台灣</option><option value="🇨🇳 中國">🇨🇳 中國</option>
                     <option value="🇻🇳 越南">🇻🇳 越南</option><option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
                     <option value="🇹🇭 泰國">🇹🇭 泰國</option><option value="🇮🇩 印尼">🇮🇩 印尼</option>
                     <option value="🇲🇾 馬來西亞">🇲🇾 馬來西亞</option><option value="🇰🇷 韓國">🇰🇷 韓國</option>
                     <option value="🇯🇵 日本">🇯🇵 日本</option><option value="其它">❓ 其它</option>
                 </select>
-                <input type="number" id="inp_qty" value="1" style="flex:1; text-align:center; margin-bottom:0;">
+                <input type="number" id="inp_qty" value="1" min="1" style="flex:1; text-align:center; margin-bottom:0;">
             </div>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button onclick="handleManualAdd()" class="btn-green">➕ 新增</button>
                 <button onclick="undoRecord()" class="btn-outline">↩️ 復原</button>
             </div>
             <hr style="border:0; border-top:1px dashed #eee; margin:20px 0;">
-            <div style="display:flex;">
-                <div style="flex:1; text-align:center;"><div id="css-pie" class="pie-chart"></div></div>
-                <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <div style="width:100%; display:flex; margin-bottom: 15px;">
+                    <div style="flex:1; text-align:center;">
+                        <div id="css-pie" class="pie-chart"></div>
+                        <!-- 🛑 優化：獨立的裸瓶顯示區塊 -->
+                        <div id="bare-display" class="bare-info-text"></div>
+                    </div>
+                    <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
+                </div>
             </div>
         </div>
 
         <h2>🚀 5. 成果上傳</h2>
         <div class="card">
             
-            <!-- ✨ 終極覆寫介面：顯示總距離並允許修改 -->
             <div id="dist-override-section" class="dist-override-box" style="display:none;">
                 <h3>📏 本次調查總距離</h3>
                 <div id="final-dist-display" class="dist-value-display">-- m</div>
@@ -294,7 +300,7 @@
         </div>
     </div>
 
-    <!-- 底部導覽列 (只留兩個，移除AI) -->
+    <!-- 底部導覽列 -->
     <div class="nav-bar">
         <div class="nav-item active" id="nav-basic" onclick="switchTab('basic')"><span>📝</span>基本</div>
         <div class="nav-item" id="nav-record" onclick="switchTab('record')"><span>📊</span>記錄</div>
@@ -307,7 +313,7 @@
         const timers = { 20: { total: 1200, endTime: null, interval: null, running: false, pausedRemainingMs: null } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
-        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575' };
+        const COLORS = { '🇹🇼 台灣': '#e53935', '🇨🇳 中國': '#1e88e5', '🇻🇳 越南': '#8e24aa', '🇵🇭 菲律賓': '#6d4c41', '🇲🇾 馬來西亞': '#8d6e63', '🇮🇩 印尼': '#00acc1', '🇹🇭 泰國': '#ff9800', '🇰🇷 韓國': '#212121', '🇯🇵 日本': '#fbc02d', '🇺🇸 美國': '#3f51b5', '🇦🇺 澳洲': '#009688', '🇩🇪 德國': '#000000', '其它': '#757575', '⚪ 無標籤/裸瓶': '#90a4ae' };
         
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzadRHvxyjNHnV4nf-4PCfCLDe6SgFJrSoGDRo6hODT7SwEqqcVMv3GVTcPSJJ34uAuZA/exec";
 
@@ -416,7 +422,25 @@
 
         function resumeTimer(min){let t=timers[min];let box=document.getElementById(`timer-${min}`);box.classList.add('running');t.interval=setInterval(()=>{const now=Date.now();const diff=t.endTime-now;if(diff<=0){clearInterval(t.interval);t.running=false;box.classList.remove('running');box.classList.add('done');document.getElementById(`time-display-${min}`).innerText="00:00";stopGpsTracking();updateFinalDistanceDisplay();saveState();triggerAlarm();}else{let m=Math.floor((diff/1000)/60).toString().padStart(2,'0');let s=Math.floor((diff/1000)%60).toString().padStart(2,'0');document.getElementById(`time-display-${min}`).innerText=`${m}:${s}`;}},500);}
         function triggerAlarm(){let utterance=new SpeechSynthesisUtterance("時間到，請結束調查");window.speechSynthesis.speak(utterance);showModal('alarm','時間到！','請結束調查並上傳資料',()=>{if(vibrationInterval)clearInterval(vibrationInterval);if(navigator.vibrate)navigator.vibrate(0);});if(navigator.vibrate){navigator.vibrate([500,200,500]);vibrationInterval=setInterval(()=>{navigator.vibrate([500,200,500]);},1500);}}
-        function normalizeName(rawName){if(!rawName)return"其它";let clean=rawName.toString().trim();if(clean.includes("台灣")||clean.includes("Taiwan"))return"🇹🇼 台灣";if(clean.includes("中國")||clean.includes("China")||clean.includes("CN")||clean.includes("大陸"))return"🇨🇳 中國";if(clean.includes("越南")||clean.includes("Vietnam"))return"🇻🇳 越南";if(clean.includes("菲律賓")||clean.includes("Philippines"))return"🇵🇭 菲律賓";if(clean.includes("泰國")||clean.includes("Thailand"))return"🇹🇭 泰國";if(clean.includes("印尼")||clean.includes("Indonesia"))return"🇮🇩 印尼";if(clean.includes("馬來西亞"))return"🇲🇾 馬來西亞";if(clean.includes("韓國")||clean.includes("Korea"))return"🇰🇷 韓國";if(clean.includes("日本")||clean.includes("Japan"))return"🇯🇵 日本";for(let code in PREFIX_DB){if(PREFIX_DB[code]===clean)return clean;}if(Object.keys(COLORS).includes(clean))return clean;return"其它";}
+        
+        // 🛑 優化：normalizeName 支援裸瓶過濾
+        function normalizeName(rawName){
+            if(!rawName)return"其它";
+            let clean=rawName.toString().trim();
+            if(clean === "⚪ 無標籤/裸瓶") return clean;
+            if(clean.includes("台灣")||clean.includes("Taiwan"))return"🇹🇼 台灣";
+            if(clean.includes("中國")||clean.includes("China")||clean.includes("CN")||clean.includes("大陸"))return"🇨🇳 中國";
+            if(clean.includes("越南")||clean.includes("Vietnam"))return"🇻🇳 越南";
+            if(clean.includes("菲律賓")||clean.includes("Philippines"))return"🇵🇭 菲律賓";
+            if(clean.includes("泰國")||clean.includes("Thailand"))return"🇹🇭 泰國";
+            if(clean.includes("印尼")||clean.includes("Indonesia"))return"🇮🇩 印尼";
+            if(clean.includes("馬來西亞"))return"🇲🇾 馬來西亞";
+            if(clean.includes("韓國")||clean.includes("Korea"))return"🇰🇷 韓國";
+            if(clean.includes("日本")||clean.includes("Japan"))return"🇯🇵 日本";
+            for(let code in PREFIX_DB){if(PREFIX_DB[code]===clean)return clean;}
+            if(Object.keys(COLORS).includes(clean))return clean;
+            return"其它";
+        }
         
         function switchTab(tabName){
             document.querySelectorAll('.container').forEach(el=>el.classList.remove('active-tab'));
@@ -437,7 +461,6 @@
             reader.readAsDataURL(file);
         }
         
-        // 🛑 主掃描器邏輯 (支援確認與取消)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block';
@@ -456,10 +479,10 @@
                 else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
                 
                 if (isHit) {
-                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px;">✨ 發現已知商品</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333;">${displayName}</div></div></div>`;
+                    const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px;">✨ 掃描成功</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333;">${displayName}</div></div></div>`;
                     showModal('scan_hit', '掃描成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); });
                 } else {
-                    const modalHtml = `<div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px;">🔍 發現未知商品</div><div style="font-size:28px; font-weight:900; color:#e65100; font-family:monospace; margin-bottom:10px;">${txt}</div><div style="font-size:18px; font-weight:bold; color:#ff9800; margin-bottom:15px;">${displayCountry}</div><div style="color:#555; font-size:14px; font-weight:bold; background:white; padding:10px; border-radius:8px;">資料庫查無此條碼<br>若點擊確定，已記錄為 1 筆，建檔交由專門夥伴處理。</div></div>`;
+                    const modalHtml = `<div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px;">🔍 未知商品</div><div style="font-size:28px; font-weight:900; color:#e65100; font-family:monospace; margin-bottom:10px;">${txt}</div><div style="font-size:18px; font-weight:bold; color:#ff9800; margin-bottom:15px;">${displayCountry}</div><div style="color:#555; font-size:14px; font-weight:bold; background:white; padding:10px; border-radius:8px;">資料庫查無此條碼<br>已記錄為 1 筆，建檔交由專門夥伴處理。</div></div>`;
                     showModal('scan_miss', '掃描成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); });
                 }
             }, () => {});
@@ -481,7 +504,50 @@
             getBottleGpsAsync(coords => { addRecord(document.getElementById('sel_country').value,parseInt(document.getElementById('inp_qty').value),{source:"Manual_Select", bottleGps: coords}); btn.disabled = false; btn.innerText = originalText; });
         }
         
-        function updateUI(){document.getElementById('disp_count').innerText=STATE.count;const tbody=document.getElementById('stats-body');tbody.innerHTML="";let grad=[],deg=0;if(STATE.count===0){document.getElementById('css-pie').style.background="transparent";document.getElementById('css-pie').style.border="2px dashed #ddd";return;}else{document.getElementById('css-pie').style.border="4px solid #fff";}for(const[key,val]of Object.entries(STATE.stats)){const color=COLORS[key]||'#757575';const pct=((val/STATE.count)*100).toFixed(1);tbody.innerHTML+=`<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`;const d=(val/STATE.count)*360;grad.push(`${color} ${deg}deg ${deg+d}deg`);deg+=d;}document.getElementById('css-pie').style.background=`conic-gradient(${grad.join(", ")})`;}
+        // 🛑 優化：圓餅圖獨立過濾裸瓶邏輯
+        function updateUI(){
+            document.getElementById('disp_count').innerText = STATE.count;
+            const tbody = document.getElementById('stats-body');
+            const bareBox = document.getElementById('bare-display');
+            tbody.innerHTML = "";
+            bareBox.innerText = "";
+            let grad = [], deg = 0;
+            
+            if(STATE.count === 0){
+                document.getElementById('css-pie').style.background = "transparent";
+                document.getElementById('css-pie').style.border = "2px dashed #ddd";
+                return;
+            }
+            
+            const bareCount = STATE.stats["⚪ 無標籤/裸瓶"] || 0;
+            const identifiedTotal = STATE.count - bareCount;
+
+            if (bareCount > 0) {
+                bareBox.innerText = `另有無標籤裸瓶 ${bareCount} 個`;
+            }
+
+            for(const [key, val] of Object.entries(STATE.stats)){
+                if (key === "⚪ 無標籤/裸瓶") continue; // 抽離裸瓶
+                
+                const color = COLORS[key] || '#757575';
+                const pct = identifiedTotal > 0 ? ((val / identifiedTotal) * 100).toFixed(1) : 0;
+                tbody.innerHTML += `<tr><td><span style='color:${color}'>■</span> ${key} <small>(${pct}%)</small></td><td>${val}</td></tr>`;
+                
+                if (identifiedTotal > 0) {
+                    const d = (val / identifiedTotal) * 360;
+                    grad.push(`${color} ${deg}deg ${deg+d}deg`);
+                    deg += d;
+                }
+            }
+            
+            if (identifiedTotal > 0) {
+                document.getElementById('css-pie').style.border = "4px solid #fff";
+                document.getElementById('css-pie').style.background = `conic-gradient(${grad.join(", ")})`;
+            } else {
+                document.getElementById('css-pie').style.background = "transparent";
+                document.getElementById('css-pie').style.border = "2px dashed #ddd";
+            }
+        }
 
         function updateFinalDistanceDisplay() {
             const section = document.getElementById('dist-override-section'); const display = document.getElementById('final-dist-display');
@@ -500,25 +566,53 @@
             document.getElementById('final-dist-display').innerText = STATE.surveyDistance + " m"; document.getElementById('final-dist-display').style.display = 'block'; document.getElementById('btn-edit-dist').style.display = 'inline-block';
         }
 
+        // 🛑 優化：整批新增邏輯
         function addRecord(country, qty, details) {
-            let safeName = normalizeName(country); if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; STATE.stats[safeName] += qty; STATE.count += qty;
-            const logEntry = details ? JSON.parse(JSON.stringify(details)) : {}; logEntry.source = logEntry.source || "Manual_Select"; logEntry.barcode = logEntry.barcode || ""; logEntry.bottleGps = logEntry.bottleGps || "未定位"; logEntry.name = logEntry.name || ""; logEntry.brand = logEntry.brand || ""; logEntry.img_url = logEntry.img_url || ""; logEntry.origin = safeName;
+            let safeName = normalizeName(country); 
+            if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; 
+            STATE.stats[safeName] += qty; 
+            STATE.count += qty;
+            
+            const logEntry = details ? JSON.parse(JSON.stringify(details)) : {}; 
+            logEntry.source = logEntry.source || "Manual_Select"; 
+            logEntry.barcode = logEntry.barcode || ""; 
+            logEntry.bottleGps = logEntry.bottleGps || "未定位"; 
+            logEntry.name = logEntry.name || ""; 
+            logEntry.brand = logEntry.brand || ""; 
+            logEntry.img_url = logEntry.img_url || ""; 
+            logEntry.origin = safeName;
+            logEntry.qty = qty; // 記錄批次數量
+            
             const shouldLog = (logEntry.source !== "Manual_Select" && logEntry.source !== "Manual_Prefix");
-            for (let i = 0; i < qty; i++) { STATE.historyStack.push({ key: safeName, qty: 1, hasLog: shouldLog }); if (shouldLog) { STATE.scanLogs.push(logEntry); } }
+            
+            // 將整筆操作推入棧中
+            STATE.historyStack.push({ key: safeName, qty: qty, hasLog: shouldLog, details: logEntry }); 
+            if (shouldLog) { 
+                STATE.scanLogs.push(logEntry); 
+            }
             updateUI(); saveState();
         }
 
+        // 🛑 優化：整批復原邏輯
         function undoRecord() {
             if (STATE.historyStack.length === 0) return;
-            const last = STATE.historyStack.pop(); STATE.stats[last.key] -= last.qty; if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; STATE.count -= last.qty;
-            if (last.hasLog && STATE.scanLogs.length > 0) { STATE.scanLogs.pop(); } updateUI(); saveState();
+            const last = STATE.historyStack.pop(); 
+            
+            STATE.stats[last.key] -= last.qty; 
+            if (STATE.stats[last.key] <= 0) delete STATE.stats[last.key]; 
+            STATE.count -= last.qty;
+            
+            if (last.hasLog && STATE.scanLogs.length > 0) { 
+                STATE.scanLogs.pop(); 
+            } 
+            updateUI(); saveState();
         }
 
         function uploadData(){
             if(STATE.count===0){showModal('warning','無資料','請先收集數據再上傳',null);return;}
             if(!document.getElementById('inp_name').value){showModal('warning','資料未填','請填寫 [填表人姓名]',()=>switchTab('basic'));return;}
             
-            // 🛑 前端也加上保護，確保電話送出時必定加上單引號
+            // 🛑 前端電話單引號保護
             var safePhone = document.getElementById('inp_phone').value;
             if (safePhone && !safePhone.startsWith("'")) safePhone = "'" + safePhone;
 
@@ -531,9 +625,19 @@
 
             localStorage.setItem('surveyor_name',document.getElementById('inp_name').value); localStorage.setItem('surveyor_phone',document.getElementById('inp_phone').value); localStorage.setItem('surveyor_participant_names',document.getElementById('inp_participant_names').value); 
             
-            let statsOut={cnt_tw:0,cnt_cn:0,cnt_vn:0,cnt_ph:0,cnt_my:0,cnt_id:0,cnt_th:0,cnt_kr:0,cnt_jp:0,cnt_other:""}; let others=[];
+            let statsOut={cnt_tw:0,cnt_cn:0,cnt_vn:0,cnt_ph:0,cnt_my:0,cnt_id:0,cnt_th:0,cnt_kr:0,cnt_jp:0,cnt_other:"", cnt_bare:0}; let others=[];
             for(let k in STATE.stats){
-                if(k.includes("台灣"))statsOut.cnt_tw+=STATE.stats[k]; else if(k.includes("中國"))statsOut.cnt_cn+=STATE.stats[k]; else if(k.includes("越南"))statsOut.cnt_vn+=STATE.stats[k]; else if(k.includes("菲律賓"))statsOut.cnt_ph+=STATE.stats[k]; else if(k.includes("泰國"))statsOut.cnt_th+=STATE.stats[k]; else if(k.includes("印尼"))statsOut.cnt_id+=STATE.stats[k]; else if(k.includes("馬來西亞"))statsOut.cnt_my+=STATE.stats[k]; else if(k.includes("韓國"))statsOut.cnt_kr+=STATE.stats[k]; else if(k.includes("日本"))statsOut.cnt_jp+=STATE.stats[k]; else others.push(`${k}*${STATE.stats[k]}`);
+                if(k === "⚪ 無標籤/裸瓶") statsOut.cnt_bare = STATE.stats[k];
+                else if(k.includes("台灣"))statsOut.cnt_tw+=STATE.stats[k]; 
+                else if(k.includes("中國"))statsOut.cnt_cn+=STATE.stats[k]; 
+                else if(k.includes("越南"))statsOut.cnt_vn+=STATE.stats[k]; 
+                else if(k.includes("菲律賓"))statsOut.cnt_ph+=STATE.stats[k]; 
+                else if(k.includes("泰國"))statsOut.cnt_th+=STATE.stats[k]; 
+                else if(k.includes("印尼"))statsOut.cnt_id+=STATE.stats[k]; 
+                else if(k.includes("馬來西亞"))statsOut.cnt_my+=STATE.stats[k]; 
+                else if(k.includes("韓國"))statsOut.cnt_kr+=STATE.stats[k]; 
+                else if(k.includes("日本"))statsOut.cnt_jp+=STATE.stats[k]; 
+                else others.push(`${k}*${STATE.stats[k]}`);
             }
             statsOut.cnt_other=others.join(", ");
             
