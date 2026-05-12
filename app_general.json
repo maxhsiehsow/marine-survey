@@ -1,8 +1,8 @@
 {
-  "id": "wilderness-general-v6",
+  "id": "wilderness-general-v7",
   "name": "荒野瓶罐調查回報站",
   "short_name": "瓶罐調查",
-  "start_url": "./index.html?mode=standalone",
+  "start_url": "./index.html?mode=pwa",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f4f7f4",
