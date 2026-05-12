@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>荒野瓶罐調查回報站</title>
     
-    <!-- 🛑 強制更新快取，加上 ?v=3 -->
-    <link rel="manifest" href="manifest_general.json?v=3">
+    <!-- 🛑 讀取全新的設定檔 (完全更換檔名打破快取) -->
+    <link rel="manifest" href="app_general.json">
     <meta name="theme-color" content="#587a30">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -423,7 +423,6 @@
         function resumeTimer(min){let t=timers[min];let box=document.getElementById(`timer-${min}`);box.classList.add('running');t.interval=setInterval(()=>{const now=Date.now();const diff=t.endTime-now;if(diff<=0){clearInterval(t.interval);t.running=false;box.classList.remove('running');box.classList.add('done');document.getElementById(`time-display-${min}`).innerText="00:00";stopGpsTracking();updateFinalDistanceDisplay();saveState();triggerAlarm();}else{let m=Math.floor((diff/1000)/60).toString().padStart(2,'0');let s=Math.floor((diff/1000)%60).toString().padStart(2,'0');document.getElementById(`time-display-${min}`).innerText=`${m}:${s}`;}},500);}
         function triggerAlarm(){let utterance=new SpeechSynthesisUtterance("時間到，請結束調查");window.speechSynthesis.speak(utterance);showModal('alarm','時間到！','請結束調查並上傳資料',()=>{if(vibrationInterval)clearInterval(vibrationInterval);if(navigator.vibrate)navigator.vibrate(0);});if(navigator.vibrate){navigator.vibrate([500,200,500]);vibrationInterval=setInterval(()=>{navigator.vibrate([500,200,500]);},1500);}}
         
-        // 🛑 優化：normalizeName 支援裸瓶過濾
         function normalizeName(rawName){
             if(!rawName)return"其它";
             let clean=rawName.toString().trim();
@@ -504,7 +503,6 @@
             getBottleGpsAsync(coords => { addRecord(document.getElementById('sel_country').value,parseInt(document.getElementById('inp_qty').value),{source:"Manual_Select", bottleGps: coords}); btn.disabled = false; btn.innerText = originalText; });
         }
         
-        // 🛑 優化：圓餅圖獨立過濾裸瓶邏輯
         function updateUI(){
             document.getElementById('disp_count').innerText = STATE.count;
             const tbody = document.getElementById('stats-body');
@@ -527,7 +525,7 @@
             }
 
             for(const [key, val] of Object.entries(STATE.stats)){
-                if (key === "⚪ 無標籤/裸瓶") continue; // 抽離裸瓶
+                if (key === "⚪ 無標籤/裸瓶") continue; 
                 
                 const color = COLORS[key] || '#757575';
                 const pct = identifiedTotal > 0 ? ((val / identifiedTotal) * 100).toFixed(1) : 0;
@@ -566,7 +564,6 @@
             document.getElementById('final-dist-display').innerText = STATE.surveyDistance + " m"; document.getElementById('final-dist-display').style.display = 'block'; document.getElementById('btn-edit-dist').style.display = 'inline-block';
         }
 
-        // 🛑 優化：整批新增邏輯
         function addRecord(country, qty, details) {
             let safeName = normalizeName(country); 
             if (!STATE.stats[safeName]) STATE.stats[safeName] = 0; 
@@ -581,11 +578,10 @@
             logEntry.brand = logEntry.brand || ""; 
             logEntry.img_url = logEntry.img_url || ""; 
             logEntry.origin = safeName;
-            logEntry.qty = qty; // 記錄批次數量
+            logEntry.qty = qty; 
             
             const shouldLog = (logEntry.source !== "Manual_Select" && logEntry.source !== "Manual_Prefix");
             
-            // 將整筆操作推入棧中
             STATE.historyStack.push({ key: safeName, qty: qty, hasLog: shouldLog, details: logEntry }); 
             if (shouldLog) { 
                 STATE.scanLogs.push(logEntry); 
@@ -593,7 +589,6 @@
             updateUI(); saveState();
         }
 
-        // 🛑 優化：整批復原邏輯
         function undoRecord() {
             if (STATE.historyStack.length === 0) return;
             const last = STATE.historyStack.pop(); 
@@ -612,7 +607,6 @@
             if(STATE.count===0){showModal('warning','無資料','請先收集數據再上傳',null);return;}
             if(!document.getElementById('inp_name').value){showModal('warning','資料未填','請填寫 [填表人姓名]',()=>switchTab('basic'));return;}
             
-            // 🛑 前端電話單引號保護
             var safePhone = document.getElementById('inp_phone').value;
             if (safePhone && !safePhone.startsWith("'")) safePhone = "'" + safePhone;
 
