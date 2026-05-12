@@ -1,7 +1,7 @@
 {
   "id": "/wilderness-general",
   "name": "荒野瓶罐調查回報站",
-  "short_name": "一般調查",
+  "short_name": "瓶罐調查",
   
   /* 🛑 終極破解：強制系統視為一般版專屬 APP */
   "start_url": "./TrashScan.html?app=general",
