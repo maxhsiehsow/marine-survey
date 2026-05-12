@@ -1,7 +1,7 @@
 {
   "id": "/wilderness-builder",
   "name": "海廢商品建檔站",
-  "short_name": "資深建檔",
+  "short_name": "瓶罐建檔",
   
   /* 🛑 終極破解：在原本的網址後面加上問號小尾巴，強制系統視為新程式 */
   "start_url": "./Builder.html?app=builder",
