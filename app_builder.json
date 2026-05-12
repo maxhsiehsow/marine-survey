@@ -1,8 +1,9 @@
 {
-  "id": "wilderness-builder-v5",
+  "id": "wilderness-builder-v6",
   "name": "海廢商品建檔站",
-  "short_name": "瓶罐建檔",
+  "short_name": "資深建檔",
   "start_url": "./Builder.html?mode=standalone",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#fff3e0",
   "theme_color": "#f57c00",
