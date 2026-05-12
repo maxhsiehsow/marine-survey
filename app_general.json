@@ -1,7 +1,7 @@
 {
   "id": "wilderness-general-v6",
   "name": "荒野瓶罐調查回報站",
-  "short_name": "一般調查",
+  "short_name": "瓶罐調查",
   "start_url": "./index.html?mode=standalone",
   "scope": "./",
   "display": "standalone",
