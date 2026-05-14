@@ -244,13 +244,13 @@
                                 <div class="bg-white border border-slate-200 p-5 rounded-lg shadow-sm">
                                     <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2"><i class="ph-fill ph-keyboard text-emerald-600"></i> 手動輸入記錄</h4>
                                     <p class="text-sm text-slate-600 mb-4">如果條碼因磨損不完整，可手動輸入條碼「前 3 碼」進行國家別查詢（例如 471 代表台灣），確認無誤後再加入記錄。</p>
-                                    <div class="image-placeholder min-h-[150px] m-0"><span></span></div>
+                                    <img src="./images/keyin1.gif" class="manual-image" alt="手動輸入">
                                 </div>
                                 
                                 <div class="bg-white border border-slate-200 p-5 rounded-lg shadow-sm">
                                     <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2"><i class="ph-fill ph-stack text-emerald-600"></i> 批次輸入</h4>
-                                    <p class="text-sm text-slate-600 mb-4">如果條碼完全不完整，但量大且外觀可明確分辨出國家別，可下拉選擇常見國家別，填寫數量後一次批次加入。</p>
-                                    <div class="image-placeholder min-h-[150px] m-0"><span></span></div>
+                                    <p class="text-sm text-slate-600 mb-4">裸瓶或無條碼可直接累積計數，如果前3碼不完整，但能明確分辨出國家別，可下拉選擇常見國家別，填寫數量後批次加入。</p>
+                                    <img src="./images/keyin2.gif" class="manual-image" alt="批次輸入">
                                 </div>
                             </div>
 
@@ -271,23 +271,18 @@
                         
                         <div class="space-y-6">
                             <div class="bg-white border border-slate-200 p-5 rounded-lg shadow-sm">
-                                <h4 class="font-bold text-slate-700 mb-2">距離與備註</h4>
-                                <p class="text-sm text-slate-600 mb-2">系統會自動計算本次調查總距離（功能測試中），如果誤差過大，先預留了「修改」按鈕供手動編輯。</p>
+                                <h4 class="font-bold text-slate-700 mb-2">備註</h4>
                                 <p class="text-sm text-slate-600">最下方的「其他記錄」欄位，任何認為值得記錄的內容都可以寫下（如在測試系統，請記得於此註記）。</p>
                             </div>
 
                             <div class="bg-white border border-slate-200 p-5 rounded-lg shadow-sm border-l-4 border-l-blue-500">
                                 <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-2"><i class="ph-fill ph-image"></i> 照片上傳規範</h4>
-                                <p class="text-sm text-slate-600 font-bold text-red-600 mb-3">⚠️ 極度強烈建議：點選相簿中的照片上傳，防閃退！（詳見實戰對策）</p>
                                 <ul class="list-disc list-inside space-y-1 text-sm text-slate-600 mb-4">
                                     <li><strong>現場照片：</strong> 需包含環境照 1 張、人員合照 1 張。</li>
                                     <li><strong>熱點照：</strong> 垃圾密集處，最多 2 張。</li>
                                     <li><strong>特殊瓶罐照：</strong> 特殊品牌或罕見垃圾，最多 4 張。</li>
                                 </ul>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div class="image-placeholder min-h-[150px] m-0"><span class="text-xs">[Image 照片上傳區塊]</span></div>
-                                    <div class="image-placeholder min-h-[150px] m-0"><span class="text-xs">[Image 手機相簿挑選]</span></div>
-                                </div>
+                                    <img src="./images/photo.jpg" class="manual-image" alt="照片上傳">
                             </div>
                             
                             <div class="bg-emerald-50 border border-emerald-200 p-5 rounded-lg text-center">
@@ -295,7 +290,7 @@
                                 <h4 class="font-bold text-emerald-800 mb-2">完成記錄與上傳</h4>
                                 <p class="text-sm text-emerald-700 mb-2">按下「🚀 上傳資料至雲端」即會送出。<strong class="text-red-600">（在顯示成功前，請勿關閉程式或螢幕）</strong></p>
                                 <p class="text-sm text-emerald-700">收到上傳成功動畫後，資料除了個資外會自動清空，您可以繼續下一筆調查。</p>
-                                <div class="image-placeholder min-h-[120px] max-w-sm mx-auto mt-4"><span class="text-xs">[Image 上傳成功畫面]</span></div>
+                                <div class="image-placeholder min-h-[120px] max-w-sm mx-auto mt-4"><span class="text-xs"><img src="./images/uploadOK.jpg" class="manual-image" alt="照片上傳"></span></div>
                             </div>
                         </div>
                     </div>
