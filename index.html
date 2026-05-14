@@ -99,7 +99,6 @@
         .dist-value-display { font-size: 28px; font-weight: 900; color: #1b5e20; margin-bottom: 10px; font-family: monospace; }
         .dist-edit-input { width: 120px; text-align: center; font-size: 20px; font-weight: bold; color: #1b5e20; padding: 8px; border: 2px solid #4caf50; border-radius: 8px; display: none; margin: 0 auto; }
         
-        /* 🛑 新增：裸瓶獨立顯示文字樣式 */
         .bare-info-text { text-align: center; color: #78909c; font-size: 14px; margin-top: 12px; font-weight: bold; }
     </style>
 </head>
@@ -222,7 +221,6 @@
             </div>
             <div style="display:flex; gap:10px;">
                 <select id="sel_country" style="flex:2;">
-                    <!-- 🛑 優化：將無標籤/裸瓶設為首位預設值 -->
                     <option value="⚪ 無標籤/裸瓶" selected>⚪ 無標籤/裸瓶</option>
                     <option value="🇹🇼 台灣">🇹🇼 台灣</option><option value="🇨🇳 中國">🇨🇳 中國</option>
                     <option value="🇻🇳 越南">🇻🇳 越南</option><option value="🇵🇭 菲律賓">🇵🇭 菲律賓</option>
@@ -241,7 +239,6 @@
                 <div style="width:100%; display:flex; margin-bottom: 15px;">
                     <div style="flex:1; text-align:center;">
                         <div id="css-pie" class="pie-chart"></div>
-                        <!-- 🛑 優化：獨立的裸瓶顯示區塊 -->
                         <div id="bare-display" class="bare-info-text"></div>
                     </div>
                     <div style="flex:1;"><table id="stats-table"><tbody id="stats-body"></tbody></table></div>
@@ -309,7 +306,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
-        const STATE = { isProcessing: false, count: 0, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, special1: null, special2: null, special3: null, special4: null }, scanners: { record: null }, surveyPoints: [], productCache: {}, manufacturerCache: {}, map: null, userMarker: null, selectedPoint: null, surveyDistance: 0, latestGps: null, gpsTracker: null };
+        const STATE = { isProcessing: false, count: 0, stats: {}, historyStack: [], scanLogs: [], currentCity: "未定位", imgs: { env: null, group: null, hotspot1: null, hotspot2: null, special1: null, special2: null, special3: null, special4: null }, scanners: { record: null }, surveyPoints: [], productCache: {}, map: null, userMarker: null, selectedPoint: null, surveyDistance: 0, latestGps: null, gpsTracker: null };
         const timers = { 20: { total: 1200, endTime: null, interval: null, running: false, pausedRemainingMs: null } };
         const GS1_RANGES = [ { s: 0, e: 19, c: "🇺🇸 美國" }, { s: 30, e: 39, c: "🇺🇸 美國" }, { s: 60, e: 139, c: "🇺🇸 美國" }, { s: 754, e: 755, c: "🇨🇦 加拿大" }, { s: 750, e: 750, c: "🇲🇽 墨西哥" }, { s: 300, e: 379, c: "🇫🇷 法國" }, { s: 400, e: 440, c: "🇩🇪 德國" }, { s: 500, e: 509, c: "🇬🇧 英國" }, { s: 800, e: 839, c: "🇮🇹 義大利" }, { s: 840, e: 849, c: "🇪🇸 西班牙" }, { s: 460, e: 469, c: "🇷🇺 俄羅斯" }, { s: 540, e: 549, c: "🇧🇪 比利時" }, { s: 570, e: 579, c: "🇩🇰 丹麥" }, { s: 590, e: 590, c: "🇵🇱 波蘭" }, { s: 599, e: 599, c: "🇭🇺 匈牙利" }, { s: 640, e: 649, c: "🇫🇮 芬蘭" }, { s: 700, e: 709, c: "🇳🇴 挪威" }, { s: 730, e: 739, c: "🇸🇪 瑞典" }, { s: 760, e: 769, c: "🇨🇭 瑞士" }, { s: 870, e: 879, c: "🇳🇱 荷蘭" }, { s: 900, e: 919, c: "🇦🇹 奧地利" }, { s: 560, e: 560, c: "🇵🇹 葡萄牙" }, { s: 520, e: 521, c: "🇬🇷 希臘" }, { s: 539, e: 539, c: "🇮🇪 愛爾蘭" }, { s: 859, e: 859, c: "🇨🇿 捷克" }, { s: 868, e: 869, c: "🇹🇷 土耳其" }, { s: 450, e: 459, c: "🇯🇵 日本" }, { s: 490, e: 499, c: "🇯🇵 日本" }, { s: 471, e: 471, c: "🇹🇼 台灣" }, { s: 690, e: 699, c: "🇨🇳 中國" }, { s: 489, e: 489, c: "🇭🇰 香港" }, { s: 958, e: 958, c: "🇲🇴 澳門" }, { s: 880, e: 880, c: "🇰🇷 韓國" }, { s: 885, e: 885, c: "🇹🇭 泰國" }, { s: 893, e: 893, c: "🇻🇳 越南" }, { s: 480, e: 480, c: "🇵🇭 菲律賓" }, { s: 899, e: 899, c: "🇮🇩 印尼" }, { s: 955, e: 955, c: "🇲🇾 馬來西亞" }, { s: 888, e: 888, c: "🇸🇬 新加坡" }, { s: 890, e: 890, c: "🇮🇳 印度" }, { s: 884, e: 884, c: "🇰🇭 柬埔寨" }, { s: 883, e: 883, c: "🇲🇲 緬甸" }, { s: 896, e: 896, c: "🇵🇰 巴基斯坦" }, { s: 930, e: 939, c: "🇦🇺 澳洲" }, { s: 940, e: 949, c: "🇳🇿 紐西蘭" }, { s: 600, e: 601, c: "🇿🇦 南非" }, { s: 615, e: 615, c: "🇳🇬 奈及利亞" }, { s: 789, e: 790, c: "🇧🇷 巴西" }, { s: 779, e: 779, c: "🇦🇷 阿根廷" }, { s: 780, e: 780, c: "🇨🇱 智利" } ];
         const PREFIX_DB = {}; GS1_RANGES.forEach(r => { for (let i = r.s; i <= r.e; i++) PREFIX_DB[i.toString().padStart(3, '0')] = r.c; });
@@ -342,7 +339,9 @@
         window.onload = () => { 
             if (navigator.userAgent.match(/Line/i)) { document.getElementById('line-warning').style.display = 'flex'; document.getElementById('loading-mask').style.display = 'none'; return; }
             if(localStorage.getItem('surveyor_name')) document.getElementById('inp_name').value = localStorage.getItem('surveyor_name'); if(localStorage.getItem('surveyor_phone')) document.getElementById('inp_phone').value = localStorage.getItem('surveyor_phone'); if(localStorage.getItem('surveyor_participant_names')) document.getElementById('inp_participant_names').value = localStorage.getItem('surveyor_participant_names');
-            restoreState(); checkOfflineQueue(); updateNetworkStatus(); window.addEventListener('online', updateNetworkStatus); window.addEventListener('offline', updateNetworkStatus); loadSurveyPoints(); loadProductDB(); setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
+            restoreState(); checkOfflineQueue(); updateNetworkStatus(); window.addEventListener('online', updateNetworkStatus); window.addEventListener('offline', updateNetworkStatus); loadSurveyPoints(); 
+            loadProductDB();
+            setTimeout(() => { document.getElementById('loading-mask').style.display = 'none'; switchTab('basic'); }, 800); 
         };
 
         function saveState() { 
@@ -369,7 +368,15 @@
         }
         
         function clearState() { localStorage.removeItem('survey_session_general'); }
-        function loadProductDB() { if (!navigator.onLine) return; fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) }).then(res => res.json()).then(data => { if(data.status === "success") { STATE.productCache = data.products; STATE.manufacturerCache = data.manufacturers; } }).catch(e => console.error("DB Load Error:", e)); }
+        
+        function loadProductDB() { 
+            if (!navigator.onLine) return; 
+            fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "getProducts" }) })
+            .then(res => res.json())
+            .then(data => { if(data.status === "success") { STATE.productCache = data.products; } })
+            .catch(e => console.error("DB Load Error:", e)); 
+        }
+
         function loadSurveyPoints(){if(!navigator.onLine)return;fetch(GOOGLE_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:"getPoints"})}).then(res=>res.json()).then(data=>{if(data.status==="success"){STATE.surveyPoints=data.points;}}).catch(e=>console.error(e));}
         function selectPoint(p){STATE.selectedPoint=p;document.querySelectorAll('.point-item').forEach(el=>el.classList.remove('selected'));const btn=document.getElementById('btn-nav-go');btn.innerText=`✅ 確認選擇：${p.name}`;btn.disabled=false;}
         function navigateToSelected(){ if(!STATE.selectedPoint)return; const p=STATE.selectedPoint; document.getElementById('inp_gps').value=`${p.lat}, ${p.lng}`; document.getElementById('inp_city').value=p.name; document.getElementById('inp_point').value=p.id; STATE.currentCity=p.name; saveState(); closeMap(); if(confirm(`已填入樣點：${p.name}\n\n是否開啟 Google Maps 導航前往？`)){ const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`; window.open(mapUrl, '_blank'); } }
@@ -460,6 +467,7 @@
             reader.readAsDataURL(file);
         }
         
+        // 🛑 核心修改：大幅簡化掃描判定邏輯 (只剩 Case A 命中 與 Case C 未知)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block';
@@ -469,20 +477,44 @@
                 STATE.isProcessing = true; STATE.scanners.record.pause();
                 
                 let tempGps = "未定位"; getBottleGpsAsync(coords => { tempGps = coords; }); 
-                let manuData = null;
-                if (STATE.manufacturerCache) { for (let i = 12; i >= 6; i--) { const prefix = txt.substring(0, i); if (STATE.manufacturerCache[prefix]) { manuData = STATE.manufacturerCache[prefix]; break; } } }
+                
+                // 1. 直接比對「常見商品庫」
                 const prodData = STATE.productCache ? STATE.productCache[txt] : null;
                 let displayCountry = getCountryFromCode(txt), displayBrand = "", displayName = "", displayImg = "", logSource = "", isHit = false;
                 
-                if (prodData) { isHit = true; logSource = "Local_Product"; displayCountry = prodData.origin || displayCountry; displayBrand = prodData.brand || (manuData ? manuData.name : ""); displayName = prodData.name; displayImg = prodData.img_url; } 
-                else if (manuData) { isHit = true; logSource = "Local_Manufacturer"; displayBrand = manuData.name; displayName = "(未建檔商品)"; }
+                if (prodData) { 
+                    // 🟢 情況 A：命中商品庫
+                    isHit = true; 
+                    displayCountry = prodData.origin || displayCountry; 
+                    displayBrand = prodData.brand || ""; 
+                    displayName = prodData.name; 
+                    displayImg = prodData.img_url; 
+                    
+                    // 判斷此商品是否已經有照片 (依據網址長度簡單判斷)
+                    if (displayImg && displayImg.length > 5) {
+                        logSource = "Local_Product_Ready"; // 有照片
+                    } else {
+                        logSource = "Local_Product_NoImg"; // 缺照片 (需通報補拍)
+                    }
+                }
+                // 🔴 情況 C：找不到，直接視為未知商品 (移除原本的情況 B 廠商比對)
                 
                 if (isHit) {
                     const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px;">✨ 掃描成功</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333;">${displayName}</div></div></div>`;
-                    showModal('scan_hit', '掃描成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); });
+                    showModal('scan_hit', '掃描成功', modalHtml, () => { 
+                        addRecord(displayCountry, 1, { barcode: txt, name: displayName, brand: displayBrand, origin: displayCountry, img_url: displayImg, source: logSource, bottleGps: tempGps }); 
+                        setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); 
+                    }, () => { 
+                        setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); 
+                    });
                 } else {
                     const modalHtml = `<div style="background:#fff8e1; padding:15px; border-radius:16px; border:2px solid #ff9800; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#f57c00; margin-bottom:5px;">🔍 未知商品</div><div style="font-size:28px; font-weight:900; color:#e65100; font-family:monospace; margin-bottom:10px;">${txt}</div><div style="font-size:18px; font-weight:bold; color:#ff9800; margin-bottom:15px;">${displayCountry}</div><div style="color:#555; font-size:14px; font-weight:bold; background:white; padding:10px; border-radius:8px;">資料庫查無此條碼<br>已記錄為 1 筆，建檔交由專門夥伴處理。</div></div>`;
-                    showModal('scan_miss', '掃描成功', modalHtml, () => { addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); }, () => { setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); });
+                    showModal('scan_miss', '掃描成功', modalHtml, () => { 
+                        addRecord(displayCountry, 1, { barcode: txt, name: "未知商品", source: "Unknown", bottleGps: tempGps }); 
+                        setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 800); 
+                    }, () => { 
+                        setTimeout(() => { STATE.isProcessing = false; STATE.scanners.record.resume(); }, 500); 
+                    });
                 }
             }, () => {});
         }
