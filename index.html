@@ -612,7 +612,7 @@
             logEntry.origin = safeName;
             logEntry.qty = qty; 
             
-            const shouldLog = (logEntry.source !== "Manual_Select" && logEntry.source !== "Manual_Prefix");
+            const shouldLog = true;
             
             STATE.historyStack.push({ key: safeName, qty: qty, hasLog: shouldLog, details: logEntry }); 
             if (shouldLog) { 
