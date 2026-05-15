@@ -133,18 +133,14 @@
                     <li>
                         <a href="#senior" class="font-bold text-build-orange hover:text-build-dark block transition mt-3">第二章：瓶罐建檔操作</a>
                         <ul class="pl-4 mt-2 space-y-2 border-l-2 border-build-light">
-                            <li><a href="#senior-intro" class="hover:text-build-dark block transition">建檔站入口</a></li>
-                            <li><a href="#senior-scan" class="hover:text-build-dark block transition">掃瞄建檔機制</a></li>
-                            <li><a href="#senior-ai" class="hover:text-build-dark block transition">AI 辨識代填</a></li>
+                            <li><a href="#senior-intro" class="hover:text-build-dark block transition">1. 建檔站入口</a></li>
+                            <li><a href="#senior-scan" class="hover:text-build-dark block transition">2. 掃瞄建檔機制</a></li>
+                            <li><a href="#senior-ai" class="hover:text-build-dark block transition">3. AI 辨識代填</a></li>
                         </ul>
                     </li>
-                    <li><a href="#best-practice" class="font-bold text-amber-600 hover:text-amber-700 block transition mt-3">第三章：實戰對策 (必讀)</a></li>
+                    <li><a href="#best-practice" class="font-bold text-amber-600 hover:text-amber-700 block transition mt-3">第三章：實戰對策</a></li>
+                    <li><a href="#project-info" class="font-bold text-blue-600 hover:text-blue-800 block transition mt-3">第四章：調查樣點認養</a></li>
                 </ul>
-                <div class="mt-8 pt-4 border-t border-slate-100">
-                    <a href="#project-info" class="flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-800 transition">
-                        <i class="ph ph-link"></i> 2026上半年度樣點認養
-                    </a>
-                </div>
             </div>
         </aside>
 
@@ -480,13 +476,15 @@
                         <div class="flex flex-col md:flex-row gap-8 items-center">
                             <div class="flex-1 space-y-4">
                                 <div class="bg-white p-6 rounded-xl shadow-sm">
-                                    <ol class="list-decimal list-outside ml-4 space-y-4 font-medium text-base leading-relaxed">
+                                    <ol class="list-decimal list-outside ml-6 space-y-4 font-medium text-base leading-relaxed text-slate-800">
                                         <li><strong>上傳照片：</strong> 必須包含一張清楚的<span class="text-build-orange font-bold">正面照</span>，與一張條碼清楚的<span class="text-build-orange font-bold">背面照</span>。</li>
                                         <li>點選畫面上紫色的 <strong>「✨ AI 辨識代填 (支援簡繁轉換)」</strong> 按鈕。</li>
                                         <li>AI 會透過圖片分析，自動協助提供並填入「商品名稱」及「廠商名稱」。</li>
-                                        <li class="bg-red-50 p-4 rounded-lg border border-red-100 mt-2 list-none ml-[-1rem]">
-                                            <strong class="text-red-600 flex items-center gap-2 text-lg mb-1"><i class="ph-fill ph-warning"></i> 人工確認防呆：</strong>
-                                            <span class="text-red-800">AI 難免有誤，請務必協助人工確認並修正可能的錯漏字。</span>
+                                        <li>
+                                            <div class="bg-red-50 p-4 rounded-lg border border-red-100 mt-2 w-full">
+                                                <strong class="text-red-600 flex items-center gap-2 text-lg mb-1"><i class="ph-fill ph-warning"></i> 人工確認防呆：</strong>
+                                                <span class="text-red-800">AI 難免有誤，請務必協助人工確認並修正可能的錯漏字。</span>
+                                            </div>
                                         </li>
                                         <li>確認無誤後，點選「確認上傳」。出現「建檔成功 / 新增圖鑑完成」即代表照片與資料已同步至雲端庫。</li>
                                     </ol>
@@ -509,7 +507,7 @@
                     <div class="bg-slate-700 p-2 rounded-lg text-white shadow-sm">
                         <i class="ph-fill ph-warning-circle text-2xl block text-amber-400"></i>
                     </div>
-                    <h2 class="text-2xl font-black text-slate-800">第三章：特殊狀況與實戰應對 (Best Practices)</h2>
+                    <h2 class="text-2xl font-black text-slate-800">第三章：特殊狀況與實戰應對</h2>
                 </div>
                 
                 <div class="space-y-6">
@@ -542,7 +540,7 @@
                                     <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 海邊高溫曝曬，加上瀏覽器同時呼叫相機與 GPS 定位功能，極易造成手機記憶體耗盡而強迫關閉網頁 (閃退)。
                                 </p>
                                 <div class="bg-red-50 p-5 rounded-xl border border-red-200">
-                                    <p class="font-bold text-red-600 mb-3 text-lg">⚡ 終極應對解法：</p>
+                                    <p class="font-bold text-red-600 mb-3 text-lg">⚡ 終極應解法：</p>
                                     <p class="text-slate-800 leading-relaxed font-medium">
                                         系統提供復原機制，重啟後請按「是」恢復先前記錄。<br><br>
                                         <span class="bg-red-600 text-white px-2 py-1 rounded inline-block mb-1">上傳照片時，不要直接在網頁內按拍照！</span><br>
@@ -554,44 +552,54 @@
                     </div>
                 </div>
             </section>
+
+            <!-- ========================================== -->
+            <!-- 第四章：瓶罐調查專案                         -->
+            <!-- ========================================== -->
+            <section class="bg-white mt-12 scroll-mt-24" id="project-info">
+                <div class="flex items-center gap-3 mb-8 border-b-2 border-blue-600 pb-3">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white shadow-sm">
+                        <i class="ph-fill ph-hands-clapping text-2xl block"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-blue-700">第四章：瓶罐調查專案</h2>
+                </div>
+                
+                <div class="space-y-8">
+                    <div class="bg-blue-50 rounded-2xl p-8 shadow-sm border border-blue-100">
+                        <h3 class="text-xl font-black text-blue-700 mb-6 flex items-center gap-3">
+                            <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+                            調查樣點認養
+                        </h3>
+                        
+                        <div class="text-slate-700 text-base space-y-4 mb-8 bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
+                            <p class="flex items-start gap-3">
+                                <i class="ph-fill ph-check-circle text-blue-500 mt-1 shrink-0 text-xl"></i> 
+                                <span class="leading-relaxed">2026年上半年度調查期間為 4/1 至 6/30 止，邀請荒野志工登錄認養表格，進行樣點調查。</span>
+                            </p>
+                            <p class="flex items-start gap-3">
+                                <i class="ph-fill ph-check-circle text-blue-500 mt-1 shrink-0 text-xl"></i> 
+                                <span class="leading-relaxed">歡迎一般民眾參與，不需填寫認養表格，可在任意地點自主調查(由系統自動定位)。</span>
+                            </p>
+                        </div>
+
+                        <div>
+                            <a href="https://docs.google.com/spreadsheets/d/1yX2dFju8H_cj6WdzpPca33aibzTArRLd/edit?gid=1819555738#gid=1819555738" target="_blank" class="text-white hover:bg-blue-800 bg-blue-600 px-8 py-3 rounded-xl inline-block font-bold tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2 max-w-max">
+                                <i class="ph-fill ph-table text-xl"></i> 點此開啟認養表格
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
-    <!-- 頁尾 (荒野綠) -->
-    <footer id="project-info" class="bg-slate-800 text-slate-300 py-12 text-center mt-16 border-t-8 border-wild-green scroll-mt-16">
+    <!-- 頁尾 (深色區塊僅保留版權與聯絡資訊) -->
+    <footer class="bg-slate-800 text-slate-300 py-8 text-center mt-8 border-t-8 border-wild-green">
         <div class="max-w-7xl mx-auto px-4">
-            <div class="mb-8">
-                <i class="ph-fill ph-leaf text-5xl text-wild-success mb-4 inline-block"></i>
-                <p class="font-black text-white tracking-widest text-2xl mb-2">荒野保護協會瓶罐調查專案</p>
-            </div>
-            
-            <div class="inline-block bg-slate-900 rounded-2xl p-6 mb-8 border border-slate-700 shadow-inner max-w-2xl text-left">
-                <h4 class="text-lg mb-4 text-slate-200 font-bold flex items-center justify-center gap-2">
-                    <i class="ph-fill ph-calendar-check text-amber-400 text-xl"></i> 2026上半年度樣點認養
-                </h4>
-                
-                <div class="text-slate-300 text-sm space-y-3 mb-6 bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <p class="flex items-start gap-2">
-                        <i class="ph-fill ph-check-circle text-wild-success mt-0.5 shrink-0"></i> 
-                        <span>2026年上半年度調查期間為4/1至6/30止，邀請荒野志工登錄認養表格，進行樣點調查。</span>
-                    </p>
-                    <p class="flex items-start gap-2">
-                        <i class="ph-fill ph-check-circle text-wild-success mt-0.5 shrink-0"></i> 
-                        <span>歡迎一般民眾參與，不需填寫認養表格，可在任意地點自主調查(由系統自動定位)。</span>
-                    </p>
-                </div>
-
-                <div class="text-center">
-                    <a href="https://docs.google.com/spreadsheets/d/1yX2dFju8H_cj6WdzpPca33aibzTArRLd/edit?gid=1819555738#gid=1819555738" target="_blank" class="text-blue-400 hover:text-white hover:bg-blue-600 bg-slate-800 px-6 py-3 rounded-xl inline-block font-mono tracking-wider transition-all duration-300 shadow-md">
-                        點此開啟認養表格
-                    </a>
-                </div>
-            </div>
-
-            <!-- 🌟 新增：聯絡資訊與系統開發者 Credit -->
-            <div class="text-slate-400 text-sm mb-6 space-y-1">
+            <!-- 🌟 聯絡資訊與系統開發者 Credit -->
+            <div class="text-slate-400 text-sm mb-4 space-y-1">
                 <p>網頁規劃設計：荒野保護協會 棲地守護部雁子</p>
-                <p>聯絡信箱：<a href="mailto:max@wilderness.tw" class="hover:text-wild-light transition text-slate-300 font-medium">max@wilderness.tw</a></p>
+                <p>聯絡信箱：<a href="mailto:max@wilderness.tw" class="hover:text-wild-light transition text-slate-200 font-medium">max@wilderness.tw</a></p>
             </div>
 
             <p class="text-sm text-slate-500">&copy; THE Society of Wilderness. All rights reserved.</p>
