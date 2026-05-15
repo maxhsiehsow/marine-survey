@@ -476,7 +476,7 @@
                         <div class="flex flex-col md:flex-row gap-8 items-center">
                             <div class="flex-1 space-y-4">
                                 <div class="bg-white p-6 rounded-xl shadow-sm">
-                                    <ol class="list-decimal list-outside ml-6 space-y-4 font-medium text-base leading-relaxed text-slate-800">
+                                    <ul class="list-disc list-outside ml-6 space-y-4 font-medium text-base leading-relaxed text-slate-800">
                                         <li><strong>上傳照片：</strong> 必須包含一張清楚的<span class="text-build-orange font-bold">正面照</span>，與一張條碼清楚的<span class="text-build-orange font-bold">背面照</span>。</li>
                                         <li>點選畫面上紫色的 <strong>「✨ AI 辨識代填 (支援簡繁轉換)」</strong> 按鈕。</li>
                                         <li>AI 會透過圖片分析，自動協助提供並填入「商品名稱」及「廠商名稱」。</li>
@@ -487,7 +487,7 @@
                                             </div>
                                         </li>
                                         <li>確認無誤後，點選「確認上傳」。出現「建檔成功 / 新增圖鑑完成」即代表照片與資料已同步至雲端庫。</li>
-                                    </ol>
+                                    </ul>
                                 </div>
                             </div>
                             <div class="flex-1 w-full max-w-sm mx-auto">
@@ -540,7 +540,7 @@
                                     <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 海邊高溫曝曬，加上瀏覽器同時呼叫相機與 GPS 定位功能，極易造成手機記憶體耗盡而強迫關閉網頁 (閃退)。
                                 </p>
                                 <div class="bg-red-50 p-5 rounded-xl border border-red-200">
-                                    <p class="font-bold text-red-600 mb-3 text-lg">⚡ 終極應解法：</p>
+                                    <p class="font-bold text-red-600 mb-3 text-lg">⚡ 終極應對解法：</p>
                                     <p class="text-slate-800 leading-relaxed font-medium">
                                         系統提供復原機制，重啟後請按「是」恢復先前記錄。<br><br>
                                         <span class="bg-red-600 text-white px-2 py-1 rounded inline-block mb-1">上傳照片時，不要直接在網頁內按拍照！</span><br>
@@ -550,44 +550,79 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 🌟 內建瀏覽器擋權限 -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-blue-200 hover:shadow-md transition">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-blue-50 text-blue-500 p-4 rounded-full shrink-0">
+                                <i class="ph-fill ph-chat-circle-warning text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-3">畫面全黑 / 無法開啟相機與定位</h3>
+                                <p class="text-slate-600 mb-4 font-medium leading-relaxed">
+                                    <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 您可能是在 LINE 或 Facebook 群組中直接點開網址。這類「內建瀏覽器」會阻擋 PWA 系統的相機與 GPS 權限。
+                                </p>
+                                <div class="bg-blue-50 p-5 rounded-xl border border-blue-200">
+                                    <p class="font-bold text-blue-700 mb-3 text-lg">✅ 應對方式：</p>
+                                    <p class="text-slate-800 leading-relaxed font-medium">
+                                        請點擊畫面右上角的 <strong class="text-blue-700 bg-white px-2 py-1 rounded shadow-sm">「⋮」設定鈕 或 「↗️」分享鈕</strong>，選擇 <strong class="text-blue-700">「以預設瀏覽器開啟」</strong>（Android 請選 Chrome，iOS 請選 Safari），即可正常使用並安裝至桌面。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🌟 烈日反光 -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-amber-200 hover:shadow-md transition">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-amber-50 text-amber-500 p-4 rounded-full shrink-0">
+                                <i class="ph-fill ph-sun text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-3">烈日反光導致「條碼掃不出」</h3>
+                                <p class="text-slate-600 mb-4 font-medium leading-relaxed">
+                                    <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 圓柱體的瓶身加上強烈的陽光反光、或是條碼磨損，讓相機無法對焦條碼。
+                                </p>
+                                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200">
+                                    <p class="font-bold text-amber-700 mb-3 text-lg">💡 應對方式：</p>
+                                    <ul class="list-disc list-outside ml-5 text-slate-800 leading-relaxed font-medium space-y-2">
+                                        <li><strong>製造陰影：</strong> 請背對陽光，用自己的身體或手掌幫瓶身擋住強光，在陰影下掃描成功率最高。</li>
+                                        <li><strong>果斷切換：</strong> 嘗試數次仍掃不出，請直接改用 <strong class="text-amber-700">「手動輸入前 3 碼」</strong> 或 <strong class="text-amber-700">「下拉選單批次輸入」</strong>，保持調查的流暢度最重要！</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- ========================================== -->
-            <!-- 第四章：瓶罐調查專案                         -->
+            <!-- 第四章：調查樣點認養                         -->
             <!-- ========================================== -->
             <section class="bg-white mt-12 scroll-mt-24" id="project-info">
                 <div class="flex items-center gap-3 mb-8 border-b-2 border-blue-600 pb-3">
                     <div class="bg-blue-600 p-2 rounded-lg text-white shadow-sm">
-                        <i class="ph-fill ph-hands-clapping text-2xl block"></i>
+                        <i class="ph-fill ph-calendar-check text-2xl block"></i>
                     </div>
-                    <h2 class="text-2xl font-black text-blue-700">第四章：瓶罐調查專案</h2>
+                    <h2 class="text-2xl font-black text-blue-700">第四章：調查樣點認養</h2>
                 </div>
                 
                 <div class="space-y-8">
                     <div class="bg-blue-50 rounded-2xl p-8 shadow-sm border border-blue-100">
-                        <h3 class="text-xl font-black text-blue-700 mb-6 flex items-center gap-3">
-                            <span class="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
-                            調查樣點認養
-                        </h3>
-                        
-                        <div class="text-slate-700 text-base space-y-4 mb-8 bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
-                            <p class="flex items-start gap-3">
-                                <i class="ph-fill ph-check-circle text-blue-500 mt-1 shrink-0 text-xl"></i> 
-                                <span class="leading-relaxed">2026年上半年度調查期間為 4/1 至 6/30 止，邀請荒野志工登錄認養表格，進行樣點調查。</span>
-                            </p>
-                            <p class="flex items-start gap-3">
-                                <i class="ph-fill ph-check-circle text-blue-500 mt-1 shrink-0 text-xl"></i> 
-                                <span class="leading-relaxed">歡迎一般民眾參與，不需填寫認養表格，可在任意地點自主調查(由系統自動定位)。</span>
-                            </p>
-                        </div>
+                        <ul class="list-disc list-outside ml-6 text-slate-700 text-base font-medium space-y-4 mb-8 leading-relaxed">
+                            <li>2026年上半年度調查期間為 4/1 至 6/30 止，邀請荒野志工登錄認養表格，進行樣點調查。</li>
+                            <li>歡迎一般民眾參與，不需填寫認養表格，可在任意地點自主調查(由系統自動定位)。</li>
+                        </ul>
 
                         <div>
                             <a href="https://docs.google.com/spreadsheets/d/1yX2dFju8H_cj6WdzpPca33aibzTArRLd/edit?gid=1819555738#gid=1819555738" target="_blank" class="text-white hover:bg-blue-800 bg-blue-600 px-8 py-3 rounded-xl inline-block font-bold tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2 max-w-max">
                                 <i class="ph-fill ph-table text-xl"></i> 點此開啟認養表格
                             </a>
                         </div>
-                    </div>
+                        <div class="w-full mt-4 flex justify-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <img src="./images/end.png" class="w-full h-auto max-h-[80vh] rounded-lg shadow-sm object-contain mx-auto" alt="加入我們">
+                        </div>
+                    </div>                    
                 </div>
             </section>
         </main>
