@@ -135,6 +135,7 @@
         </div>
     </div>
 
+    <!-- 主要操作區 (容器內) -->
     <div class="container">
         <h1 class="app-title">🛠️ 海廢商品建檔站</h1>
         
@@ -158,52 +159,40 @@
                 </div>
             </div>
         </div>
-<!-- 頁尾 (深色區塊僅保留版權與聯絡資訊) -->
-    <footer class="mt-12 border-t-8 border-wild-green font-sans">
-        
-        <!-- 上半部：白底贊助 Logo 區 -->
-        <div class="bg-slate-50 py-10 border-b border-slate-200">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex flex-col sm:flex-row justify-center items-center gap-10 md:gap-16">
-                    
-                    <!-- 主辦單位 -->
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm font-bold text-slate-500 mb-3 tracking-widest">主辦單位</span>
-                        <div class="h-[120px] w-[360px] bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center p-3 hover:shadow-md transition">
-                            <!-- 注意：不可在 img 外面再包 span，並確保加上這三個 class -->
-                            <img src="./images/SOW-LOGO.png" class="max-h-full max-w-full object-contain" alt="荒野保護協會">
-                        </div>
-                    </div>
 
-                    <!-- 視覺分隔線 -->
-                    <div class="hidden sm:block w-px h-24 bg-slate-300"></div>
-
-                    <!-- 贊助單位 -->
-                    <div class="flex flex-col items-center">
-                        <span class="text-sm font-bold text-slate-500 mb-3 tracking-widest">專案贊助</span>
-                        <div class="h-[120px] w-[360px] bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center p-3 hover:shadow-md transition">
-                            <!-- 注意：不可在 img 外面再包 span，並確保加上這三個 class -->
-                            <img src="./images/Nestle-LOGO.png" class="max-h-full max-w-full object-contain" alt="雀巢公司">
-                        </div>
-                    </div>
-
+        <!-- ============================================================== -->
+        <!-- 🌟 專屬行動版 Web App 精緻頁尾 (完美融入橘色暖色主題，永不爆版) -->
+        <!-- ============================================================== -->
+        <footer style="margin-top: 35px; border-top: 1px dashed #ffcc80; padding-top: 25px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            <div style="text-align: center; margin-bottom: 12px;">
+                <span style="font-size: 12px; font-weight: bold; color: #e65100; letter-spacing: 2px;">主辦暨贊助單位</span>
+            </div>
+            
+            <!-- Logo 雙名片並列 -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
+                <!-- 荒野保護協會 Logo 框 -->
+                <div style="height: 64px; flex: 1; background: white; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(245,124,0,0.06);">
+                    <img src="./images/SOW-LOGO.png" alt="荒野保護協會" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                </div>
+                
+                <!-- ✕ 連結符號 -->
+                <span style="color: #ffb74d; font-weight: bold; font-size: 14px;">✕</span>
+                
+                <!-- 雀巢 Logo 框 -->
+                <div style="height: 64px; flex: 1; background: white; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(245,124,0,0.06);">
+                    <img src="./images/Nestle-LOGO.png" alt="雀巢公司" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                 </div>
             </div>
-        </div>
 
-        <!-- 下半部：深色版權與聯絡資訊區 -->
-        <div class="bg-slate-800 text-slate-300 py-8 text-center">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="text-slate-400 text-sm mb-4 space-y-1 font-medium">
-                    <p>系統規劃設計：荒野保護協會 棲地守護部雁子</p>
-                    <p>聯絡信箱：<a href="mailto:max@wilderness.tw" class="text-slate-300 hover:text-white border-b border-slate-600 hover:border-slate-400 pb-0.5 transition">max@wilderness.tw</a></p>
-                </div>
-                <p class="text-xs text-slate-500">&copy; THE Society of Wilderness. All rights reserved.</p>
+            <!-- 開發者與版權宣告 -->
+            <div style="text-align: center; font-size: 12px; color: #8d6e63; line-height: 1.6;">
+                <p style="margin: 0; font-weight: bold;">系統規劃設計：荒野保護協會 棲地守護部雁子</p>
+                <p style="margin: 2px 0 0 0;">聯絡信箱：<a href="mailto:max@wilderness.tw" style="color: #e65100; text-decoration: none; border-bottom: 1px dotted #e65100; font-weight: bold;">max@wilderness.tw</a></p>
+                <p style="margin: 8px 0 0 0; font-size: 10px; color: #bcaaa4; letter-spacing: 0.5px;">&copy; THE Society of Wilderness. All rights reserved.</p>
             </div>
-        </div>
+        </footer>
 
-    </footer>
-    </div>
+    </div> <!-- /container 結束 -->
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script>
@@ -217,11 +206,10 @@
         let productCache = {}, manufacturerCache = {}, html5Qrcode = null;
 
         window.onload = () => {
-            // 🛑 新增：偵測是否為 LINE 或 FB 內建瀏覽器
             if (navigator.userAgent.match(/Line|FBAN|FBAV|Instagram/i)) { 
                 document.getElementById('line-warning').style.display = 'flex'; 
                 document.getElementById('loading-mask').style.display = 'none'; 
-                return; // 終止後續載入
+                return;
             }
 
             if(localStorage.getItem('builder_name')) document.getElementById('inp_builder_name').value = localStorage.getItem('builder_name');
@@ -245,7 +233,6 @@
             navigator.geolocation.getCurrentPosition( p => { BUILD_STATE.gps = `${p.coords.latitude.toFixed(5)}, ${p.coords.longitude.toFixed(5)}`; }, e => {}, { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 } );
         }
 
-        // 🛑 終極 UI 統一升級：showModal 支援自訂是否顯示取消按鈕 (showCancel)
         function showModal(title, msg, onConfirm, showCancel = true) {
             document.getElementById('modal-msg').innerHTML = `<h3 style="margin-top:0; color:var(--primary-dark);">${title}</h3><div style="color:#555; font-size:16px; text-align:center;">${msg}</div>`;
             
@@ -400,7 +387,7 @@
                         document.getElementById('build_name').value = ""; 
                         document.getElementById('build_brand').value = "";
                         stopScanner(); 
-                    }, false); // 傳入 false 確保沒有取消按鈕
+                    }, false);
                 } else { 
                     showModal('⚠️ 建檔失敗', data.message, null, false);
                 }
