@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>荒野瓶罐調查 - 操作手冊</title>
+    <!-- 使用 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 🌟 老王配置：注入專屬色彩系統 (Theme Config) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wild: {
+                            green: '#587a30',   /* 荒野深綠 */
+                            light: '#f4f7f4',   /* 極淺草綠 */
+                            dark: '#3e5c20',    /* 森林暗綠 */
+                            success: '#689f38'  /* 連線綠 */
+                        },
+                        build: {
+                            orange: '#f57c00',  /* 活力橘 */
+                            light: '#fff3e0',   /* 溫暖淺橘 */
+                            dark: '#e65100',    /* 焦糖深橘 */
+                            text: '#333333'     /* 碳黑色 */
+                        }
+                    },
+                    borderRadius: {
+                        '2xl': '16px' /* 統一圓角矩形 16px */
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 引入 Google Fonts: Noto Sans TC (無襯線體) -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- 引入 Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #ffffff; /* 頁面底色改為純白，凸顯區塊色彩 */
+        }
+        /* 自訂滾動條樣式 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* 手機直立截圖專屬樣式 */
+        .mobile-img {
+            max-width: 280px; 
+            width: 100%;
+            height: auto;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            border: 1px solid #e2e8f0;
+            display: block;
+            background-color: #fff;
+        }
+
+        /* GIF 動圖專屬相框 */
+        .gif-demo {
+            border: 6px solid #ffffff;
+            box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.06), 0 8px 12px -3px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 畫廊相簿卡片 (扁平化) */
+        .gallery-card {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 1rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .gallery-card p {
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #475569;
+            font-weight: 500;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased leading-relaxed">
+
+    <!-- 頂部導覽列 (荒野綠) -->
+    <nav class="bg-wild-green text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-waves text-2xl"></i>
+                    <span class="font-bold text-xl tracking-wider">荒野瓶罐調查 操作手冊</span>
+                </div>
+                <div class="hidden md:flex space-x-6 text-sm font-medium">
+                    <a href="#sop" class="hover:text-wild-light transition">瓶罐調查說明</a>
+                    <a href="#general" class="hover:text-wild-light transition">瓶罐調查</a>
+                    <a href="#senior" class="hover:text-build-light text-build-light transition font-bold">瓶罐建檔</a>
+                    <a href="#best-practice" class="hover:text-amber-200 transition text-amber-400">實戰對策</a>
+                    <a href="#project-info" class="hover:text-blue-200 transition text-blue-300 font-bold">調查樣點認養</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主頁面佈局 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+
+        <!-- 側邊目錄 -->
+        <aside class="hidden md:block w-64 flex-shrink-0">
+            <div class="sticky top-24 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="font-bold text-lg text-slate-800 mb-4 border-b pb-2">章節目錄</h3>
+                <ul class="space-y-3 text-sm text-slate-600">
+                    <li><a href="#sop" class="hover:text-wild-green block transition">第零章：瓶罐調查說明</a></li>
+                    <li>
+                        <a href="#general" class="font-bold text-wild-green hover:text-wild-dark block transition mt-2">第一章：瓶罐調查操作</a>
+                        <ul class="pl-4 mt-2 space-y-2 border-l-2 border-wild-light">
+                            <li><a href="#step-1" class="hover:text-wild-dark block transition">1. 參與人員資訊</a></li>
+                            <li><a href="#step-2" class="hover:text-wild-dark block transition">2. 調查地點資訊</a></li>
+                            <li><a href="#step-3" class="hover:text-wild-dark block transition">3. 調查工具</a></li>
+                            <li><a href="#step-4" class="hover:text-wild-dark block transition">4. 記錄與成果</a></li>
+                            <li><a href="#step-5" class="hover:text-wild-dark block transition">5. 調查上傳</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#senior" class="font-bold text-build-orange hover:text-build-dark block transition mt-3">第二章：瓶罐建檔操作</a>
+                        <ul class="pl-4 mt-2 space-y-2 border-l-2 border-build-light">
+                            <li><a href="#senior-intro" class="hover:text-build-dark block transition">1. 建檔站入口</a></li>
+                            <li><a href="#senior-scan" class="hover:text-build-dark block transition">2. 掃瞄建檔機制</a></li>
+                            <li><a href="#senior-ai" class="hover:text-build-dark block transition">3. AI 辨識代填</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#best-practice" class="font-bold text-amber-600 hover:text-amber-700 block transition mt-3">第三章：實戰對策</a></li>
+                    <li><a href="#project-info" class="font-bold text-blue-600 hover:text-blue-800 block transition mt-3">第四章：調查樣點認養</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 主要內容區 -->
+        <main class="flex-1 space-y-12">
+
+            <!-- 標題與簡介 -->
+            <header class="bg-white rounded-2xl p-2 scroll-mt-24" id="sop">
+                <h1 class="text-3xl font-black text-wild-green mb-4">瓶罐調查操作手冊</h1>
+                <p class="text-base text-slate-700 mb-6 leading-relaxed">歡迎使用荒野瓶罐調查系統。本手冊將詳細指引您從系統安裝到現場實地調查、資料上傳的完整步驟。</p>
+                
+                <div class="bg-wild-light p-8 rounded-2xl mt-4">
+                    <h2 class="font-bold text-xl text-wild-dark flex items-center gap-2 mb-6 border-b border-wild-green/20 pb-3">
+                        <i class="ph-fill ph-target text-2xl"></i> 瓶罐調查說明
+                    </h2>
+                    
+                    <!-- 1. 調查目的 -->
+                    <div class="mb-6">
+                        <h3 class="font-bold text-wild-green mb-3 flex items-center gap-2 text-lg">
+                            <span class="bg-wild-green text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                            調查目的
+                        </h3>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+                            <p class="text-base text-slate-700 leading-relaxed">
+                                彙整瓶罐的數據分析其密度、熱點、品牌及產地，做為政策遊說、環境倡議的重要參考依據。
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 2. 調查工具介紹 -->
+                    <div class="mb-6">
+                        <h3 class="font-bold text-wild-green mb-3 flex items-center gap-2 text-lg">
+                            <span class="bg-wild-green text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                            調查工具介紹
+                        </h3>
+                        <div class="space-y-4 bg-white p-5 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex items-start gap-3">
+                                <i class="ph-fill ph-wrench text-wild-green mt-1 shrink-0 text-xl"></i>
+                                <div>
+                                    <strong class="text-wild-dark block mb-1 text-base">荒野瓶罐調查回報站：</strong>
+                                    <p class="text-base text-slate-700 leading-relaxed">調查記錄的工具，以掃瞄條碼搭配手動輸入記錄海邊的廢棄瓶罐。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 border-t border-slate-100 pt-4">
+                                <i class="ph-fill ph-database text-build-orange mt-1 shrink-0 text-xl"></i>
+                                <div>
+                                    <strong class="text-build-orange block mb-1 text-base">荒野瓶罐建檔站：</strong>
+                                    <p class="text-base text-slate-700 leading-relaxed">協助建置常見海廢瓶罐的工具，擴充應用AI協助建立瓶罐基本資訊。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. 調查方法標準化 -->
+                    <div>
+                        <h3 class="font-bold text-wild-green mb-3 flex items-center gap-2 text-lg">
+                            <span class="bg-wild-green text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                            調查方法標準化
+                        </h3>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <ul class="list-disc list-outside ml-6 space-y-3 text-base text-slate-700 leading-relaxed">
+                                <li>每個海灘最多分 4 組調查（高潮帶左右岸、低潮帶左右岸）</li>
+                                <li>建議優先選擇高潮帶位置，一路往前行進不回頭</li>
+                                <li>每次記錄 20分鐘，時間到停止調查進行回報上傳</li>
+                                <li>沿著潮帶記錄寬度 2公尺 間的所有瓶罐（包含裸瓶/無標籤、部份破損、包裝完整)</li>
+                                <li>依瓶罐包裝破損程度，進行掃描條碼、前 3 碼搜尋、手動輸入等方式記錄每個瓶罐</li>
+                                <li>在有足夠人手時使用荒野瓶罐建檔站，協助建立台灣海邊常見瓶罐資料</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ========================================== -->
+            <!-- 第一章：一般調查版 (荒野綠主題)            -->
+            <!-- ========================================== -->
+            <section class="bg-white scroll-mt-24" id="general">
+                <div class="flex items-center gap-3 mb-8 border-b-2 border-wild-green pb-3">
+                    <div class="bg-wild-green p-2 rounded-lg text-white">
+                        <i class="ph-fill ph-users text-2xl block"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-wild-green">第一章：瓶罐調查操作流程</h2>
+                </div>
+                
+                <div class="space-y-8">
+                    
+                    <!-- 安裝 -->
+                    <div class="bg-wild-light rounded-2xl p-8">
+                        <h3 class="text-xl font-black text-wild-green mb-4 flex items-center gap-3">
+                            <span class="bg-wild-green text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">0</span>
+                            系統入口與安裝
+                        </h3>
+                        <p class="text-slate-700 mb-2">荒野瓶罐調查回報站：<a href="https://maxhsiehsow.github.io/marine-survey/" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold break-all transition">https://maxhsiehsow.github.io/marine-survey/</a></p>
+                        <p class="text-slate-600 mb-6">建議將網頁「加到主畫面」安裝或建立捷徑，以獲得最佳的全螢幕體驗。</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="gallery-card">
+                                <img src="./images/join-android.gif" class="mobile-img gif-demo" alt="Android手機的加入主畫面說明">
+                                <p class="text-wild-dark">Android 加入主畫面操作</p>
+                            </div>
+                            <div class="gallery-card">
+                                <img src="./images/join-apple.gif" class="mobile-img gif-demo" alt="Apple手機的加入主畫面說明">
+                                <p class="text-wild-dark">iOS (Apple) 加入主畫面操作</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 1 -->
+                    <div class="bg-wild-light rounded-2xl p-8 scroll-mt-24" id="step-1">
+                        <h3 class="text-xl font-black text-wild-green mb-4 flex items-center gap-3">
+                            <span class="bg-wild-green text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+                            參與人員資訊
+                        </h3>
+                        <div class="flex flex-col md:flex-row items-center gap-8">
+                            <div class="flex-1">
+                                <p class="text-slate-700 mb-4 leading-relaxed">請填寫人類名 <strong class="text-red-500">(勿只填自然名)</strong>，利於後續統計及感謝。</p>
+                                <p class="text-wild-dark bg-white p-4 rounded-xl border border-white/50 shadow-sm">
+                                    <i class="ph-fill ph-lightbulb text-amber-500 mr-1"></i> 填寫一次即會自動留存，於參與人員調整時記得進行修改即可。
+                                </p>
+                            </div>
+                            <div class="flex-1 w-full">
+                                <img src="./images/info.png" class="mobile-img" alt="參與人員資訊">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="bg-wild-light rounded-2xl p-8 scroll-mt-24" id="step-2">
+                        <h3 class="text-xl font-black text-wild-green mb-4 flex items-center gap-3">
+                            <span class="bg-wild-green text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+                            調查地點資訊
+                        </h3>
+                        <p class="text-slate-700 mb-6">可用「自動定位」或「尋找樣點」兩種模式進行定位。</p>
+                        
+                        <!-- 兩欄：自動 vs 手動 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-wild-green">
+                                <h4 class="font-bold text-wild-green mb-3">自動定位</h4>
+                                <p class="text-sm text-slate-600 mb-6 h-10">定位於現地，不限設定的樣點，隨時隨地皆可調查，系統會自動定位於該地的鄉鎮巿。</p>
+                                <img src="./images/GPS1.png" class="mobile-img" alt="自動定位">
+                            </div>
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-wild-green flex flex-col">
+                                <h4 class="font-bold text-wild-green mb-3">尋找樣點</h4>
+                                <p class="text-sm text-slate-600 mb-3">於荒野預設的全台 121 個樣點進行調查。可點選全台任一樣點或臨近的 3 個樣點進行調查。</p>
+                                <div class="bg-blue-50 text-blue-700 p-3 rounded-lg text-sm mb-6 flex items-start gap-2">
+                                    <i class="ph-fill ph-navigation-arrow text-lg shrink-0 mt-0.5"></i>
+                                    <span><strong>提供導航服務：</strong>選擇樣點後，系統可連動開啟 Google Maps 導航前往。</span>
+                                </div>
+                                <img src="./images/GPS2.gif" class="mobile-img gif-demo mx-auto mt-auto" alt="尋找樣點">
+                            </div>
+                        </div>
+
+                        <!-- 導航與潮線 (🌟 老王優化版：文字與大圖上下排列) -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex flex-col gap-6">
+                                <div class="w-full">
+                                    <h4 class="font-bold text-wild-green mb-4 text-lg">灘地與區塊選擇</h4>
+                                    <ul class="list-disc list-outside ml-5 space-y-3 text-sm text-slate-700 leading-relaxed">
+                                        <li><strong>灘地類型：</strong> 提供 5 種常見地形選項 (沙灘/泥灘/礫石灘/礁岩/消波塊海堤)，請以「超過 50%」的類型做為記錄標準。</li>
+                                        <li><strong>調查區塊：</strong> 調查員面對海的方向，右側為右岸、左側為左岸。
+                                            <ul class="list-none space-y-2 mt-3 bg-wild-light p-4 rounded-lg">
+                                                <li class="flex items-start gap-2"><i class="ph-fill ph-caret-right text-wild-green mt-0.5"></i> <span><strong>高潮線：</strong>海水最大潮淹至的地方，通常堆積較多垃圾，建議優先挑選。</span></li>
+                                                <li class="flex items-start gap-2"><i class="ph-fill ph-caret-right text-wild-green mt-0.5"></i> <span><strong>低潮線：</strong>當日的水線附近，通常垃圾較少。</span></li>
+                                                <li class="flex items-start gap-2"><i class="ph-fill ph-warning-circle text-amber-500 mt-0.5 text-lg"></i> <span class="text-amber-700 font-medium">如灘地狹窄，請統一登錄為「高潮線」。</span></li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <!-- 🌟 圖片區域：釋放寬度限制，放大呈現 -->
+                                <div class="w-full mt-4 flex justify-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <img src="./images/Transect.png" class="w-full h-auto max-h-[80vh] rounded-lg shadow-sm object-contain mx-auto" alt="潮線選擇圖解">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="bg-wild-light rounded-2xl p-8 scroll-mt-24" id="step-3">
+                        <h3 class="text-xl font-black text-wild-green mb-6 flex items-center gap-3">
+                            <span class="bg-wild-green text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
+                            調查工具
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="gallery-card">
+                                <h4 class="font-bold text-wild-green mb-2 w-full text-left text-lg">⏳ 調查計時</h4>
+                                <p class="text-sm text-slate-700 mb-4 text-left w-full">每個樣點調查時間為 20 分鐘。系統會捉取 GPS 座標計算調查距離。</p>
+                                <img src="./images/timer.jpg" class="mobile-img mt-auto" alt="計時器使用">
+                            </div>
+                            <div class="gallery-card border border-red-100 bg-red-50/20">
+                                <h4 class="font-bold text-red-600 mb-2 w-full text-left flex items-center gap-2 text-lg"><i class="ph-fill ph-megaphone text-xl"></i> 發現大量垃圾？</h4>
+                                <p class="text-sm text-slate-700 mb-4 text-left w-full leading-relaxed">
+                                    調查結束後，若現場垃圾量超過一台小貨車的量，請協助通報。<br>
+                                    <span class="bg-red-100 text-red-700 font-bold px-2 py-1 rounded inline-block mt-2">⚠️ 3月至7月海邊有水鳥繁殖，請暫時不要通報清理</span>
+                                </p>
+                                <img src="./images/report.jpg" class="mobile-img mt-auto" alt="大量垃圾回報">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 4 -->
+                    <div class="bg-wild-light rounded-2xl p-8 scroll-mt-24" id="step-4">
+                        <h3 class="text-xl font-black text-wild-green mb-4 flex items-center gap-3">
+                            <span class="bg-wild-green text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">4</span>
+                            記錄與成果
+                        </h3>
+                        <p class="text-slate-700 mb-6">調查核心區域。提供多種方式進行條碼記錄，下方圓餅圖會即時顯示目前的國家統計狀況。</p>
+                        
+                        <div class="space-y-6">
+                            <!-- 掃描區塊 -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm">
+                                <h4 class="font-bold text-wild-green text-lg mb-3 flex items-center gap-2">
+                                    <i class="ph-fill ph-barcode text-2xl"></i> 掃描條碼記錄
+                                </h4>
+                                <p class="text-sm text-slate-700 mb-1">對準條碼掃描，不分前後方向。請核對掃描出的條碼數字是否一致，如一致按確定即可增加一筆記錄。</p>
+                                <p class="text-sm text-slate-700 mb-6">系統比對瓶罐是否已完成建檔：有資料會顯示商品名稱；無資料會提示「發現未知商品」，請記錄此筆瓶罐後交由其它夥伴建檔（依現場人力分工）。</p>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div class="gallery-card p-3 shadow-none bg-slate-50">
+                                        <img src="./images/scan1.jpg" class="mobile-img" alt="掃描中">
+                                        <p class="text-wild-dark">1. 掃描中</p>
+                                    </div>
+                                    <div class="gallery-card p-3 shadow-none bg-slate-50">
+                                        <img src="./images/scan2.jpg" class="mobile-img" alt="已知瓶罐">
+                                        <p class="text-wild-dark">2. 已知商品 (直接記錄)</p>
+                                    </div>
+                                    <div class="gallery-card p-3 shadow-none border-amber-200 bg-amber-50/50">
+                                        <img src="./images/scan3.jpg" class="mobile-img" alt="未知瓶罐">
+                                        <p class="text-amber-700 font-bold">3. 未知商品 (提示建檔)</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 手動與批次 -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col">
+                                    <h4 class="font-bold text-wild-green mb-3 flex items-center gap-2 text-lg">
+                                        <i class="ph-fill ph-keyboard text-xl"></i> 手動輸入記錄
+                                    </h4>
+                                    <p class="text-sm text-slate-700 mb-6 flex-1 leading-relaxed">如果條碼因磨損不完整，可手動輸入條碼「前 3 碼」進行國家別查詢（例如 471 代表台灣），確認無誤後再加入記錄。</p>
+                                    <img src="./images/keyin1.gif" class="mobile-img gif-demo mx-auto" alt="手動輸入">
+                                </div>
+                                
+                                <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col">
+                                    <h4 class="font-bold text-wild-green mb-3 flex items-center gap-2 text-lg">
+                                        <i class="ph-fill ph-stack text-xl"></i> 批次輸入
+                                    </h4>
+                                    <p class="text-sm text-slate-700 mb-6 flex-1 leading-relaxed">裸瓶或無條碼可直接累積計數。如果前 3 碼不完整，但能明確分辨出國家別，可下拉選擇常見國家別，填寫數量後批次加入。</p>
+                                    <img src="./images/keyin2.gif" class="mobile-img gif-demo mx-auto" alt="批次輸入">
+                                </div>
+                            </div>
+
+                            <div class="bg-amber-100/50 border border-amber-200 p-5 rounded-xl">
+                                <h4 class="font-bold text-amber-800 mb-2 flex items-center gap-2">
+                                    <i class="ph-fill ph-arrow-u-up-left text-lg"></i> 復原記錄
+                                </h4>
+                                <p class="text-sm text-amber-800">如果新增錯誤，如重複掃瞄、算錯數量，可按畫面上的「復原」鈕，系統會刪除最近一筆輸入記錄。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 5 -->
+                    <div class="bg-wild-light rounded-2xl p-8 scroll-mt-24" id="step-5">
+                        <h3 class="text-xl font-black text-wild-green mb-6 flex items-center gap-3">
+                            <span class="bg-wild-green text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">5</span>
+                            成果上傳
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <!-- 備註與規範 -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border-l-[5px] border-wild-green">
+                                <div class="flex flex-col md:flex-row gap-8">
+                                    <div class="flex-1 space-y-6">
+                                        <div>
+                                            <h4 class="font-bold text-wild-green mb-2 text-lg">距離與備註</h4>
+                                            <p class="text-sm text-slate-700 leading-relaxed">20 分鐘計時到期會跳出通知。系統底部有「其他記錄」欄位，任何認為值得記錄的內容都可以寫下（如在測試系統，請記得於此註記）。</p>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-bold text-wild-green mb-3 flex items-center gap-2 text-lg">
+                                                <i class="ph-fill ph-image"></i> 照片上傳規範
+                                            </h4>
+                                            <ul class="list-disc list-inside space-y-2 text-sm text-slate-700 bg-wild-light p-4 rounded-lg font-medium">
+                                                <li><strong>現場照片：</strong> 需包含環境照 1 張、人員合照 1 張。</li>
+                                                <li><strong>熱點照：</strong> 垃圾密集處，最多 2 張。</li>
+                                                <li><strong>特殊瓶罐照：</strong> 特殊品牌或罕見垃圾，最多 4 張。</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1 w-full">
+                                        <img src="./images/photo.jpg" class="mobile-img" alt="照片上傳">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 成功送出 -->
+                            <div class="bg-white border-2 border-wild-success p-8 rounded-xl flex flex-col md:flex-row items-center gap-8 shadow-sm">
+                                <div class="flex-1 text-center md:text-left">
+                                    <i class="ph-fill ph-rocket text-5xl text-wild-success mb-4 inline-block"></i>
+                                    <h4 class="font-black text-wild-success text-2xl mb-3">完成記錄與上傳</h4>
+                                    <p class="text-slate-700 mb-3">按下「🚀 上傳資料至雲端」即會送出。<strong class="text-red-600 block mt-2 bg-red-50 p-2 rounded inline-block">⚠️ 在顯示成功動畫前，請勿關閉程式或螢幕</strong></p>
+                                    <p class="text-sm text-slate-600">收到上傳成功動畫後，資料除了個資外會自動清空，您可以繼續下一筆調查。</p>
+                                </div>
+                                <div class="flex-1 w-full">
+                                    <img src="./images/uploadOK.jpg" class="mobile-img border-none" alt="上傳成功">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- 第二章：瓶罐建檔版 (活力橘主題)             -->
+            <!-- ========================================== -->
+            <section class="bg-white mt-12 scroll-mt-24" id="senior">
+                <div class="flex items-center gap-3 mb-8 border-b-2 border-build-orange pb-3">
+                    <div class="bg-build-orange p-2 rounded-lg text-white shadow-sm">
+                        <i class="ph-fill ph-database text-2xl block"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-build-orange">第二章：瓶罐建檔操作流程</h2>
+                </div>
+                
+                <div class="space-y-8 text-build-text"> <!-- 套用建檔版深灰字體 -->
+                    
+                    <div class="bg-build-light rounded-2xl p-8 shadow-sm scroll-mt-24" id="senior-intro">
+                        <h3 class="text-xl font-black text-build-orange mb-4 flex items-center gap-3 border-l-[5px] border-build-orange pl-3">
+                            <span class="bg-build-orange text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">1</span>
+                            建檔站入口
+                        </h3>
+                        <p class="mb-2">荒野瓶罐建檔站：<a href="https://maxhsiehsow.github.io/marine-survey/Builder.html" target="_blank" class="text-build-orange hover:text-build-dark font-bold break-all underline transition">https://maxhsiehsow.github.io/marine-survey/Builder.html</a></p>
+                        <p class="mb-6 font-medium">系統會自動記錄發現座標，（請允許位置權限），同樣建議將程式「加到主畫面」。</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="gallery-card border-none shadow-sm">
+                                <img src="./images/c-homepage.jpg" class="mobile-img" alt="建檔版首頁">
+                                <p class="text-build-dark font-bold">建檔版首頁</p>
+                            </div>
+                            <div class="gallery-card border-none shadow-sm">
+                                <img src="./images/c-scan.jpg" class="mobile-img" alt="建檔掃瞄">
+                                <p class="text-build-dark font-bold">啟動掃瞄條碼建檔</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-build-light rounded-2xl p-8 shadow-sm scroll-mt-24" id="senior-scan">
+                        <h3 class="text-xl font-black text-build-orange mb-6 flex items-center gap-3 border-l-[5px] border-build-orange pl-3">
+                            <span class="bg-build-orange text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">2</span>
+                            掃瞄建檔機制
+                        </h3>
+                        <p class="mb-6 font-medium">點擊「掃描條碼建檔」，系統會自動判斷條碼狀態分流：</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="bg-white p-5 rounded-xl shadow-sm flex flex-col">
+                                <h4 class="font-bold text-build-dark mb-2 text-lg">情況 A：全新商品</h4>
+                                <p class="text-sm mb-4 flex-1">資料庫完全查無此條碼。<br><span class="text-build-orange font-bold">提示：請協助建立全新檔案！</span></p>
+                                <img src="./images/c-scan-new.jpg" class="mobile-img mx-auto" alt="發現全新商品">
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm flex flex-col">
+                                <h4 class="font-bold text-build-dark mb-2 text-lg">情況 B：無照片商品</h4>
+                                <p class="text-sm mb-4 flex-1">已知商品名稱，但缺乏清晰照片。<br><span class="text-build-orange font-bold">提示：請協助立即補拍！</span></p>
+                                 <img src="./images/c-scan-nophoto.jpg" class="mobile-img mx-auto" alt="發現缺照片商品">
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm flex flex-col border-2 border-green-100">
+                                <h4 class="font-bold text-green-700 mb-2 text-lg">情況 C：資料完整</h4>
+                                <p class="text-sm mb-4 flex-1 text-slate-600">已有資料與照片。若覺得原資料有誤，可點擊確定「重新覆寫編輯」更正。</p>
+                                 <img src="./images/c-scan-ok.jpg" class="mobile-img mx-auto" alt="資料完整商品">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-build-light rounded-2xl p-8 shadow-sm scroll-mt-24" id="senior-ai">
+                        <h3 class="text-xl font-black text-build-orange mb-6 flex items-center gap-3 border-l-[5px] border-build-orange pl-3">
+                            <span class="bg-build-orange text-white w-8 h-8 rounded-full flex items-center justify-center text-sm">3</span>
+                            AI 辨識代填與建檔
+                        </h3>
+                        <div class="flex flex-col md:flex-row gap-8 items-center">
+                            <div class="flex-1 space-y-4">
+                                <div class="bg-white p-6 rounded-xl shadow-sm">
+                                    <ul class="list-disc list-outside ml-5 space-y-4 font-medium text-base leading-relaxed text-slate-800">
+                                        <li><strong>上傳照片：</strong> 必須包含一張清楚的<span class="text-build-orange font-bold">正面照</span>，與一張條碼清楚的<span class="text-build-orange font-bold">背面照</span>。</li>
+                                        <li>點選畫面上紫色的 <strong>「✨ AI 辨識代填 (支援簡繁轉換)」</strong> 按鈕。</li>
+                                        <li>AI 會透過圖片分析，自動協助提供並填入「商品名稱」及「廠商名稱」。</li>
+                                        <li>
+                                            <div class="bg-red-50 p-4 rounded-lg border border-red-100 mt-2 w-full">
+                                                <strong class="text-red-600 flex items-center gap-2 text-lg mb-1"><i class="ph-fill ph-warning"></i> 人工確認防呆：</strong>
+                                                <span class="text-red-800">AI 難免有誤，請務必協助人工確認並修正可能的錯漏字。</span>
+                                            </div>
+                                        </li>
+                                        <li>確認無誤後，點選「確認上傳」。出現「建檔成功 / 新增圖鑑完成」即代表照片與資料已同步至雲端庫。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="flex-1 w-full max-w-sm mx-auto">
+                                 <img src="./images/c-upload-check.gif" class="mobile-img gif-demo" alt="資料建檔流程">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- 第三章：實戰對策                            -->
+            <!-- ========================================== -->
+            <section class="bg-white mt-12 scroll-mt-24" id="best-practice">
+                <div class="flex items-center gap-3 mb-8 border-b-2 border-slate-300 pb-3">
+                    <div class="bg-slate-700 p-2 rounded-lg text-white shadow-sm">
+                        <i class="ph-fill ph-warning-circle text-2xl block text-amber-400"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-slate-800">第三章：特殊狀況與實戰應對</h2>
+                </div>
+                
+                <div class="space-y-6">
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 hover:shadow-md transition">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-slate-100 text-slate-600 p-4 rounded-full shrink-0">
+                                <i class="ph-fill ph-wifi-slash text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-3">海岸無網路？ (離線模式自動保護)</h3>
+                                <p class="text-slate-600 mb-4 font-medium">
+                                    <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 症狀：</strong> 上方狀態列顯示紅色「離線模式」。
+                                </p>
+                                <div class="bg-wild-light p-5 rounded-xl border border-wild-green/20">
+                                    <p class="font-bold text-wild-green mb-2 text-lg">✅ 應對方式：</p>
+                                    <p class="text-slate-700 leading-relaxed font-medium">請安心繼續調查。按下上傳時，資料會安全存入手機內部記憶體。當您回到市區或有網路的地方後，只需打開網頁，點擊畫面上方的「☁️ 立即同步」即可將資料補傳至雲端。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-red-200 hover:shadow-md transition">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-red-50 text-red-500 p-4 rounded-full shrink-0">
+                                <i class="ph-fill ph-fire text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-3">手機過熱 / 網頁頻繁閃退</h3>
+                                <p class="text-slate-600 mb-4 font-medium leading-relaxed">
+                                    <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 海邊高溫曝曬，加上瀏覽器同時呼叫相機與 GPS 定位功能，極易造成手機記憶體耗盡而強迫關閉網頁 (閃退)。
+                                </p>
+                                <div class="bg-red-50 p-5 rounded-xl border border-red-200">
+                                    <p class="font-bold text-red-600 mb-3 text-lg">⚡ 終極應對解法：</p>
+                                    <p class="text-slate-800 leading-relaxed font-medium">
+                                        系統提供復原機制，重啟後請按「是」恢復先前記錄。<br><br>
+                                        <span class="bg-red-600 text-white px-2 py-1 rounded inline-block mb-1">上傳照片時，不要直接在網頁內按拍照！</span><br>
+                                        請先跳出網頁，用手機原本內建的「相機 APP」拍好所有的照片，然後再回到網頁，選擇 <strong>「從相簿上傳」</strong>。這樣做可以 100% 避免網頁閃退導致辛苦調查的資料遺失。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🌟 內建瀏覽器擋權限 -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-blue-200 hover:shadow-md transition">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-blue-50 text-blue-500 p-4 rounded-full shrink-0">
+                                <i class="ph-fill ph-chat-circle-warning text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-3">畫面全黑 / 無法開啟相機與定位</h3>
+                                <p class="text-slate-600 mb-4 font-medium leading-relaxed">
+                                    <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 您可能是在 LINE 或 Facebook 群組中直接點開網址。這類「內建瀏覽器」會阻擋 PWA 系統的相機與 GPS 權限。
+                                </p>
+                                <div class="bg-blue-50 p-5 rounded-xl border border-blue-200">
+                                    <p class="font-bold text-blue-700 mb-3 text-lg">✅ 應對方式：</p>
+                                    <p class="text-slate-800 leading-relaxed font-medium">
+                                        請點擊畫面右上角的 <strong class="text-blue-700 bg-white px-2 py-1 rounded shadow-sm">「⋮」設定鈕 或 「↗️」分享鈕</strong>，選擇 <strong class="text-blue-700">「以預設瀏覽器開啟」</strong>（Android 請選 Chrome，iOS 請選 Safari），即可正常使用並安裝至桌面。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 🌟 烈日反光 -->
+                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-amber-200 hover:shadow-md transition">
+                        <div class="flex items-start gap-5">
+                            <div class="bg-amber-50 text-amber-500 p-4 rounded-full shrink-0">
+                                <i class="ph-fill ph-sun text-3xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-slate-800 mb-3">烈日反光導致「條碼掃不出」</h3>
+                                <p class="text-slate-600 mb-4 font-medium leading-relaxed">
+                                    <strong class="text-slate-800 bg-slate-100 px-2 py-1 rounded">🔍 原因：</strong> 圓柱體的瓶身加上強烈的陽光反光、或是條碼磨損，讓相機無法對焦條碼。
+                                </p>
+                                <div class="bg-amber-50 p-5 rounded-xl border border-amber-200">
+                                    <p class="font-bold text-amber-700 mb-3 text-lg">💡 應對方式：</p>
+                                    <ul class="list-disc list-outside ml-5 text-slate-800 leading-relaxed font-medium space-y-2">
+                                        <li><strong>製造陰影：</strong> 請背對陽光，用自己的身體或手掌幫瓶身擋住強光，在陰影下掃描成功率最高。</li>
+                                        <li><strong>果斷切換：</strong> 嘗試數次仍掃不出，請直接改用 <strong class="text-amber-700">「手動輸入前 3 碼」</strong> 或 <strong class="text-amber-700">「下拉選單批次輸入」</strong>，保持調查的流暢度最重要！</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================== -->
+            <!-- 第四章：調查樣點認養                         -->
+            <!-- ========================================== -->
+            <section class="bg-white mt-12 scroll-mt-24" id="project-info">
+                <div class="flex items-center gap-3 mb-8 border-b-2 border-blue-600 pb-3">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white shadow-sm">
+                        <i class="ph-fill ph-calendar-check text-2xl block"></i>
+                    </div>
+                    <h2 class="text-2xl font-black text-blue-700">第四章：調查樣點認養</h2>
+                </div>
+                
+                <div class="space-y-8">
+                    <div class="bg-blue-50 rounded-2xl p-8 shadow-sm border border-blue-100">
+                        <ul class="list-disc list-outside ml-6 text-slate-700 text-base font-medium space-y-4 mb-8 leading-relaxed">
+                            <li>2026年上半年度調查期間為 4/1 至 6/30 止，邀請荒野志工登錄認養表格，進行樣點調查。</li>
+                            <li>歡迎一般民眾參與，不需填寫認養表格，可在任意地點自主調查(由系統自動定位)。</li>
+                        </ul>
+
+                        <div>
+                            <a href="https://docs.google.com/spreadsheets/d/1yX2dFju8H_cj6WdzpPca33aibzTArRLd/edit?gid=1819555738#gid=1819555738" target="_blank" class="text-white hover:bg-blue-800 bg-blue-600 px-8 py-3 rounded-xl inline-block font-bold tracking-wider transition-all duration-300 shadow-md flex items-center justify-center gap-2 max-w-max">
+                                <i class="ph-fill ph-table text-xl"></i> 點此開啟認養表格
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 頁尾 (深色區塊) -->
+    <footer class="bg-slate-800 text-slate-400 py-10 text-center mt-12 border-t-8 border-wild-green font-sans">
+        <div class="max-w-7xl mx-auto px-4">
+            
+            <!-- 主辦與贊助 (自動適應直/橫式 Logo) -->
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-12 mb-8 pb-8 border-b border-slate-700/80 max-w-2xl mx-auto">
+                <!-- 主辦單位 -->
+                <div class="flex flex-col items-center">
+                    <span class="text-sm font-medium mb-3">主辦單位</span>
+                    <!-- 🌟 移除固定寬度，改用高度限制，讓直橫式 Logo 都能自適應 -->
+                    <div class="bg-white/10 p-3 rounded-xl flex items-center justify-center min-w-[140px] h-[80px] border border-slate-700/50 hover:bg-white/15 transition">
+                        <!-- 💡 老王提示：替換圖片時，請加上 class="max-h-full w-auto object-contain" -->
+                        <span class="text-slate-400 text-sm">[荒野 Logo]</span>
+                    </div>
+                </div>
+                <!-- 贊助單位 -->
+                <div class="flex flex-col items-center">
+                    <span class="text-sm font-medium mb-3">專案贊助</span>
+                    <img src="./images/Nestle-LOGO.png" class="max-h-full w-auto object-contain">
+                </div>
+            </div>
+
+            <!-- 聯絡資訊與系統開發者 Credit -->
+            <div class="text-sm mb-4 space-y-1 font-medium">
+                <p>網頁規劃設計：荒野保護協會 棲地守護部雁子</p>
+                <p>聯絡信箱：<a href="mailto:max@wilderness.tw" class="text-slate-300 hover:text-white border-b border-slate-600 hover:border-slate-400 pb-0.5 transition">max@wilderness.tw</a></p>
+            </div>
+
+            <p class="text-xs text-slate-500 mt-6">&copy; THE Society of Wilderness. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>
