@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="荒野調查">
+    <meta name="apple-mobile-web-app-title" content="瓶罐調查">
     <link rel="apple-touch-icon" href="logo.png">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -81,9 +81,6 @@
         .nav-item { flex: 1; text-align: center; font-size: 14px; color: #b0bec5; padding-top: 5px; cursor: pointer; transition: color 0.2s; font-weight: bold; }
         .nav-item.active { color: var(--primary); }
         .nav-item span { display: block; font-size: 24px; margin-bottom: 2px; }
-        
-        .footer-credit { text-align: center; font-size: 13px; color: #90a4ae; margin-top: 30px; padding-bottom: 20px; line-height: 1.6; border-top: 1px dashed #cfd8dc; padding-top: 15px; }
-        .footer-credit a { color: var(--primary); text-decoration: none; font-weight: bold; }
         
         .camera-box { position: relative; display: none; background: #000; border-radius: 16px; overflow: hidden; margin-top: 15px; }
         .scanner-view { width: 100%; min-height: 300px; }
@@ -197,7 +194,37 @@
             </div>
         </div>
         
-        <div class="footer-credit">網頁規劃設計：荒野保護協會 棲地守護部雁子<br>聯絡信箱：<a href="mailto:max@wilderness.tw">max@wilderness.tw</a></div>
+        <!-- ============================================================== -->
+        <!-- 🌟 專屬行動版 Web App 精緻頁尾 (完美融入荒野綠色主題，避開導覽列) -->
+        <!-- ============================================================== -->
+        <footer style="margin-top: 35px; border-top: 1px dashed #c5d7bc; padding-top: 25px; padding-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+            <div style="text-align: center; margin-bottom: 12px;">
+                <span style="font-size: 12px; font-weight: bold; color: var(--primary-dark); letter-spacing: 2px;">主辦暨贊助單位</span>
+            </div>
+            
+            <!-- Logo 雙名片並列 -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
+                <!-- 荒野保護協會 Logo 框 -->
+                <div style="height: 64px; flex: 1; background: white; border-radius: 10px; border: 1px solid #c5d7bc; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(88,122,48,0.06);">
+                    <img src="./images/SOW-LOGO.png" alt="荒野保護協會" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                </div>
+                
+                <!-- ✕ 連結符號 -->
+                <span style="color: #a9c29d; font-weight: bold; font-size: 14px;">✕</span>
+                
+                <!-- 雀巢 Logo 框 -->
+                <div style="height: 64px; flex: 1; background: white; border-radius: 10px; border: 1px solid #c5d7bc; display: flex; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(88,122,48,0.06);">
+                    <img src="./images/Nestle-LOGO.png" alt="雀巢公司" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                </div>
+            </div>
+
+            <!-- 開發者與版權宣告 -->
+            <div style="text-align: center; font-size: 12px; color: #555; line-height: 1.6;">
+                <p style="margin: 0; font-weight: bold; color: #444;">系統規劃設計：棲地守護部 雁子</p>
+                <p style="margin: 2px 0 0 0;">聯絡信箱：<a href="mailto:max@wilderness.tw" style="color: var(--primary); text-decoration: none; border-bottom: 1px dotted var(--primary); font-weight: bold;">max@wilderness.tw</a></p>
+                <p style="margin: 8px 0 0 0; font-size: 10px; color: #90a4ae; letter-spacing: 0.5px;">&copy; THE Society of Wilderness. All rights reserved.</p>
+            </div>
+        </footer>
     </div>
 
     <!-- ==================== 分頁 2：記錄 ==================== -->
@@ -467,7 +494,6 @@
             reader.readAsDataURL(file);
         }
         
-        // 🛑 核心修改：大幅簡化掃描判定邏輯 (只剩 Case A 命中 與 Case C 未知)
         function startRecordScanner() {
             if (STATE.scanners.record) return;
             document.getElementById('camera-box-record').style.display = 'block'; document.getElementById('btn-scan-start').style.display = 'none'; document.getElementById('btn-scan-stop').style.display = 'inline-block';
@@ -478,26 +504,22 @@
                 
                 let tempGps = "未定位"; getBottleGpsAsync(coords => { tempGps = coords; }); 
                 
-                // 1. 直接比對「常見商品庫」
                 const prodData = STATE.productCache ? STATE.productCache[txt] : null;
                 let displayCountry = getCountryFromCode(txt), displayBrand = "", displayName = "", displayImg = "", logSource = "", isHit = false;
                 
                 if (prodData) { 
-                    // 🟢 情況 A：命中商品庫
                     isHit = true; 
                     displayCountry = prodData.origin || displayCountry; 
                     displayBrand = prodData.brand || ""; 
                     displayName = prodData.name; 
                     displayImg = prodData.img_url; 
                     
-                    // 判斷此商品是否已經有照片 (依據網址長度簡單判斷)
                     if (displayImg && displayImg.length > 5) {
-                        logSource = "Local_Product_Ready"; // 有照片
+                        logSource = "Local_Product_Ready"; 
                     } else {
-                        logSource = "Local_Product_NoImg"; // 缺照片 (需通報補拍)
+                        logSource = "Local_Product_NoImg"; 
                     }
                 }
-                // 🔴 情況 C：找不到，直接視為未知商品 (移除原本的情況 B 廠商比對)
                 
                 if (isHit) {
                     const modalHtml = `<div style="background:#f1f8e9; padding:20px; border-radius:16px; border:2px solid #587a30; text-align:center;"><div style="font-size:13px; font-weight:bold; color:#587a30; margin-bottom:5px;">✨ 掃描成功</div><div style="font-size:32px; font-weight:900; color:#2e4418; font-family:monospace;">${txt}</div><div style="font-size:20px; font-weight:bold; color:#587a30; margin-bottom:15px;">${displayCountry}</div><div style="background:white; padding:15px; border-radius:12px; border:1px solid #c8e6c9;"><div style="font-size:18px; color:#555; font-weight:bold; margin-bottom:6px;">${displayBrand}</div><div style="font-size:24px; font-weight:900; color:#333;">${displayName}</div></div></div>`;
