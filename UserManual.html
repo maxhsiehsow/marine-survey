@@ -276,7 +276,7 @@
                         </h3>
                         <p class="text-slate-700 mb-6">可用「自動定位」或「尋找樣點」兩種模式進行定位。</p>
                         
-                        <!-- 兩欄：自動 vs 手動 -->
+                        <!-- 兩欄：自動 vs 手 পরীক্ষ動 -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-wild-green">
                                 <h4 class="font-bold text-wild-green mb-3">自動定位</h4>
@@ -518,7 +518,7 @@
                         <div class="flex flex-col md:flex-row gap-8 items-center">
                             <div class="flex-1 space-y-4">
                                 <div class="bg-white p-6 rounded-xl shadow-sm">
-                                    <ul class="list-disc list-outside ml-6 space-y-4 font-medium text-base leading-relaxed text-slate-800">
+                                    <ul class="list-disc list-outside ml-5 space-y-4 font-medium text-base leading-relaxed text-slate-800">
                                         <li><strong>上傳照片：</strong> 必須包含一張清楚的<span class="text-build-orange font-bold">正面照</span>，與一張條碼清楚的<span class="text-build-orange font-bold">背面照</span>。</li>
                                         <li>點選畫面上紫色的 <strong>「✨ AI 辨識代填 (支援簡繁轉換)」</strong> 按鈕。</li>
                                         <li>AI 會透過圖片分析，自動協助提供並填入「商品名稱」及「廠商名稱」。</li>
@@ -529,7 +529,7 @@
                                             </div>
                                         </li>
                                         <li>確認無誤後，點選「確認上傳」。出現「建檔成功 / 新增圖鑑完成」即代表照片與資料已同步至雲端庫。</li>
-                                    </ul>
+                                    </ol>
                                 </div>
                             </div>
                             <div class="flex-1 w-full max-w-sm mx-auto">
@@ -668,16 +668,47 @@
     </div>
 
     <!-- 頁尾 (深色區塊僅保留版權與聯絡資訊) -->
-    <footer class="bg-slate-800 text-slate-300 py-8 text-center mt-8 border-t-8 border-wild-green">
-        <div class="max-w-7xl mx-auto px-4">
-            <!-- 🌟 聯絡資訊與系統開發者 Credit -->
-            <div class="text-slate-400 text-sm mb-4 space-y-1">
-                <p>網頁規劃設計：荒野保護協會 棲地守護部雁子</p>
-                <p>聯絡信箱：<a href="mailto:max@wilderness.tw" class="hover:text-wild-light transition text-slate-200 font-medium">max@wilderness.tw</a></p>
-            </div>
+    <footer class="mt-12 border-t-8 border-wild-green font-sans">
+        
+        <!-- 上半部：白底贊助 Logo 區 -->
+        <div class="bg-slate-50 py-10 border-b border-slate-200">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-10 md:gap-16">
+                    
+                    <!-- 主辦單位 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm font-bold text-slate-500 mb-3 tracking-widest">主辦單位</span>
+                        <div class="h-[120px] w-[360px] bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center p-3 hover:shadow-md transition">
+                            <img src="./images/SOW-LOGO.png" class="max-h-full max-w-full object-contain" alt="荒野保護協會">
+                        </div>
+                    </div>
 
-            <p class="text-sm text-slate-500">&copy; THE Society of Wilderness. All rights reserved.</p>
+                    <!-- 視覺分隔線 -->
+                    <div class="hidden sm:block w-px h-24 bg-slate-300"></div>
+
+                    <!-- 贊助單位 -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-sm font-bold text-slate-500 mb-3 tracking-widest">專案贊助</span>
+                        <div class="h-[120px] w-[360px] bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center p-3 hover:shadow-md transition">
+                            <img src="./images/Nestle-LOGO.png" class="max-h-full max-w-full object-contain" alt="雀巢公司">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
+
+        <!-- 下半部：深色版權與聯絡資訊區 -->
+        <div class="bg-slate-800 text-slate-300 py-8 text-center">
+            <div class="max-w-7xl mx-auto px-4">
+                <div class="text-slate-400 text-sm mb-4 space-y-1 font-medium">
+                    <p>網頁規劃設計：棲地守護部 雁子 / 聯絡信箱：<a href="mailto:max@wilderness.tw" class="text-slate-300 hover:text-white border-b border-slate-600 hover:border-slate-400 pb-0.5 transition">max@wilderness.tw</a></p>
+                    <!-- <p>聯絡信箱：<a href="mailto:max@wilderness.tw" class="text-slate-300 hover:text-white border-b border-slate-600 hover:border-slate-400 pb-0.5 transition">max@wilderness.tw</a></p> -->
+                </div>
+                <p class="text-xs text-slate-500">&copy; The Society of Wilderness. All rights reserved.</p>
+            </div>
+        </div>
+
     </footer>
 
 </body>
