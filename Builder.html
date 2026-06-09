@@ -168,18 +168,18 @@
                 <span style="font-size: 12px; font-weight: bold; color: #e65100; letter-spacing: 2px;">主辦單位 X 贊助單位</span>
             </div>
             
-            <!-- Logo 雙名片並列 (建檔站專用橘色系) -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px;">
-                <!-- 荒野保護協會 Logo 框 (增加內邊距 padding 至 14px，使其視覺收縮) -->
-                <div style="height: 64px; flex: 1; background: white; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(245,124,0,0.06);">
+            <!-- Logo 雙名片並列 (建檔站專用橘色系 - 1:1 等寬版) -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; width: 100%; max-width: 360px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
+                <!-- 荒野保護協會 Logo 框 (flex 1 1 0% 強制等寬，padding 14px 限制大小) -->
+                <div style="height: 64px; flex: 1 1 0%; min-width: 0; max-width: 170px; background: white; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(245,124,0,0.06);">
                     <img src="./images/SOW-LOGO.png" alt="荒野保護協會" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                 </div>
                 
                 <!-- ✕ 連結符號 -->
-                <span style="color: #ffb74d; font-weight: bold; font-size: 14px;">✕</span>
+                <span style="color: #ffb74d; font-weight: bold; font-size: 14px; flex-shrink: 0;">✕</span>
                 
-                <!-- 雀巢 Logo 框 (極大化內部空間 padding 縮至 2px，使其等比例最大化) -->
-                <div style="height: 64px; flex: 1; background: white; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; align-items: center; justify-content: center; padding: 2px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(245,124,0,0.06);">
+                <!-- 雀巢 Logo 框 (flex 1 1 0% 強制等寬，padding 2px 最大化呈現) -->
+                <div style="height: 64px; flex: 1 1 0%; min-width: 0; max-width: 170px; background: white; border-radius: 10px; border: 1px solid #ffe0b2; display: flex; align-items: center; justify-content: center; padding: 2px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(245,124,0,0.06);">
                     <img src="./images/Nestle-LOGO.png" alt="雀巢公司" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                 </div>
             </div>
