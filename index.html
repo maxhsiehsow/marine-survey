@@ -198,34 +198,38 @@
         <!-- 🌟 專屬行動版 Web App 精緻頁尾 (完美融入荒野綠色主題，避開導覽列) -->
         <!-- ============================================================== -->
         <footer style="margin-top: 35px; border-top: 1px dashed #c5d7bc; padding-top: 25px; padding-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-            <div style="text-align: center; margin-bottom: 12px;">
-                <span style="font-size: 12px; font-weight: bold; color: var(--primary-dark); letter-spacing: 2px;">主辦單位 X 贊助單位</span>
-            </div>
             
-            <!-- Logo 雙名片並列 (一般站專用綠色系 - 1:1 等寬版) -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 20px; width: 100%; max-width: 360px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
-                <!-- 荒野保護協會 Logo 框 (flex 1 1 0% 強制等寬，padding 14px 限制大小) -->
-                <div style="height: 64px; flex: 1 1 0%; min-width: 0; max-width: 170px; background: white; border-radius: 10px; border: 1px solid #c5d7bc; display: flex; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(88,122,48,0.06);">
+            <!-- Logo 雙名片並列 (一般站專用綠色系 - 建議 A 標籤分流 Grid 雙排版) -->
+            <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px 12px; margin-bottom: 20px; width: 100%; max-width: 360px; margin-left: auto; margin-right: auto; box-sizing: border-box;">
+                
+                <!-- 1. 標籤列 (第一排) -->
+                <div style="text-align: center; font-size: 12px; font-weight: bold; color: var(--primary-dark); letter-spacing: 2px; justify-self: end; width: 100%; max-width: 170px;">主辦單位</div>
+                <div style="width: 14px;"></div>
+                <div style="text-align: center; font-size: 12px; font-weight: bold; color: var(--primary-dark); letter-spacing: 2px; justify-self: start; width: 100%; max-width: 170px;">專案贊助</div>
+                
+                <!-- 2. 卡片列 (第二排) -->
+                <!-- 荒野保護協會 Logo 框 (靠右對齊，padding 調整為 18px 縮小視覺比重) -->
+                <div style="height: 64px; width: 100%; max-width: 170px; justify-self: end; background: white; border-radius: 10px; border: 1px solid #c5d7bc; display: flex; align-items: center; justify-content: center; padding: 18px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(88,122,48,0.06);">
                     <img src="./images/SOW-LOGO.png" alt="荒野保護協會" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                 </div>
                 
-                <!-- ✕ 連結符號 -->
-                <span style="color: #a9c29d; font-weight: bold; font-size: 14px; flex-shrink: 0;">✕</span>
+                <!-- ✕ 連結符號 (置於 grid 1fr auto 1fr 的正中央) -->
+                <span style="color: #a9c29d; font-weight: bold; font-size: 14px; text-align: center; width: 14px; display: inline-block;">✕</span>
                 
-                <!-- 雀巢 Logo 框 (flex 1 1 0% 強制等寬，padding 2px 最大化呈現) -->
-                <div style="height: 64px; flex: 1 1 0%; min-width: 0; max-width: 170px; background: white; border-radius: 10px; border: 1px solid #c5d7bc; display: flex; align-items: center; justify-content: center; padding: 2px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(88,122,48,0.06);">
+                <!-- 雀巢 Logo 框 (靠左對齊，padding 2px 最大化呈現) -->
+                <div style="height: 64px; width: 100%; max-width: 170px; justify-self: start; background: white; border-radius: 10px; border: 1px solid #c5d7bc; display: flex; align-items: center; justify-content: center; padding: 2px; box-sizing: border-box; box-shadow: 0 2px 8px rgba(88,122,48,0.06);">
                     <img src="./images/Nestle-LOGO.png" alt="雀巢公司" style="max-height: 100%; max-width: 100%; object-fit: contain;">
                 </div>
+                
             </div>
 
             <!-- 開發者與版權宣告 -->
             <div style="text-align: center; font-size: 12px; color: #555; line-height: 1.6;">
-                <p style="margin: 0; font-weight: bold; color: #444;">系統規劃設計：棲地守護部 雁子</p>
+                <p style="margin: 0; font-weight: bold; color: #444;">系統規劃設計：荒野棲地守護部 雁子</p>
                 <p style="margin: 2px 0 0 0;">聯絡信箱：<a href="mailto:max@wilderness.tw" style="color: var(--primary); text-decoration: none; border-bottom: 1px dotted var(--primary); font-weight: bold;">max@wilderness.tw</a></p>
                 <p style="margin: 8px 0 0 0; font-size: 10px; color: #90a4ae; letter-spacing: 0.5px;">&copy; THE Society of Wilderness. All rights reserved.</p>
             </div>
         </footer>
-    </div>
 
     <!-- ==================== 分頁 2：記錄 ==================== -->
     <div id="view-record" class="container">
